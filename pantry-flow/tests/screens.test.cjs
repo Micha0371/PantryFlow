@@ -1,4 +1,4 @@
-const { test } = require('node:test');
+const { test, mock } = require('node:test');
 const assert = require('node:assert/strict');
 const React = require('react');
 const { create, act } = require('react-test-renderer');
@@ -54,10 +54,14 @@ test('empty pantry offers add navigation and populated pantry opens the selected
     '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/PantryItem': { PantryItem: 'Item' },
     '@/hooks/usePantryItems': { usePantryItems: () => ({ items, loading: false, error: null }) },
   });
+  // The add action and the rows share one lock (KAN-38). The list never blurs
+  // here, so the one-second fallback releases it before the row tap.
+  mock.timers.enable({ apis: ['setTimeout'] });
   let renderer;
   act(() => { renderer = create(React.createElement(Screen)); });
   act(() => renderer.root.findByType('EmptyState').props.onCtaPress());
   assert.deepEqual(navigation, ['/add-item']);
+  mock.timers.tick(1000);
   items = [{ id: 'selected-item' }];
   act(() => renderer.update(React.createElement(Screen)));
   assert.equal(renderer.root.findAllByType('EmptyState').length, 0);
@@ -65,6 +69,7 @@ test('empty pantry offers add navigation and populated pantry opens the selected
   act(() => row.props.onPress());
   assert.equal(navigation.at(-1), '/edit-item/selected-item');
   act(() => renderer.unmount());
+  mock.timers.reset();
 });
 
 test('fast repeated pantry row taps open one edit screen, even on different rows (KAN-33)', () => {
@@ -82,6 +87,34 @@ test('fast repeated pantry row taps open one edit screen, even on different rows
     const tap = item => renderer.root.findByType('FlatList').props.renderItem({ item }).props.onPress();
     act(() => { tap(items[0]); tap(items[0]); tap(items[1]); });
     assert.deepEqual(navigation, ['/edit-item/a']);
+  } finally { act(() => renderer.unmount()); }
+});
+
+test('fast repeated add taps open one add screen (KAN-38)', () => {
+  const navigation = [];
+  let items = [];
+  const { default: Screen } = load('app/(tabs)/index.tsx', { ...shared,
+    ...routerStubs(route => navigation.push(route)),
+    '@expo/vector-icons': { Ionicons: 'Icon' },
+    '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/PantryItem': { PantryItem: 'Item' },
+    '@/hooks/usePantryItems': { usePantryItems: () => ({ items, loading: false, error: null }) },
+  });
+  let renderer;
+  act(() => { renderer = create(React.createElement(Screen)); });
+  try {
+    const cta = renderer.root.findByType('EmptyState').props.onCtaPress;
+    act(() => { cta(); cta(); });
+    assert.deepEqual(navigation, ['/add-item']);
+  } finally { act(() => renderer.unmount()); }
+
+  navigation.length = 0;
+  items = [{ id: 'a' }];
+  act(() => { renderer = create(React.createElement(Screen)); });
+  try {
+    const fab = () => renderer.root.findByProps({ testID: 'pantry-fab-add' }).props.onPress();
+    const row = () => renderer.root.findByType('FlatList').props.renderItem({ item: items[0] }).props.onPress();
+    act(() => { fab(); fab(); row(); });
+    assert.deepEqual(navigation, ['/add-item']);
   } finally { act(() => renderer.unmount()); }
 });
 

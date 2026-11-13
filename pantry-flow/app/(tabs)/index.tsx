@@ -7,7 +7,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { EmptyState } from '@/components/EmptyState';
 import { PantryItem } from '@/components/PantryItem';
@@ -18,8 +17,8 @@ import { useTranslation } from '@/lib/i18n';
 import { colors, radii, spacing, typography } from '@/lib/theme';
 
 export default function PantryScreen() {
-  const router = useRouter();
-  const openEditor = useSingleOpen();
+  // One lock for rows and add actions: a tap burst opens one screen (KAN-33, KAN-38).
+  const openScreen = useSingleOpen();
   const { t } = useTranslation();
   const { items, loading, error, retry } = usePantryItems();
 
@@ -49,7 +48,7 @@ export default function PantryScreen() {
           title={t('empty_pantry_title')}
           subtitle={t('empty_pantry_subtitle')}
           ctaLabel={t('empty_pantry_cta')}
-          onCtaPress={() => router.push('/add-item')}
+          onCtaPress={() => openScreen('/add-item')}
         />
       ) : (
         <>
@@ -59,7 +58,7 @@ export default function PantryScreen() {
             renderItem={({ item }) => (
               <PantryItem
                 item={item}
-                onPress={() => openEditor(`/edit-item/${item.id}`)}
+                onPress={() => openScreen(`/edit-item/${item.id}`)}
               />
             )}
             contentContainerStyle={styles.list}
@@ -68,7 +67,7 @@ export default function PantryScreen() {
       )}
 
       <Pressable
-        onPress={() => router.push('/add-item')}
+        onPress={() => openScreen('/add-item')}
         style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
         accessibilityRole="button"
         accessibilityLabel={t('item_add_button')}

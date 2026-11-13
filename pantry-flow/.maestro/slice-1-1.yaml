@@ -20,6 +20,22 @@ name: Slice 1.1 critical behavioral journey
     env:
       EMAIL: pf.test.alice@example.com
 - assertVisible: Your pantry is empty
+# A fast double tap on add opens one add screen (KAN-38): after Cancel, no
+# second add screen may remain underneath.
+- doubleTapOn:
+    id: pantry-fab-add
+- extendedWaitUntil:
+    visible:
+      id: add-item-save
+    timeout: 15000
+- tapOn:
+    id: add-item-cancel
+- extendedWaitUntil:
+    notVisible:
+      id: add-item-save
+    timeout: 15000
+- assertVisible:
+    id: pantry-screen
 - tapOn:
     id: pantry-fab-add
 - inputText: '   '
