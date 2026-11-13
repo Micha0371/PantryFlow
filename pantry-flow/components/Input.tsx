@@ -22,7 +22,11 @@ export function Input({ label, error, style, ...rest }: Props) {
         style={[styles.input, error ? styles.inputError : null, style]}
         {...rest}
       />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {/* Always mounted, so TalkBack announces an error when it appears or
+          changes (KAN-34); the alert role is what iOS uses. */}
+      <View accessibilityLiveRegion="polite" collapsable={false}>
+        {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
+      </View>
     </View>
   );
 }
