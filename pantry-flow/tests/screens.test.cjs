@@ -1,4 +1,4 @@
-const { test, mock } = require('node:test');
+const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const React = require('react');
 const { create, act } = require('react-test-renderer');
@@ -45,7 +45,7 @@ test('a failed initial pantry load shows retry instead of claiming the pantry is
   act(() => renderer.unmount());
 });
 
-test('empty pantry offers add navigation and populated pantry opens the selected item', () => {
+test('empty pantry offers add navigation and populated pantry opens the selected item', ctx => {
   const navigation = [];
   let items = [];
   const { default: Screen } = load('app/(tabs)/index.tsx', { ...shared,
@@ -55,21 +55,22 @@ test('empty pantry offers add navigation and populated pantry opens the selected
     '@/hooks/usePantryItems': { usePantryItems: () => ({ items, loading: false, error: null }) },
   });
   // The add action and the rows share one lock (KAN-38). The list never blurs
-  // here, so the one-second fallback releases it before the row tap.
-  mock.timers.enable({ apis: ['setTimeout'] });
+  // here, so the one-second fallback releases it before the row tap. The
+  // test-scoped mock is restored after the test, even when an assertion fails.
+  ctx.mock.timers.enable({ apis: ['setTimeout'] });
   let renderer;
   act(() => { renderer = create(React.createElement(Screen)); });
-  act(() => renderer.root.findByType('EmptyState').props.onCtaPress());
-  assert.deepEqual(navigation, ['/add-item']);
-  mock.timers.tick(1000);
-  items = [{ id: 'selected-item' }];
-  act(() => renderer.update(React.createElement(Screen)));
-  assert.equal(renderer.root.findAllByType('EmptyState').length, 0);
-  const row = renderer.root.findByType('FlatList').props.renderItem({ item: items[0] });
-  act(() => row.props.onPress());
-  assert.equal(navigation.at(-1), '/edit-item/selected-item');
-  act(() => renderer.unmount());
-  mock.timers.reset();
+  try {
+    act(() => renderer.root.findByType('EmptyState').props.onCtaPress());
+    assert.deepEqual(navigation, ['/add-item']);
+    ctx.mock.timers.tick(1000);
+    items = [{ id: 'selected-item' }];
+    act(() => renderer.update(React.createElement(Screen)));
+    assert.equal(renderer.root.findAllByType('EmptyState').length, 0);
+    const row = renderer.root.findByType('FlatList').props.renderItem({ item: items[0] });
+    act(() => row.props.onPress());
+    assert.equal(navigation.at(-1), '/edit-item/selected-item');
+  } finally { act(() => renderer.unmount()); }
 });
 
 test('fast repeated pantry row taps open one edit screen, even on different rows (KAN-33)', () => {
