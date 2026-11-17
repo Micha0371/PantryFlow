@@ -13,7 +13,11 @@ const routerStubs = push => {
   const expoRouter = { useRouter: () => ({ push }), useFocusEffect: callback => React.useEffect(callback, [callback]) };
   return { 'expo-router': expoRouter, '@/hooks/useSingleOpen': load('hooks/useSingleOpen.ts', { 'expo-router': expoRouter }) };
 };
-const shared = { ...routerStubs(route => pushes.push(route)), 'react-native': native, '@/lib/theme': theme, '@expo/vector-icons': { Ionicons: 'Icon' },
+const announced = [];
+const announcing = { Platform: { OS: 'android' }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } };
+const shared = { ...routerStubs(route => pushes.push(route)), 'react-native': native,
+  '@/hooks/useErrorAnnouncement': load('hooks/useErrorAnnouncement.ts', { 'react-native': announcing,
+    'expo-router': { useFocusEffect: callback => React.useEffect(callback, [callback]) } }), '@/lib/theme': theme, '@expo/vector-icons': { Ionicons: 'Icon' },
   '@/lib/i18n': { useTranslation: () => ({ t }) }, '@/components/Button': { Button: 'Button' }, '@/components/Input': { Input: 'Input' },
   '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/ShoppingItem': { ShoppingItem: 'Row' },
   '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }) };
@@ -57,6 +61,19 @@ test('a failed load shows the error with retry, not an empty list', () => {
     act(() => r.root.findByProps({ testID: 'shopping-retry' }).props.onPress());
     assert.equal(retries, 1);
   } finally { act(() => r.unmount()); }
+});
+
+test('a failed load is announced to TalkBack once, on the focused tab (KAN-39)', () => {
+  announced.length = 0;
+  const r = render({ error: 'err_load_shopping' });
+  try {
+    assert.deepEqual(announced, ['err_load_shopping']);
+  } finally { act(() => r.unmount()); }
+  announced.length = 0;
+  const ok = render({ items: [row('a')] });
+  try {
+    assert.deepEqual(announced, []);
+  } finally { act(() => ok.unmount()); }
 });
 
 test('an empty list shows the empty state without an add action', () => {

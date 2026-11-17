@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { colors, radii, spacing, typography } from '@/lib/theme';
+import { InlineError } from './InlineError';
 
 interface Props extends TextInputProps {
   label?: string;
@@ -22,13 +23,7 @@ export function Input({ label, error, style, ...rest }: Props) {
         style={[styles.input, error ? styles.inputError : null, style]}
         {...rest}
       />
-      {/* Always mounted, so TalkBack announces an error when it appears or
-          changes (KAN-34). The alert role only names it ("alert"). iOS has no
-          live region and RN maps this role to no VoiceOver trait, so iOS still
-          needs an explicit announcement (PF-IOS-001). */}
-      <View accessibilityLiveRegion="polite" collapsable={false}>
-        {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
-      </View>
+      <InlineError message={error ?? null} style={styles.error} />
     </View>
   );
 }

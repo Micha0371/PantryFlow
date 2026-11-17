@@ -9,6 +9,7 @@ const theme = load('lib/theme.ts');
 const { Input } = load('components/Input.tsx', {
   'react-native': { Text: 'Text', TextInput: 'TextInput', View: 'View', StyleSheet: { create: s => s } },
   '@/lib/theme': theme,
+  './InlineError': load('components/InlineError.tsx', { 'react-native': { Text: 'Text', View: 'View' } }),
 });
 
 function render(error) {

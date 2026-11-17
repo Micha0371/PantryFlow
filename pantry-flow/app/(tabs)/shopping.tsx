@@ -6,6 +6,7 @@ import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { useShoppingItems } from '@/hooks/useShoppingItems';
 import { useSingleOpen } from '@/hooks/useSingleOpen';
+import { useFocusedErrorAnnouncement } from '@/hooks/useErrorAnnouncement';
 import { useTranslation } from '@/lib/i18n';
 import { SHOPPING_NAME_MAX, shoppingErrorKey, splitShoppingItems, type ShoppingItem as ShoppingItemData } from '@/lib/shopping-data';
 import { colors, spacing, typography } from '@/lib/theme';
@@ -88,6 +89,7 @@ function HouseholdShoppingScreen() {
   }, [completeItem, reopenItem]);
 
   const showLoading = loading && items.length === 0;
+  useFocusedErrorAnnouncement(error ? t(error) : null);
 
   if (error) {
     return (
