@@ -30,3 +30,29 @@ test('saved locale restores, missing translations fall back and locale changes p
     }
   } finally { if (view) act(() => view.unmount()); }
 });
+
+// KAN-27: the context value is memoized, so consumers re-render for locale changes only.
+test('the i18n context value is stable across a parent re-render and changes with the locale', async () => {
+  const { en } = load('lib/i18n/en.ts');
+  const { de } = load('lib/i18n/de.ts');
+  const { I18nProvider, useTranslation } = load('lib/i18n/index.tsx', {
+    './en': { en }, './de': { de },
+    '@react-native-async-storage/async-storage': { getItem: async () => null, setItem: async () => {} },
+  });
+  const seen = [];
+  function Probe() { seen.push(useTranslation()); return null; }
+  const tree = () => React.createElement(I18nProvider, null, React.createElement(Probe));
+  let view;
+  try {
+    await act(async () => { view = create(tree()); });
+    const first = seen.at(-1);
+    act(() => view.update(tree()));
+    assert.equal(seen.at(-1), first);
+    await act(async () => first.setLocale('de'));
+    const german = seen.at(-1);
+    assert.notEqual(german, first);
+    assert.equal(german.locale, 'de');
+    assert.equal(german.t('nav_shopping'), de.nav_shopping ?? en.nav_shopping);
+    assert.equal(german.setLocale, first.setLocale);
+  } finally { if (view) act(() => view.unmount()); }
+});

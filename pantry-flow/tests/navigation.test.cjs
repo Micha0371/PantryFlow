@@ -63,3 +63,30 @@ test('root layout mounts ShoppingProvider inside the household scope and around 
     assert.equal(modal.props.options.presentation, 'modal');
   } finally { if (renderer) act(() => renderer.unmount()); }
 });
+
+// KAN-27: pins each tab icon's name and colors before moving the icon components out of the layout.
+test('each tab icon has its Ionicons name and the focused or muted color', () => {
+  const Tabs = ({ children }) => React.createElement(React.Fragment, null, children);
+  Tabs.Screen = 'TabScreen';
+  const theme = load('lib/theme.ts');
+  const { default: Layout } = load('app/(tabs)/_layout.tsx', {
+    'expo-router': { Tabs }, '@expo/vector-icons': { Ionicons: 'Icon' },
+    '@/components/AuthGate': { AuthGate: host('Gate') },
+    '@/lib/i18n': { useTranslation: () => ({ t }) },
+    '@/lib/theme': theme,
+  });
+  let renderer;
+  try {
+    act(() => { renderer = create(React.createElement(Layout)); });
+    const icons = { index: 'cube-outline', shopping: 'cart-outline', settings: 'settings-outline' };
+    for (const screen of renderer.root.findAllByType('TabScreen')) {
+      for (const [focused, color] of [[true, theme.colors.primary], [false, theme.colors.textMuted]]) {
+        let icon;
+        act(() => { icon = create(React.createElement(screen.props.options.tabBarIcon, { focused, size: 24, color: 'ignored' })); });
+        const node = icon.root.findByType('Icon');
+        assert.deepEqual([node.props.name, node.props.size, node.props.color], [icons[screen.props.name], 24, color]);
+        act(() => icon.unmount());
+      }
+    }
+  } finally { if (renderer) act(() => renderer.unmount()); }
+});
