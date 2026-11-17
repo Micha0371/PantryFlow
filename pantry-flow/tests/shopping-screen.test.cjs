@@ -162,6 +162,38 @@ test('editing the field after a rejected add clears the error', async () => {
   } finally { act(() => renderer.unmount()); }
 });
 
+// KAN-37: an add that fails after the field was edited must not put its error
+// under text it is not about.
+const duplicate = () => Object.assign(new Error('dup'), { code: '23505' });
+
+test('a failed add after the field was edited names the submitted item (KAN-37)', async () => {
+  const d = deferred();
+  const { renderer, input, submit } = renderAdd({ addItem: () => d.promise });
+  try {
+    act(() => input().props.onChangeText(' Milk '));
+    act(() => { submit().props.onPress(); });
+    act(() => input().props.onChangeText('Eggs'));
+    await act(async () => { d.reject(duplicate()); await d.promise.catch(() => {}); });
+    assert.equal(input().props.value, 'Eggs');
+    assert.equal(input().props.error, 'Milk: err_duplicate_shopping_item');
+    act(() => input().props.onChangeText('Egg'));
+    assert.equal(input().props.error, null);
+  } finally { act(() => renderer.unmount()); }
+});
+
+test('a failed add after an edit back to the submitted text shows the plain error', async () => {
+  const d = deferred();
+  const { renderer, input, submit } = renderAdd({ addItem: () => d.promise });
+  try {
+    act(() => input().props.onChangeText('Milk'));
+    act(() => { submit().props.onPress(); });
+    act(() => input().props.onChangeText('Eggs'));
+    act(() => input().props.onChangeText('Milk'));
+    await act(async () => { d.reject(duplicate()); await d.promise.catch(() => {}); });
+    assert.equal(input().props.error, 'err_duplicate_shopping_item');
+  } finally { act(() => renderer.unmount()); }
+});
+
 test('text typed while an add is in flight is kept', async () => {
   const d = deferred();
   const { renderer, input, submit } = renderAdd({ addItem: () => d.promise });

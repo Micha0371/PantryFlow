@@ -20,6 +20,27 @@ name: Slice 1.1 critical behavioral journey
     env:
       EMAIL: pf.test.alice@example.com
 - assertVisible: Your pantry is empty
+# A fast double tap on add opens one add screen (KAN-38): after Cancel, no
+# second add screen may remain underneath. The name field is checked, not Save:
+# the focused field's keyboard can cover Save (CI emulator), which would make
+# "Save not visible" pass even with a second screen open. A tap on the plain
+# "Category" label closes the keyboard (keyboardShouldPersistTaps="handled");
+# hideKeyboard is avoided, as it may act as Back and close the second screen.
+- doubleTapOn:
+    id: pantry-fab-add
+- extendedWaitUntil:
+    visible:
+      id: add-item-name
+    timeout: 15000
+- tapOn: Category
+- tapOn:
+    id: add-item-cancel
+- extendedWaitUntil:
+    notVisible:
+      id: add-item-name
+    timeout: 15000
+- assertVisible:
+    id: pantry-screen
 - tapOn:
     id: pantry-fab-add
 - inputText: '   '

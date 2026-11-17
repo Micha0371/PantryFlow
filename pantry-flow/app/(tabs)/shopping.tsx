@@ -25,6 +25,8 @@ function HouseholdShoppingScreen() {
   const openEditor = useSingleOpen();
   const { householdId, items, loading, error, retry, addItem, completeItem, reopenItem } = useShoppingItems();
   const [name, setName] = useState('');
+  // The field's latest text, readable when a pending add settles (KAN-37).
+  const fieldText = useRef('');
   const [busy, setBusy] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   // A toggle failure belongs to one item: it names the item and is hidden once that item
@@ -50,9 +52,14 @@ function HouseholdShoppingScreen() {
       await addItem({ name: submitted });
       if (mounted.current) setActionError(null);
       // Clear only if the user has not started typing the next item.
+      if (fieldText.current === submitted) fieldText.current = '';
       if (mounted.current) setName(current => (current === submitted ? '' : current));
     } catch (e) {
-      if (mounted.current) setAddError(t(shoppingErrorKey(e)));
+      // After an edit, name the item so the error is not read as about the new text.
+      const message = t(shoppingErrorKey(e));
+      if (mounted.current) {
+        setAddError(fieldText.current === submitted ? message : `${submitted.trim()}: ${message}`);
+      }
     } finally {
       lock.current = false;
       if (mounted.current) setBusy(false);
@@ -115,7 +122,7 @@ function HouseholdShoppingScreen() {
           testID="shopping-add-input"
           value={name}
           // The tab stays mounted, so an add error must not outlive the text it was about.
-          onChangeText={(text) => { setName(text); setAddError(null); }}
+          onChangeText={(text) => { fieldText.current = text; setName(text); setAddError(null); }}
           placeholder={t('shopping_add_placeholder')}
           maxLength={SHOPPING_NAME_MAX}
           error={addError}
