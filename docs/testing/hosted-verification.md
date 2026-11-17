@@ -75,6 +75,20 @@ npm run db:reset
 npx --no-install supabase db query --local --file scripts/catalog-snapshot.sql --output-format json
 ```
 
+With Supabase CLI 2.122.1, `db query --local` rejects files with several
+statements ("cannot insert multiple commands into a prepared statement"). Run the
+local snapshot through psql in the database container instead:
+
+```sh
+docker exec -i supabase_db_pantryflow-tests psql -U postgres -d postgres -X -q -At -v ON_ERROR_STOP=1 < scripts/catalog-snapshot.sql
+```
+
+KAN-27 (2026-11-17) refactored `catalog-snapshot.sql` and `baseline-inventory.sql`
+to define names once (a constant CTE and column aliases). On the local stack,
+the parsed JSON of both was identical before and after, both still run
+`READ ONLY` (a write in the same transaction fails), and neither reads an
+application table. The hosted query was not rerun for this refactor.
+
 For the hosted query, prepare the isolated workdir and use the explicit-project
 commands in the baseline procedure. Do not run linked Management API lookups
 from the disposable project's workdir: the CLI can leave a hosted-project cache
