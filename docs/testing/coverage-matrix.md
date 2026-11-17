@@ -36,7 +36,7 @@ screens, the low/out prompt and the Android journey (steps 1–5).
 | SHOP-UI-03 | A tap on a Pantry or Shopping row opens exactly one edit screen: further taps, on the same or another row, are ignored until the list is focused again, with a one-second fallback when no navigation took the focus away (KAN-33). The Pantry add actions (the empty-state Add Item button and the + button) share the Pantry list's lock, so a fast repeated tap opens one Add Item screen and a row tap right after an add is ignored (KAN-38) | single-open.test.cjs (hook rules, fake timers), shopping-screen.test.cjs and screens.test.cjs (repeated row taps; repeated add taps, + then row) | Android fast double tap on a Shopping and a Pantry row, then Cancel leaves no second edit screen: SHOP-E2E-01. The Shopping check was shown failing on the pre-fix APK; that run stopped there, so the Pantry check has only run green. Android fast double tap on the empty pantry's + button, then Cancel leaves no second Add Item screen (Slice 1.1 flow), shown failing on the pre-fix APK and passing on the fixed one; the empty-state button is unit-tested only. A tap after the fallback during a navigation slower than one second could still open a second screen |
 | SHOP-UI-04 | A successful remove closes the Shopping or Pantry edit screen without rendering or announcing the "no longer available" state; a missing item, a remove failing after the row was dropped, and a remove failing otherwise (form, values and error kept) behave as before (KAN-35) | shopping-edit.test.cjs, edit-item-remove.test.cjs, with a successful delete that drops the row before it resolves, as both providers do. The "fails after the row was dropped" case is a provider behavior of Shopping only (a missing row); for Pantry it guards the screen contract | The flash lasts one dismissal animation and is not asserted on a device |
 | SHOP-UI-05 | On Android, an error under a form field is announced by TalkBack when it appears or changes: the error text has the alert role inside an always-mounted polite live region (KAN-34). On iOS nothing announces it: React Native 0.88 maps the alert role to no VoiceOver trait and has no live regions, so this is part of PF-IOS-001 | input.test.cjs (unit: role, live region, region kept when empty, changed text) | Android TalkBack check by the owner: the Shopping duplicate add error is spoken on appear and again after an edit cleared it. Android only; no VoiceOver run. Screen-level errors that use only the alert role are not announced on Android: KAN-39 ([Slice 2] Announce screen-level errors to TalkBack) |
-| SHOP-LINK-01 | The low/out prompt fires only on a change to low or out; Yes adds once, linked; No or dismiss adds nothing; the pantry save is never reverted; no prompt, add or failure notice once the edit screen has closed or lost focus | edit-item-prompt.test.cjs, mutation.test.cjs, pantry-shopping.test.cjs (unit) | Android prompt wording, Back as Not now, Not now, Add and the duplicate notice: SHOP-E2E-01. A lost native alert (KAN-36) is not reproducible |
+| SHOP-LINK-01 | The low/out prompt fires only on a change to low or out; Yes adds once, linked; No or dismiss adds nothing; the pantry save is never reverted; no prompt, add or failure notice once the edit screen has closed or lost focus; Delete and Save do nothing while the prompt is open; Cancel stays usable while the prompt or its failure notice is pending, so a native alert that never answers cannot lock the form, and a late answer after Cancel adds nothing (KAN-36) | edit-item-prompt.test.cjs, mutation.test.cjs, pantry-shopping.test.cjs (unit) | Android prompt wording, Back as Not now, Not now, Add and the duplicate notice: SHOP-E2E-01. A lost alert was not reproduced on the phone: with "Don't keep activities", returning to the app rebuilds the whole UI on both the old and the fixed build (KAN-32 and KAN-36 evidence) |
 | SHOP-LINK-02 | Shopping rename/complete/reopen/remove never change pantry data; pantry status changes create no shopping items; open duplicates are rejected with the duplicate key, a completed duplicate does not block, reopening into an open duplicate fails; pantry deletion keeps a named standalone shopping item | pantry-shopping.integration.ts against real local Auth/PostgREST with ordinary clients | Local stack only |
 | SHOP-E2E-01 | Android release-mode test APK: the low/out prompt (Back, Not now, Add, duplicate notice), a fast double tap on a Shopping and a Pantry row opening one edit screen, keyboard-open add, toggle, rename and remove, duplicate message cleared by editing, complete/reopen, remove cancel/confirm, tab-switch draft, cold restart, shopping load failure/retry and another household's empty list | `.maestro/slice-2-shopping.yaml` on real local Auth/PostgREST through the loopback proxy | Emulator in the CI Android job; physical phone results in the evidence section below |
 | SHOP-E2E-02 | The journey's persisted outcome: exact shopping rows, the pantry link, completion state, the pantry row as last saved, and nothing for the other household | `e2e-fixtures.ts shopping-verify` with ordinary clients after the flow | Local stack only |
@@ -104,7 +104,8 @@ Two earlier phone runs are not counted.
 
 Neither failed inside the app.
 
-Limits: no iOS run. A lost native alert (KAN-36) is still not reproducible.
+Limits: no iOS run. A lost native alert was not reproducible here; see the
+KAN-32 and KAN-36 evidence below.
 No network loss or handover was tested during a mutation. The evidence comes
 from one device over Wi-Fi ADB, against the local stack only, not hosted. It is
 not a production-readiness claim.
@@ -117,8 +118,8 @@ Still open beyond Slice 2:
 - Hosted use of the Slice 2 schema, which follows the tracked hosted migration
   path (KAN-29, adopt the hosted migration-history baseline).
 - Low-priority follow-ups:
-  - KAN-36 (low/out prompt follow-ups: Save-then-Delete test and lost-alert busy lock);
-  - KAN-39 (screen-level errors are not announced by TalkBack).
+  - KAN-39 (screen-level errors are not announced by TalkBack);
+  - KAN-84 (KAN-34/37/38 review follow-ups).
 
   KAN-37 is fixed; see the KAN-34, KAN-37 and KAN-38 Android evidence below.
 
@@ -204,6 +205,38 @@ the empty-state Add Item button are covered by unit tests only. With the final
 step, the full suite has passed on the emulator only; on the phone, Slice 1.1
 passed and the unchanged shopping journey last passed on 2026-11-14.
 
+### KAN-32 and KAN-36 evidence
+
+KAN-32's two defects are unreachable through the current UI, so the evidence is
+unit tests only (STATE-03), each new case shown failing on the previous code:
+a stuck spinner, a missing re-read, a hidden load error, and `['new', 'new', 'a']`
+for the duplicated row. KAN-36's Delete-and-Save test pins existing guards; it
+was shown failing with `onDelete`'s busy guard removed.
+
+The lost-alert check ran on 2026-11-17 on the same phone (Xiaomi 23122PCD1G,
+Android 16) over Wi-Fi ADB, with the owner at the phone and the developer
+option "Don't keep activities" on:
+
+- **Pre-fix APK** (SHA-256 `c7f8afe0…0035`): the prompt opened over a busy edit
+  screen (Save spinning, Cancel and Delete disabled). After Home and back,
+  Android recreated the activity and React Native rebuilt the whole UI: a fresh
+  edit screen without the prompt, every button enabled, Milk saved as Low and
+  nothing added to the shopping list.
+- **Fixed APK** from d9e5cd5 (SHA-256
+  `1eeb6682631d348801f795c38f2dea8001acc55a3f2f3b28b5e2f7b5ae711115`): Cancel was
+  enabled while the prompt was open, Delete stayed disabled and Save kept its
+  spinner. After Home and back, the same rebuild as before.
+
+So this trigger doesn't lock the form on either build. The other trigger in
+React Native's `DialogModule` (no attached activity when the alert opens) was
+not reproduced. The Cancel change stays as a guard for both. Screenshots stay in
+ignored `.verification`.
+
+[CI run 43998165097](https://github.com/Micha0371/VSCode-Environment/actions/runs/43998165097)
+on d9e5cd5 passed all four jobs, including the emulator Android job.
+
+Limits: no iOS run (PF-IOS-001); the Maestro flows are unchanged.
+
 ## Slice 1.1 baseline coverage
 
 | ID | Approved behavior / observable outcome | Reused automated coverage | Additional coverage | Manual / deferred limit |
@@ -227,6 +260,7 @@ passed and the unchanged shopping journey last passed on 2026-11-14.
 | ERR-02 | Loading/error differ from empty; retry recovers correct household | Household/provider/screen tests | Maestro real REST 503 through local proxy, retry succeeds | No offline queue or offline success promised |
 | STATE-01 | Shared consumers observe add/edit/delete; stale reads cannot undo writes | `pantry-state.test.cjs` | Maestro list updates | Detailed timing stays in deterministic hook tests |
 | STATE-02 | Account/household identity changes discard stale results and clear cache | Household/provider/auth tests | Maestro switches to empty second household | Switching households inside one account is outside Slice 1 |
+| STATE-03 | A pantry write before the first successful read keeps the load error, re-reads after it settles and never leaves a spinner or a partial list; a write on a loaded list issues no re-read; an added row that a read already returned appears once (KAN-32) | `pantry-state.test.cjs` (five cases) | None: no current flow writes before the list has loaded | Unreachable through today's UI; mirrors the ShoppingProvider fix (SHOP-STATE-02) |
 | RACE-01 | Double submit locked immediately, failure unlocks retry | `mutation.test.cjs`, provider failed-write tests | Retained, not duplicated in Maestro | Synchronous race best covered in hook test |
 | RACE-02 | Cross-screen save/delete exclusion and abandoned completion | Existing mutation/provider tests | Maestro delayed real PATCH, disabled delete, Back/new modal stays open | Proxy affects only local test transport |
 | SEC-01 | All four tables isolate households/users | Existing SQL tests; 13 historical hosted groups | Local API both directions; pgTAP ordinary authenticated roles | Hosted runner excluded from CI |
