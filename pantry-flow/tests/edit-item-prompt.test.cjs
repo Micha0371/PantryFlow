@@ -143,6 +143,29 @@ test('Save stays locked until the prompt is answered', async () => {
   } finally { act(() => renderer.unmount()); }
 });
 
+// KAN-36: a press that beats the disabled state must not delete or save again.
+test('Delete and Save do nothing while the prompt is open, and answering it closes the screen', async () => {
+  const { renderer, log, by, press } = render({ updateItem: saved('low') });
+  try {
+    setStatus(by, 'low');
+    const pending = start(by);
+    await flush();
+    assert.equal(log.alerts.length, 1);
+    await act(async () => {
+      by('edit-item-delete').props.onPress();
+      await by('edit-item-save').props.onPress();
+    });
+    assert.equal(log.alerts.length, 1);
+    assert.equal(log.deletes, 0);
+    assert.equal(log.updates, 1);
+    await act(async () => { press('shopping_prompt_skip'); await flush(); });
+    await pending;
+    assert.equal(log.back, 1);
+    assert.equal(log.deletes, 0);
+    assert.equal(log.updates, 1);
+  } finally { act(() => renderer.unmount()); }
+});
+
 test('no prompt after the edit screen has closed during the save', async () => {
   const d = deferred();
   const { renderer, log, by } = render({ updateItem: async () => { await d.promise; return { ...baseItem, status: 'low' }; } });
