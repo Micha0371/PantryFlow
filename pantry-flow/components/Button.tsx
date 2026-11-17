@@ -11,6 +11,17 @@ import { colors, radii, spacing, typography } from '@/lib/theme';
 
 type Variant = 'primary' | 'secondary' | 'danger';
 
+const BACKGROUND: Record<Variant, string> = {
+  primary: colors.primary,
+  secondary: 'transparent',
+  danger: colors.danger,
+};
+
+function opacityFor(disabled: boolean, pressed: boolean): number {
+  if (disabled) return 0.6;
+  return pressed ? 0.9 : 1;
+}
+
 interface Props {
   label: string;
   onPress: () => void;
@@ -32,12 +43,7 @@ export function Button({
 }: Props) {
   const isDisabled = disabled || loading;
 
-  const bg =
-    variant === 'primary'
-      ? colors.primary
-      : variant === 'danger'
-      ? colors.danger
-      : 'transparent';
+  const bg = BACKGROUND[variant];
   const fg =
     variant === 'secondary' ? colors.text : colors.primaryOn;
   const borderColor =
@@ -50,7 +56,7 @@ export function Button({
       disabled={isDisabled}
       style={({ pressed }) => [
         styles.base,
-        { backgroundColor: bg, borderColor, opacity: isDisabled ? 0.6 : pressed ? 0.9 : 1 },
+        { backgroundColor: bg, borderColor, opacity: opacityFor(isDisabled, pressed) },
         style,
       ]}
     >

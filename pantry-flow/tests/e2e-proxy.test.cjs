@@ -6,7 +6,7 @@ const { fork } = require('node:child_process');
 
 // Drives the real test proxy against a stub upstream on free ports, so a running
 // local stack on 54321/54329 is never touched.
-async function start() {
+async function start({ upstreamUp = true } = {}) {
   const seen = [];
   const upstream = http.createServer((req, res) => {
     seen.push(`${req.method} ${req.url}`);
@@ -14,24 +14,28 @@ async function start() {
     res.end('[]');
   });
   await new Promise(resolve => upstream.listen(0, '127.0.0.1', resolve));
+  const upstreamPort = upstream.address().port;
+  if (!upstreamUp) await new Promise(resolve => upstream.close(resolve));
   const proxy = fork(path.join(__dirname, '../scripts/e2e-proxy.cjs'), [], {
-    env: { ...process.env, PANTRY_PROXY_PORT: '0', PANTRY_PROXY_UPSTREAM_PORT: String(upstream.address().port) },
+    env: { ...process.env, PANTRY_PROXY_PORT: '0', PANTRY_PROXY_UPSTREAM_PORT: String(upstreamPort) },
     stdio: ['ignore', 'ignore', 'inherit', 'ipc'],
   });
   const port = await new Promise((resolve, reject) => {
     proxy.once('message', message => resolve(message.port));
     proxy.once('exit', code => reject(Error(`proxy exited ${code}`)));
   });
-  const call = (method, url) => new Promise((resolve, reject) => {
+  const send = (method, url, body) => new Promise((resolve, reject) => {
     const req = http.request({ hostname: '127.0.0.1', port, path: url, method }, res => {
-      res.resume();
-      res.on('end', () => resolve(res.statusCode));
+      const chunks = [];
+      res.on('data', chunk => chunks.push(chunk));
+      res.on('end', () => resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString() }));
     });
     req.on('error', reject);
-    req.end(method === 'GET' ? undefined : '{}');
+    req.end(method === 'GET' ? undefined : body ?? '{}');
   });
-  const stop = () => { proxy.kill(); upstream.close(); };
-  return { call, seen, stop };
+  const call = async (method, url) => (await send(method, url)).status;
+  const stop = () => { proxy.kill(); if (upstreamUp) upstream.close(); };
+  return { call, send, seen, stop };
 }
 
 const shopping = '/rest/v1/pantry_shopping_items?select=*';
@@ -59,5 +63,49 @@ test('the pantry read fault still leaves shopping reads alone', async () => {
     assert.equal(await call('GET', shopping), 200);
     await call('GET', '/__test/restore');
     assert.equal(await call('GET', pantry), 200);
+  } finally { stop(); }
+});
+
+// KAN-27: pins the control, PKCE, delayed-write and upstream-failure paths before splitting the handler.
+test('control endpoints answer with the write state', async () => {
+  const { send, stop } = await start();
+  try {
+    assert.deepEqual(await send('GET', '/__test/restore'), { status: 200, body: '{"pendingWrites":0,"writeStarted":false}' });
+  } finally { stop(); }
+});
+
+test('signup and resend without S256 PKCE are refused and not forwarded', async () => {
+  const { send, seen, stop } = await start();
+  try {
+    for (const url of ['/auth/v1/signup', '/auth/v1/resend']) {
+      for (const body of ['{}', 'not json', '{"code_challenge_method":"plain"}']) {
+        const reply = await send('POST', url, body);
+        assert.equal(reply.status, 400);
+        assert.match(reply.body, /requires S256 PKCE/);
+      }
+      assert.equal((await send('POST', url, '{"code_challenge_method":"s256"}')).status, 200);
+    }
+    assert.deepEqual(seen, ['POST /auth/v1/signup', 'POST /auth/v1/resend']);
+  } finally { stop(); }
+});
+
+test('a delayed pantry write is held and reported, and other writes pass', async () => {
+  const { call, send, seen, stop } = await start();
+  try {
+    await call('GET', '/__test/delay-write');
+    assert.equal(await call('PATCH', shopping), 200);
+    assert.equal(await call('POST', pantry), 200);
+    send('PATCH', pantry).catch(() => {});
+    let state = { writeStarted: false };
+    for (let i = 0; i < 40 && !state.writeStarted; i++) state = JSON.parse((await send('GET', '/__test/wait-write')).body);
+    assert.deepEqual(state, { pendingWrites: 1, writeStarted: true });
+    assert.deepEqual(seen, [`PATCH ${shopping}`, `POST ${pantry}`]);
+  } finally { stop(); }
+});
+
+test('an unreachable upstream answers 502', async () => {
+  const { send, stop } = await start({ upstreamUp: false });
+  try {
+    assert.deepEqual(await send('GET', pantry), { status: 502, body: 'Local Supabase unavailable' });
   } finally { stop(); }
 });

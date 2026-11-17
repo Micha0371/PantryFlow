@@ -3,6 +3,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
   ReactNode,
 } from 'react';
@@ -47,8 +48,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     [locale]
   );
 
+  // Consumers re-render only when the locale changes (KAN-27).
+  const value = useMemo(() => ({ locale, setLocale, t }), [locale, setLocale, t]);
+
   return (
-    <I18nContext.Provider value={{ locale, setLocale, t }}>
+    <I18nContext.Provider value={value}>
       {children}
     </I18nContext.Provider>
   );

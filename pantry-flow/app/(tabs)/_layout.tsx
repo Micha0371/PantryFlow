@@ -5,6 +5,17 @@ import { AuthGate } from '@/components/AuthGate';
 import { useTranslation } from '@/lib/i18n';
 import { colors } from '@/lib/theme';
 
+// Tab icons live outside the layout, so they are stable components (KAN-27).
+type IconName = React.ComponentProps<typeof Ionicons>['name'];
+function tabIcon(name: IconName) {
+  return function TabIcon({ focused, size }: { focused: boolean; size: number }) {
+    return <Ionicons name={name} size={size} color={focused ? colors.primary : colors.textMuted} />;
+  };
+}
+const PantryIcon = tabIcon('cube-outline');
+const ShoppingIcon = tabIcon('cart-outline');
+const SettingsIcon = tabIcon('settings-outline');
+
 export default function TabsLayout() {
   const { t } = useTranslation();
 
@@ -24,27 +35,21 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: t('nav_pantry'),
-          tabBarIcon: ({ focused, size }) => (
-            <Ionicons name="cube-outline" size={size} color={focused ? colors.primary : colors.textMuted} />
-          ),
+          tabBarIcon: PantryIcon,
         }}
       />
       <Tabs.Screen
         name="shopping"
         options={{
           title: t('nav_shopping'),
-          tabBarIcon: ({ focused, size }) => (
-            <Ionicons name="cart-outline" size={size} color={focused ? colors.primary : colors.textMuted} />
-          ),
+          tabBarIcon: ShoppingIcon,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: t('nav_settings'),
-          tabBarIcon: ({ focused, size }) => (
-            <Ionicons name="settings-outline" size={size} color={focused ? colors.primary : colors.textMuted} />
-          ),
+          tabBarIcon: SettingsIcon,
         }}
       />
     </Tabs>

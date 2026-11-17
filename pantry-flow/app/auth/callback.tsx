@@ -8,6 +8,12 @@ import { confirmEmail, confirmationCode } from '@/lib/email-confirmation';
 import { useTranslation } from '@/lib/i18n';
 import { colors, spacing, typography } from '@/lib/theme';
 
+const TITLE = {
+  working: 'auth_confirming',
+  already: 'auth_already_signed_in',
+  invalid: 'auth_confirmation_invalid',
+} as const;
+
 export default function ConfirmationCallback() {
   const params = useLocalSearchParams();
   const code = confirmationCode(params);
@@ -38,7 +44,7 @@ export default function ConfirmationCallback() {
 
   return <SafeAreaView style={styles.safe}>
     <View style={styles.container}>
-      <Text style={styles.title}>{t(phase === 'working' ? 'auth_confirming' : phase === 'already' ? 'auth_already_signed_in' : 'auth_confirmation_invalid')}</Text>
+      <Text style={styles.title}>{t(TITLE[phase])}</Text>
       {phase === 'working' ? <ActivityIndicator testID="confirmation-progress" color={colors.primary} /> : <>
         {phase === 'invalid' && <Text style={styles.message}>{t('auth_confirmation_recovery')}</Text>}
         <Button testID="confirmation-recover" label={t(phase === 'already' ? 'nav_pantry' : 'auth_resend_confirmation')}

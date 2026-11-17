@@ -49,3 +49,27 @@ test('confirmation-enabled hosted checks refuse synthetic signup and explain the
     fs.rmSync(folder, { recursive: true, force: true });
   }
 });
+
+// KAN-27: a failure after the run (here: writing the report) is reported, not left as an unhandled rejection.
+test('a failure after the run exits 1 with a message instead of an unhandled rejection', () => {
+  const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'pf-hosted-report-'));
+  try {
+    fs.mkdirSync(path.join(folder, 'scripts'));
+    fs.copyFileSync(path.join(__dirname, '../scripts/verify-hosted.cjs'), path.join(folder, 'scripts/verify-hosted.cjs'));
+    const preload = path.join(folder, 'no-network-no-report.cjs');
+    fs.writeFileSync(preload, `global.fetch = async () => { throw Error('offline'); };
+      const fs = require('node:fs'); const write = fs.writeFileSync;
+      fs.writeFileSync = (file, ...rest) => {
+        if (String(file).endsWith('hosted-results.json')) throw Error('report could not be written');
+        return write(file, ...rest);
+      };`);
+    const result = spawnSync(process.execPath, ['--require', preload, 'scripts/verify-hosted.cjs', '--run'], {
+      cwd: folder, encoding: 'utf8', timeout: 5000,
+      env: { ...process.env, EXPO_PUBLIC_SUPABASE_URL: 'https://oiqteedkfwmcertgxqga.supabase.co',
+        EXPO_PUBLIC_SUPABASE_ANON_KEY: 'sb_publishable_fixture' },
+    });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /report could not be written/);
+    assert.doesNotMatch(result.stderr, /Node\.js v\d+|at .*verify-hosted\.cjs/);
+  } finally { fs.rmSync(folder, { recursive: true, force: true }); }
+});

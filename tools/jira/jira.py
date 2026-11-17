@@ -146,11 +146,21 @@ def require_success(status):
         raise Failure(messages.get(status, "Jira request rejected") + " (HTTP " + str(status) + ")")
 
 
+def is_email_shape(value):
+    """One '@' with no ':' before it, no whitespace, and a dot inside the domain
+    with text on both sides. A scan instead of a backtracking regex (KAN-27)."""
+    local, separator, domain = value.partition("@")
+    if not local or not separator or "@" in domain or ":" in local or any(ch.isspace() for ch in value):
+        return False
+    dot = domain.find(".", 1)
+    return 0 < dot < len(domain) - 1
+
+
 class Jira:
     def __init__(self, secrets, mode="auto", http=None, allow_writes=False):
         self.site = site_url(secrets["site"])
         email, token = secrets["email"], secrets["token"]
-        if not re.fullmatch(r"[^\s:@]+@[^\s@]+\.[^\s@]+", email) or not token or any(c in token for c in "\r\n\0"):
+        if not is_email_shape(email) or not token or any(c in token for c in "\r\n\0"):
             raise Failure("Invalid email or API credential")
         self.auth = "Basic " + base64.b64encode((email + ":" + token).encode()).decode()
         self.sensitive = [token, parse.quote(token, safe=""), self.auth,
@@ -230,7 +240,7 @@ def jql_string(value):
 def issue_view(item, site):
     fields = item.get("fields", {})
     key = item.get("key", "")
-    return {"key": key, "url": site + "/browse/" + parse.quote(key, safe=""),
+    return {"key": key, "url": browse_url(site, parse.quote(key, safe="")),
             "summary": fields.get("summary"), "description": fields.get("description"),
             "status": (fields.get("status") or {}).get("name"),
             "issueType": (fields.get("issuetype") or {}).get("name"),
@@ -384,121 +394,143 @@ def comment_input(filename):
     return plain_adf(body)
 
 
+def summary_field(summary):
+    if not isinstance(summary, str) or not summary.strip() or len(summary) > 255:
+        raise Failure("Summary must contain 1–255 characters")
+    return summary.strip()
+
+
+def description_field(description):
+    if not isinstance(description, str) or len(description) > 30000:
+        raise Failure("Description must be plain text of at most 30000 characters")
+    return plain_adf(description)
+
+
+def labels_field(labels):
+    if not isinstance(labels, list) or len(labels) > 20 or any(
+            not isinstance(label, str) or not re.fullmatch(r"[\w-]{1,100}", label) for label in labels):
+        raise Failure("Labels must be up to 20 simple names without spaces")
+    return labels
+
+
+def creation_fields(value):
+    if not isinstance(value["issueTypeId"], str) or not re.fullmatch(r"\d+", value["issueTypeId"], flags=re.ASCII):
+        raise Failure("issueTypeId must be a numeric string from check")
+    result = {"issuetype": {"id": value["issueTypeId"]}}
+    if "parentKey" in value:
+        if not isinstance(value["parentKey"], str) or not re.fullmatch(r"[A-Z][A-Z0-9_]{1,29}-[1-9]\d*", value["parentKey"], flags=re.ASCII):
+            raise Failure("Invalid parent issue key")
+        result["parent"] = {"key": value["parentKey"]}
+    if "priorityId" in value:
+        result["priority"] = {"id": numeric_id(value["priorityId"])}
+    return result
+
+
+# Each field has its own validator; the checks and their order are unchanged (KAN-27).
+FIELD_VALIDATORS = (("summary", summary_field), ("description", description_field), ("labels", labels_field))
+
+
 def input_fields(filename, create=False):
     value = read_input(filename)
     allowed = {"summary", "description", "labels"} | ({"issueTypeId", "parentKey", "priorityId"} if create else set())
     if not isinstance(value, dict) or not value or set(value) - allowed:
         raise Failure("Unsupported input fields; see tools/jira/README.md")
-    result = {}
     if create and not {"summary", "issueTypeId"} <= set(value):
         raise Failure("Creation requires summary and issueTypeId")
-    if "summary" in value:
-        if not isinstance(value["summary"], str) or not value["summary"].strip() or len(value["summary"]) > 255:
-            raise Failure("Summary must contain 1–255 characters")
-        result["summary"] = value["summary"].strip()
-    if "description" in value:
-        if not isinstance(value["description"], str) or len(value["description"]) > 30000:
-            raise Failure("Description must be plain text of at most 30000 characters")
-        result["description"] = plain_adf(value["description"])
-    if "labels" in value:
-        if not isinstance(value["labels"], list) or len(value["labels"]) > 20 or any(
-                not isinstance(label, str) or not re.fullmatch(r"[\w-]{1,100}", label) for label in value["labels"]):
-            raise Failure("Labels must be up to 20 simple names without spaces")
-        result["labels"] = value["labels"]
+    result = {name: validate(value[name]) for name, validate in FIELD_VALIDATORS if name in value}
     if create:
-        if not isinstance(value["issueTypeId"], str) or not re.fullmatch(r"\d+", value["issueTypeId"], flags=re.ASCII):
-            raise Failure("issueTypeId must be a numeric string from check")
-        result["issuetype"] = {"id": value["issueTypeId"]}
-        if "parentKey" in value:
-            if not isinstance(value["parentKey"], str) or not re.fullmatch(r"[A-Z][A-Z0-9_]{1,29}-[1-9]\d*", value["parentKey"], flags=re.ASCII):
-                raise Failure("Invalid parent issue key")
-            result["parent"] = {"key": value["parentKey"]}
-        if "priorityId" in value:
-            result["priority"] = {"id": numeric_id(value["priorityId"])}
+        result.update(creation_fields(value))
     return result
 
 
-def execute(args, jira, settings):
-    project = settings.get("project")
-    if args.command == "check":
-        if not project:
-            result = jira.call("GET", "/project/search?maxResults=50")
-            return {"connected": True, "authMode": jira.mode, "projectConfigured": False,
-                    "projects": [{"key": p["key"], "name": p["name"]} for p in result.get("values", [])],
-                    "moreProjects": not result.get("isLast", True)}
-        info = jira.call("GET", "/project/" + project)
-        if info.get("key") != project:
-            raise Failure("Jira project identity did not match configuration")
-        return {"connected": True, "authMode": jira.mode, "project": project, "name": info.get("name"),
-                "issueTypes": [{"id": t["id"], "name": t["name"]} for t in info.get("issueTypes", [])]}
+def browse_url(site, key):
+    return site + "/browse/" + key
+
+
+def check_connection(jira, project):
     if not project:
-        raise Failure("Configure a project first: jira.py configure --project KEY")
-    project_key(project)
-    if args.command == "metadata":
-        return creation_metadata(jira, project, args.issue_type)
-    if args.command == "list":
-        query = "project = " + jql_string(project)
-        if args.status:
-            query += " AND status = " + jql_string(args.status)
-        query += " ORDER BY updated DESC"
-        body = {"jql": query, "maxResults": args.limit,
-                "fields": ["summary", "status", "issuetype", "labels", "updated", "parent", "priority"]}
-        if args.page:
-            body["nextPageToken"] = args.page
-        result = jira.call("POST", "/search/jql", body)
-        for item in result.get("issues", []):
-            issue_key(item.get("key", ""), project)
-        return {"issues": [issue_view(i, jira.site) for i in result.get("issues", [])],
-                "nextPage": result.get("nextPageToken"), "isLast": result.get("isLast", True)}
-    if args.command == "create":
-        fields = input_fields(args.input, create=True)
-        fields["project"] = {"key": project}
-        validate_creation_relationships(jira, project, fields)
-        if not args.apply:
-            return {"preview": True, "operation": "create", "fields": fields}
-        result = jira.call("POST", "/issue", {"fields": fields})
-        try:
-            key = issue_key(result.get("key", ""), project)
-        except (Failure, AttributeError, TypeError):
-            raise WriteOutcomeUnknown() from None
-        return {"created": key, "url": jira.site + "/browse/" + key}
-    key = issue_key(args.key, project)
-    route = "/issue/" + key
-    identity = jira.call("GET", route + "?fields=project")
-    if identity.get("key") != key or identity.get("fields", {}).get("project", {}).get("key") != project:
-        raise Failure("Issue moved or project identity did not match; refusing operation")
-    if args.command == "get":
-        result = jira.call("GET", route + "?fields=summary,description,status,issuetype,labels,updated,parent,priority")
-        if result.get("key") != key:
-            raise Failure("Jira issue identity did not match request")
-        return issue_view(result, jira.site)
-    if args.command == "comments":
-        page = jira.call("GET", route + "/comment?orderBy=-created&maxResults=" + str(args.limit))
-        comments = page.get("comments")
-        if not isinstance(comments, list):
-            raise Failure("Invalid comments response")
-        total = page.get("total")
-        return {"key": key, "total": total if type(total) is int else None,
-                "comments": [{"id": c["id"] if isinstance(c.get("id"), str) and re.fullmatch(NUMERIC_ID, c["id"], flags=re.ASCII) else None,
-                              "created": c["created"] if isinstance(c.get("created"), str) else None,
-                              "body": adf_text(c.get("body"))}
-                             for c in comments if isinstance(c, dict)]}
-    if args.command == "comment":
-        body = comment_input(args.input)
-        if not args.apply:
-            return {"preview": True, "operation": "comment", "key": key, "body": body}
-        result = jira.call("POST", route + "/comment", {"body": body})
-        comment_id = result.get("id") if isinstance(result, dict) else None
-        if not isinstance(comment_id, str) or not re.fullmatch(NUMERIC_ID, comment_id, flags=re.ASCII):
-            raise WriteOutcomeUnknown()
-        return {"commented": key, "commentId": comment_id,
-                "url": jira.site + "/browse/" + key + "?focusedCommentId=" + comment_id}
-    if args.command == "update":
-        fields = input_fields(args.input)
-        if not args.apply:
-            return {"preview": True, "operation": "update", "key": key, "fields": fields}
-        jira.call("PUT", route, {"fields": fields})
-        return {"updated": key, "url": jira.site + "/browse/" + key}
+        result = jira.call("GET", "/project/search?maxResults=50")
+        return {"connected": True, "authMode": jira.mode, "projectConfigured": False,
+                "projects": [{"key": p["key"], "name": p["name"]} for p in result.get("values", [])],
+                "moreProjects": not result.get("isLast", True)}
+    info = jira.call("GET", "/project/" + project)
+    if info.get("key") != project:
+        raise Failure("Jira project identity did not match configuration")
+    return {"connected": True, "authMode": jira.mode, "project": project, "name": info.get("name"),
+            "issueTypes": [{"id": t["id"], "name": t["name"]} for t in info.get("issueTypes", [])]}
+
+
+def list_issues(args, jira, project):
+    query = "project = " + jql_string(project)
+    if args.status:
+        query += " AND status = " + jql_string(args.status)
+    query += " ORDER BY updated DESC"
+    body = {"jql": query, "maxResults": args.limit,
+            "fields": ["summary", "status", "issuetype", "labels", "updated", "parent", "priority"]}
+    if args.page:
+        body["nextPageToken"] = args.page
+    result = jira.call("POST", "/search/jql", body)
+    for item in result.get("issues", []):
+        issue_key(item.get("key", ""), project)
+    return {"issues": [issue_view(i, jira.site) for i in result.get("issues", [])],
+            "nextPage": result.get("nextPageToken"), "isLast": result.get("isLast", True)}
+
+
+def create_issue(args, jira, project):
+    fields = input_fields(args.input, create=True)
+    fields["project"] = {"key": project}
+    validate_creation_relationships(jira, project, fields)
+    if not args.apply:
+        return {"preview": True, "operation": "create", "fields": fields}
+    result = jira.call("POST", "/issue", {"fields": fields})
+    try:
+        key = issue_key(result.get("key", ""), project)
+    except (Failure, AttributeError, TypeError):
+        raise WriteOutcomeUnknown() from None
+    return {"created": key, "url": browse_url(jira.site, key)}
+
+
+def get_issue(args, jira, key, route):
+    result = jira.call("GET", route + "?fields=summary,description,status,issuetype,labels,updated,parent,priority")
+    if result.get("key") != key:
+        raise Failure("Jira issue identity did not match request")
+    return issue_view(result, jira.site)
+
+
+def list_comments(args, jira, key, route):
+    page = jira.call("GET", route + "/comment?orderBy=-created&maxResults=" + str(args.limit))
+    comments = page.get("comments")
+    if not isinstance(comments, list):
+        raise Failure("Invalid comments response")
+    total = page.get("total")
+    return {"key": key, "total": total if type(total) is int else None,
+            "comments": [{"id": c["id"] if isinstance(c.get("id"), str) and re.fullmatch(NUMERIC_ID, c["id"], flags=re.ASCII) else None,
+                          "created": c["created"] if isinstance(c.get("created"), str) else None,
+                          "body": adf_text(c.get("body"))}
+                         for c in comments if isinstance(c, dict)]}
+
+
+def add_comment(args, jira, key, route):
+    body = comment_input(args.input)
+    if not args.apply:
+        return {"preview": True, "operation": "comment", "key": key, "body": body}
+    result = jira.call("POST", route + "/comment", {"body": body})
+    comment_id = result.get("id") if isinstance(result, dict) else None
+    if not isinstance(comment_id, str) or not re.fullmatch(NUMERIC_ID, comment_id, flags=re.ASCII):
+        raise WriteOutcomeUnknown()
+    return {"commented": key, "commentId": comment_id,
+            "url": browse_url(jira.site, key) + "?focusedCommentId=" + comment_id}
+
+
+def update_issue(args, jira, key, route):
+    fields = input_fields(args.input)
+    if not args.apply:
+        return {"preview": True, "operation": "update", "key": key, "fields": fields}
+    jira.call("PUT", route, {"fields": fields})
+    return {"updated": key, "url": browse_url(jira.site, key)}
+
+
+def transition_issue(args, jira, key, route):
     transitions = jira.call("GET", route + "/transitions").get("transitions", [])
     choices = [{"id": t["id"], "name": t["name"]} for t in transitions]
     if args.command == "transitions":
@@ -510,6 +542,31 @@ def execute(args, jira, settings):
         return {"preview": True, "operation": "transition", "key": key, "transition": matches[0]}
     jira.call("POST", route + "/transitions", {"transition": {"id": matches[0]["id"]}})
     return {"transitioned": key, "transition": matches[0]}
+
+
+# Commands on one existing issue run after its identity check; the rest are transitions.
+ISSUE_COMMANDS = {"get": get_issue, "comments": list_comments, "comment": add_comment, "update": update_issue}
+
+
+def execute(args, jira, settings):
+    project = settings.get("project")
+    if args.command == "check":
+        return check_connection(jira, project)
+    if not project:
+        raise Failure("Configure a project first: jira.py configure --project KEY")
+    project_key(project)
+    if args.command == "metadata":
+        return creation_metadata(jira, project, args.issue_type)
+    if args.command == "list":
+        return list_issues(args, jira, project)
+    if args.command == "create":
+        return create_issue(args, jira, project)
+    key = issue_key(args.key, project)
+    route = "/issue/" + key
+    identity = jira.call("GET", route + "?fields=project")
+    if identity.get("key") != key or identity.get("fields", {}).get("project", {}).get("key") != project:
+        raise Failure("Issue moved or project identity did not match; refusing operation")
+    return ISSUE_COMMANDS.get(args.command, transition_issue)(args, jira, key, route)
 
 
 def parser():

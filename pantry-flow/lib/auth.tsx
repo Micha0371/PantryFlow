@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { createURL } from 'expo-linking';
 import { assertSecurePkce } from './native-auth-crypto';
@@ -23,7 +23,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const generation = useRef(0);
   const mounted = useRef(true);
 
-  const retrySession = async () => {
+  // The actions read state only through refs and setters, so they are created
+  // once and the context value changes only with session, loading or error (KAN-27).
+  const retrySession = useCallback(async () => {
     const request = ++generation.current;
     setLoading(true); setError(null);
     try {
@@ -37,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       if (mounted.current && request === generation.current) setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     mounted.current = true;
@@ -54,14 +56,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
     if (err) throw err;
     if (!data.session) throw new Error('No session returned');
     generation.current++;
     if (mounted.current) { setSession(data.session); setError(null); setLoading(false); }
-  };
-  const signUp: AuthContextType['signUp'] = async (name, email, password) => {
+  }, []);
+  const signUp = useCallback<AuthContextType['signUp']>(async (name, email, password) => {
     if (!name.trim() || Array.from(name.trim()).length > 100) throw new Error('Invalid name');
     assertSecurePkce();
     const { data, error: err } = await supabase.auth.signUp({
@@ -72,15 +74,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     generation.current++;
     if (mounted.current) { setSession(data.session); setError(null); setLoading(false); }
     return 'signed_in';
-  };
-  const signOut = async () => {
+  }, []);
+  const signOut = useCallback(async () => {
     const { error: err } = await supabase.auth.signOut();
     if (err) throw err;
     generation.current++;
     if (mounted.current) { setSession(null); setError(null); }
-  };
-  return <AuthContext.Provider value={{ session, user: session?.user ?? null, loading, error,
-    retrySession, signIn, signUp, signOut }}>{children}</AuthContext.Provider>;
+  }, []);
+  const value = useMemo(() => ({ session, user: session?.user ?? null, loading, error,
+    retrySession, signIn, signUp, signOut }), [session, loading, error, retrySession, signIn, signUp, signOut]);
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 export function useAuth() {
   const value = useContext(AuthContext);

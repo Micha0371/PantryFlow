@@ -79,3 +79,34 @@ test('saved sessions restore, logout clears identity and a later login replaces 
   assert.equal(f.value.user.id, 'next-user');
   f.dispose();
 });
+
+// KAN-27: the context value is memoized, so consumers re-render for auth changes only.
+test('the auth context value is stable across a parent re-render and changes with the session', async () => {
+  const restored = deferred();
+  let listener;
+  const auth = {
+    getSession: () => restored.promise,
+    onAuthStateChange: cb => { listener = cb; return { data: { subscription: { unsubscribe() {} } } }; },
+    signUp: async () => ({ data: { session: null }, error: null }), signInWithPassword: async () => ({ data: {}, error: null }),
+    signOut: async () => ({ error: null }),
+  };
+  const { AuthProvider, useAuth } = load('lib/auth.tsx', { './supabase': { supabase: { auth } },
+    'expo-linking': { createURL: () => 'pantryflow://auth/callback' }, './native-auth-crypto': { assertSecurePkce() {} } });
+  const seen = [];
+  function Consumer() { seen.push(useAuth()); return null; }
+  const tree = () => React.createElement(AuthProvider, null, React.createElement(Consumer));
+  let renderer;
+  try {
+    act(() => { renderer = create(tree()); });
+    await act(async () => restored.resolve({ data: { session: null }, error: null }));
+    const settled = seen.at(-1);
+    act(() => renderer.update(tree()));
+    assert.equal(seen.at(-1), settled);
+    act(() => listener('SIGNED_IN', { user: { id: 'u' } }));
+    const signedIn = seen.at(-1);
+    assert.notEqual(signedIn, settled);
+    assert.equal(signedIn.user.id, 'u');
+    assert.equal(signedIn.loading, false);
+    for (const action of ['retrySession', 'signIn', 'signUp', 'signOut']) assert.equal(signedIn[action], settled[action], action);
+  } finally { if (renderer) act(() => renderer.unmount()); }
+});

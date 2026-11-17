@@ -12,13 +12,19 @@ export async function fetchAllPages<T>(
     if (error) throw error;
     const rows = (data ?? []).map(parse);
     items.push(...rows);
-    if (count !== null && items.length >= count) return items;
-    // Do not silently truncate if the server's response cap is below PAGE_SIZE.
-    if (rows.length === 0) {
-      if (count !== null && items.length < count) throw new Error('Incomplete inventory');
-      return items;
-    }
-    if (count === null && rows.length < PAGE_SIZE) return items;
-    if (rows.length < PAGE_SIZE) throw new Error('Server row limit is below page size');
+    if (isComplete(items.length, rows.length, count)) return items;
   }
+}
+
+// True once every row has been read; throws when the server stopped early.
+function isComplete(total: number, received: number, count: number | null): boolean {
+  if (count !== null && total >= count) return true;
+  // Do not silently truncate if the server's response cap is below PAGE_SIZE.
+  if (received === 0) {
+    if (count !== null && total < count) throw new Error('Incomplete inventory');
+    return true;
+  }
+  if (count === null && received < PAGE_SIZE) return true;
+  if (received < PAGE_SIZE) throw new Error('Server row limit is below page size');
+  return false;
 }

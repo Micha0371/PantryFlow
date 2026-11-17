@@ -93,3 +93,25 @@ test('native PKCE adapter delegates secure randomness and SHA-256 without replac
     else delete globalThis.crypto;
   }
 });
+
+// KAN-27: the email shape check without a backtracking regex, unchanged in what it accepts.
+const NBSP = String.fromCharCode(0xa0);
+const EMAIL_SHAPES = [['a@b.c', true], ['first.last@sub.example.com', true], ['üser@exämple.de', true], ['a@b', false],
+  ['a@@b.c', false], ['a@b.', false], ['@b.c', false], ['a b@c.d', false], ['a@b c.d', false], ['a@.c', false],
+  ['a@b.c.', true], ['a@.b.c', true], ['a.@b.c', true], ['a@b..c', true], ['a:b@c.d', true], ['', false], ['.@a.b', true],
+  ['a@b.c@d.e', false], ['a\t@b.c', false], ['a@b.c\n', false], [`a@b${NBSP}.c`, false], ['x@y.zz', true], ['a@-.b', true]];
+
+test('the email shape check accepts and rejects exactly the same addresses', () => {
+  const { isEmailShape } = fixture().service;
+  for (const [address, valid] of EMAIL_SHAPES) assert.equal(isEmailShape(address), valid, JSON.stringify(address));
+});
+
+test('the email shape check runs in linear time', () => {
+  const { isEmailShape } = fixture().service;
+  for (const address of ['a@' + 'b'.repeat(100000), 'a@' + '.'.repeat(100000), 'a'.repeat(100000) + '@b',
+    'a@' + 'b.'.repeat(50000) + ' ']) {
+    const started = performance.now();
+    isEmailShape(address);
+    assert.ok(performance.now() - started < 100, `took ${Math.round(performance.now() - started)} ms`);
+  }
+});

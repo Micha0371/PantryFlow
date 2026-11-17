@@ -94,3 +94,31 @@ test('resend UI blocks double submits, recovers from rate limits, and shows priv
     assert.equal(button().props.disabled, true);
   } finally { if (view) act(() => view.unmount()); }
 });
+
+// KAN-27: pins the working and already-signed-in states before flattening the screen's conditions.
+test('callback shows progress while confirming and a pantry link when already signed in', async () => {
+  const routes = [];
+  let auth = { loading: false, user: null };
+  const pending = deferred();
+  const Screen = load('app/auth/callback.tsx', { ...shared,
+    'expo-router': { useRouter: () => ({ replace: path => routes.push(path) }), useLocalSearchParams: () => ({ code: 'real-code' }) },
+    '@/lib/auth': { useAuth: () => auth },
+    '@/lib/email-confirmation': { confirmationCode: parser, confirmEmail: () => pending.promise },
+  }).default;
+  let view;
+  try {
+    act(() => { view = create(React.createElement(Screen)); });
+    assert.match(JSON.stringify(view.toJSON()), /auth_confirming/);
+    assert.equal(view.root.findAllByProps({ testID: 'confirmation-progress' }).length, 1);
+    assert.equal(view.root.findAllByType('Button').length, 0);
+  } finally { if (view) act(() => view.unmount()); }
+  auth = { loading: false, user: { id: 'signed-in' } };
+  try {
+    act(() => { view = create(React.createElement(Screen)); });
+    assert.match(JSON.stringify(view.toJSON()), /auth_already_signed_in/);
+    const button = view.root.findAllByType('Button').find(b => b.props.testID === 'confirmation-recover');
+    assert.equal(button.props.label, 'nav_pantry');
+    act(() => button.props.onPress());
+    assert.deepEqual(routes, ['/(tabs)']);
+  } finally { if (view) act(() => view.unmount()); }
+});

@@ -253,6 +253,30 @@ on d9e5cd5 passed all four jobs, including the emulator Android job.
 
 Limits: no iOS run (PF-IOS-001); the Maestro flows are unchanged.
 
+### KAN-27 quality cleanup (no behavior change)
+
+KAN-27 closed the open SonarCloud bugs and Critical/Major findings in
+`pantry-flow/` and `tools/jira/` (48 findings). It changes no tested behavior;
+the evidence is equivalence, not new coverage:
+
+- **Startup redaction:** byte-identical output on a 7,240-case corpus; the old
+  pattern took about 9 s on a 100,000-character line, the new scan is linear.
+  A test pins 12,000 CR-separated labels on one line (the final review found
+  that an earlier recursive version overflowed the stack there).
+- **Catalog and inventory SQL:** identical parsed JSON before and after on the
+  local stack, still read-only.
+- **pgTAP:** 3 files, 65 tests before and after; wrong error codes in the new key
+  tables fail exactly the 22 checks that use them.
+- **Email checks (app and Jira CLI):** identical results on a 23-case table and
+  200,000 random strings; the old patterns took 5 s (JS) and 31 s (Python) on
+  `a@b.b.…b. `.
+- **verify-hosted.cjs:** a failure after the run is reported and exits 1
+  instead of crashing as an unhandled rejection.
+- **App code:** new tests pin Button colors and opacity, the confirmation
+  screen's states, every `fetchAllPages` exit, the tab icons, and stable auth and
+  i18n context values; the test proxy's control, PKCE, delayed-write and 502
+  paths; the Jira CLI suite keeps its 47 tests.
+
 ## Slice 1.1 baseline coverage
 
 | ID | Approved behavior / observable outcome | Reused automated coverage | Additional coverage | Manual / deferred limit |

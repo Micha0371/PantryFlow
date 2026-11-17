@@ -263,4 +263,8 @@ async function cleanup() {
       failed: results.filter(result => result.status === 'failed').length, fatal: !!fatal, cleanupFailures: cleanupFailures.length }));
   }
   if (fatal || cleanupFailures.length || results.some(result => result.status === 'failed')) process.exitCode = 1;
-})();
+})().catch(error => {
+  // A failure after the run (cleanup or the report) is reported, never left unhandled (KAN-27).
+  console.error(error.message);
+  process.exitCode = 1;
+});
