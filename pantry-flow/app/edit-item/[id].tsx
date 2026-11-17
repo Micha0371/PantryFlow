@@ -68,6 +68,10 @@ function EditItemModalContent() {
   const [hydrated, setHydrated] = useState(false);
   const { busy, run } = useItemMutation();
   const [error, setError] = useState<string | null>(null);
+  // True while the low/out prompt or its failure notice is pending. The pantry
+  // save has committed by then, so Cancel stays usable: a native alert that
+  // never answers cannot lock the form (KAN-36).
+  const [prompting, setPrompting] = useState(false);
   // The provider drops a deleted row before the delete resolves; until the screen
   // has closed, that is this screen's own delete, not a missing item (KAN-35).
   const removing = useRef(false);
@@ -124,13 +128,18 @@ function EditItemModalContent() {
         const saved = await updateItem(item.id, { name: trimmed, category, location, status });
         // current() is false once this screen has closed or another screen covers it.
         if (!current() || !offersShoppingAdd(previous, saved.status)) return;
-        const wanted = await ask(t('shopping_prompt_title'), saved.name, t('shopping_prompt_add'), t('shopping_prompt_skip'));
-        if (!wanted || !current()) return;
+        setPrompting(true);
         try {
-          await addShoppingItem({ name: saved.name, pantryItemId: saved.id });
-        } catch (shoppingError) {
-          if (!current()) return;
-          await notice(t('shopping_prompt_failed_title'), t(shoppingErrorKey(shoppingError)), t('common_ok'));
+          const wanted = await ask(t('shopping_prompt_title'), saved.name, t('shopping_prompt_add'), t('shopping_prompt_skip'));
+          if (!wanted || !current()) return;
+          try {
+            await addShoppingItem({ name: saved.name, pantryItemId: saved.id });
+          } catch (shoppingError) {
+            if (!current()) return;
+            await notice(t('shopping_prompt_failed_title'), t(shoppingErrorKey(shoppingError)), t('common_ok'));
+          }
+        } finally {
+          setPrompting(false);
         }
       },
       () => router.back(),
@@ -230,7 +239,7 @@ function EditItemModalContent() {
             label={t('common_cancel')}
             onPress={() => router.back()}
             variant="secondary"
-            disabled={busy}
+            disabled={busy && !prompting}
             style={{ flex: 1 }}
             testID="edit-item-cancel"
           />

@@ -7,36 +7,52 @@ import { useHouseholdList } from './household-list';
 export type { PantryItem, NewItemInput, UpdateItemInput } from '@/lib/pantry-data';
 
 function usePantryState() {
-  const { user, householdId, scope, isCurrent, generation, pendingItems, setItems, setLoading, setError, visibleItems, view } =
-    useHouseholdList<PantryItem>(fetchAllItems, 'err_load_items');
+  const { user, householdId, scope, isCurrent, loadedScope, generation, pendingItems, setItems, setLoading, setError,
+    visibleItems, view } = useHouseholdList<PantryItem>(fetchAllItems, 'err_load_items');
+  const { fetchItems } = view;
 
   // Invalidate pending reads before each mutation, so an older snapshot cannot
   // overwrite its result. All screens observe this same state instance.
+  // While the list is not loaded for this scope the discarded read is re-run
+  // after the write settles, and a load error stays visible, so a write before
+  // the first load never leaves a partial list or a permanent spinner (KAN-32).
   const beginMutation = () => {
     if (!householdId || !user || !isCurrent(scope)) throw new Error('No active household');
-    generation.current++; setLoading(false); setError(null);
+    const unloaded = loadedScope !== scope;
+    generation.current++; setLoading(false);
+    if (!unloaded) setError(null);
+    return unloaded;
+  };
+  const rereadIfUnloaded = (unloaded: boolean) => {
+    if (unloaded && isCurrent(scope)) void fetchItems();
   };
   const beginItemMutation = (id: string) => {
     if (pendingItems.current.has(id)) throw new Error('Item change is already pending');
-    beginMutation();
+    const unloaded = beginMutation();
     pendingItems.current.add(id);
+    return unloaded;
   };
   const addItem = async (input: NewItemInput) => {
     const validated = validateItem(input);
     assertUniqueItemName(visibleItems, validated.name);
-    beginMutation();
-    const { data, error: err } = await supabase.from('pantry_items')
-      .insert({ ...validated, household_id: householdId, status: 'in_stock', created_by: user!.id })
-      .select().single();
-    if (err) throw err;
-    const item = parseItem(data);
-    if (isCurrent(scope)) { generation.current++; setLoading(false); setItems(prev => [item, ...prev]); }
-    return item;
+    const unloaded = beginMutation();
+    try {
+      const { data, error: err } = await supabase.from('pantry_items')
+        .insert({ ...validated, household_id: householdId, status: 'in_stock', created_by: user!.id })
+        .select().single();
+      if (err) throw err;
+      const item = parseItem(data);
+      // A refresh may already hold this row; replace it instead of adding a copy.
+      if (isCurrent(scope)) { generation.current++; setLoading(false); setItems(prev => [item, ...prev.filter(it => it.id !== item.id)]); }
+      return item;
+    } finally {
+      rereadIfUnloaded(unloaded);
+    }
   };
   const updateItem = async (id: string, input: UpdateItemInput) => {
     const validated = validateItem(input);
     assertUniqueItemName(visibleItems, validated.name, id);
-    beginItemMutation(id);
+    const unloaded = beginItemMutation(id);
     try {
       const { data, error: err } = await supabase.from('pantry_items')
         .update(validated).eq('id', id).eq('household_id', householdId).select().single();
@@ -46,10 +62,11 @@ function usePantryState() {
       return item;
     } finally {
       pendingItems.current.delete(id);
+      rereadIfUnloaded(unloaded);
     }
   };
   const deleteItem = async (id: string) => {
-    beginItemMutation(id);
+    const unloaded = beginItemMutation(id);
     try {
       const { data, error: err } = await supabase.from('pantry_items')
         .delete().eq('id', id).eq('household_id', householdId).select('id');
@@ -58,6 +75,7 @@ function usePantryState() {
       if (isCurrent(scope)) { generation.current++; setLoading(false); setItems(prev => prev.filter(it => it.id !== id)); }
     } finally {
       pendingItems.current.delete(id);
+      rereadIfUnloaded(unloaded);
     }
   };
   return { ...view, addItem, updateItem, deleteItem };

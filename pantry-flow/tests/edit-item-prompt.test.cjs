@@ -137,7 +137,84 @@ test('Save stays locked until the prompt is answered', async () => {
     assert.equal(log.updates, 1);
     assert.equal(by('edit-item-save').props.loading, true);
     assert.equal(by('edit-item-delete').props.disabled, true);
+    // Cancel stays usable while the prompt is open (KAN-36, D1).
+    assert.equal(by('edit-item-cancel').props.disabled, false);
+    await act(async () => { press('shopping_prompt_skip'); await flush(); });
+    await pending;
+  } finally { act(() => renderer.unmount()); }
+});
+
+// KAN-36: a press that beats the disabled state must not delete or save again.
+test('Delete and Save do nothing while the prompt is open, and answering it closes the screen', async () => {
+  const { renderer, log, by, press } = render({ updateItem: saved('low') });
+  try {
+    setStatus(by, 'low');
+    const pending = start(by);
+    await flush();
+    assert.equal(log.alerts.length, 1);
+    await act(async () => {
+      by('edit-item-delete').props.onPress();
+      await by('edit-item-save').props.onPress();
+    });
+    assert.equal(log.alerts.length, 1);
+    assert.equal(log.deletes, 0);
+    assert.equal(log.updates, 1);
+    await act(async () => { press('shopping_prompt_skip'); await flush(); });
+    await pending;
+    assert.equal(log.back, 1);
+    assert.equal(log.deletes, 0);
+    assert.equal(log.updates, 1);
+  } finally { act(() => renderer.unmount()); }
+});
+
+// KAN-36 (D1): the pantry save has committed once the prompt is open, so Cancel
+// stays usable; a native alert that never answers cannot lock the form.
+test('Cancel closes the screen while the prompt is unanswered, and a late answer does nothing', async () => {
+  const { renderer, log, by, press, blur } = render({ updateItem: saved('low') });
+  try {
+    setStatus(by, 'low');
+    const pending = start(by);
+    await flush();
+    assert.equal(log.alerts.length, 1);
+    assert.equal(by('edit-item-cancel').props.disabled, false);
+    assert.equal(by('edit-item-save').props.loading, true);
+    assert.equal(by('edit-item-delete').props.disabled, true);
+    act(() => { by('edit-item-cancel').props.onPress(); blur(); });
+    assert.equal(log.back, 1);
+    await act(async () => { press('shopping_prompt_add'); await flush(); });
+    await pending;
+    assert.equal(log.adds.length, 0);
+    assert.equal(log.alerts.length, 1);
+    assert.equal(log.back, 1);
+    assert.equal(log.updates, 1);
+  } finally { act(() => renderer.unmount()); }
+});
+
+test('Cancel closes the screen while the failure notice is unanswered', async () => {
+  const { renderer, log, by, press } = render({ updateItem: saved('low'), addItem: async () => { throw { code: '23505' }; } });
+  try {
+    setStatus(by, 'low');
+    start(by);
+    await flush();
+    await act(async () => { press('shopping_prompt_add'); await flush(); });
+    assert.equal(log.alerts.length, 2);
+    assert.equal(by('edit-item-cancel').props.disabled, false);
+    act(() => by('edit-item-cancel').props.onPress());
+    assert.equal(log.back, 1);
+    assert.equal(log.updates, 1);
+    assert.equal(log.adds.length, 1);
+  } finally { act(() => renderer.unmount()); }
+});
+
+test('Cancel stays disabled while the pantry save itself is pending', async () => {
+  const d = deferred();
+  const { renderer, by, press } = render({ updateItem: async () => { await d.promise; return { ...baseItem, status: 'low' }; } });
+  try {
+    setStatus(by, 'low');
+    const pending = start(by);
+    await flush();
     assert.equal(by('edit-item-cancel').props.disabled, true);
+    await act(async () => { d.resolve(); await flush(); });
     await act(async () => { press('shopping_prompt_skip'); await flush(); });
     await pending;
   } finally { act(() => renderer.unmount()); }
