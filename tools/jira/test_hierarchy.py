@@ -81,8 +81,9 @@ class HierarchyTests(unittest.TestCase):
                 jira.input_fields(file, create=False)
             for invalid in [{"parentKey": "PF-1/../../OTHER-1"}, {"priorityId": 2},
                             {"priorityId": "2?other=1"}, {"parent": {"key": "PF-1"}}]:
+                path = self.write_input(directory, **invalid)
                 with self.subTest(invalid=invalid), self.assertRaises(jira.Failure):
-                    jira.input_fields(self.write_input(directory, **invalid), create=True)
+                    jira.input_fields(path, create=True)
 
     def test_metadata_is_read_only_and_selects_safe_fields(self):
         responses = metadata()

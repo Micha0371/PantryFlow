@@ -92,14 +92,16 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(http.calls[-1][1], SECRETS["site"] + "/rest/api/3/myself")
         for mode, status in [("scoped", 401), ("auto", 429), ("auto", 500)]:
             http = FakeHTTP([(200, {"cloudId": CLOUD}), (status, {})])
+            api = jira.Jira(SECRETS, mode=mode, http=http)
             with self.assertRaises(jira.Failure):
-                jira.Jira(SECRETS, mode=mode, http=http).connect()
+                api.connect()
             self.assertEqual(len(http.calls), 2)
 
     def test_malformed_tenant_never_receives_credentials(self):
         http = FakeHTTP([(200, {"cloudId": "../../evil"})])
+        api = jira.Jira(SECRETS, http=http)
         with self.assertRaises(jira.Failure):
-            jira.Jira(SECRETS, http=http).connect()
+            api.connect()
         self.assertEqual(len(http.calls), 1)
 
     def test_response_and_error_redaction(self):
@@ -134,17 +136,20 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(body["nextPageToken"], "page")
         self.assertEqual(result["nextPage"], "next")
         api, _ = client([(200, {"issues": [{"key": "OTHER-1"}]})])
+        command = args("list", status=None, limit=5, page=None)
         with self.assertRaises(jira.Failure):
-            jira.execute(args("list", status=None, limit=5, page=None), api, {"project": "PF"})
+            jira.execute(command, api, {"project": "PF"})
 
     def test_cross_project_and_moved_issue_cannot_be_updated(self):
         api, http = client([])
+        command = args("update", key="OTHER-1", input="unused", apply=True)
         with self.assertRaises(jira.Failure):
-            jira.execute(args("update", key="OTHER-1", input="unused", apply=True), api, {"project": "PF"})
+            jira.execute(command, api, {"project": "PF"})
         self.assertEqual(http.calls, [])
         api, http = client([(200, {"key": "OTHER-1", "fields": {"project": {"key": "OTHER"}}})])
+        command = args("update", key="PF-1", input="unused", apply=True)
         with self.assertRaises(jira.Failure):
-            jira.execute(args("update", key="PF-1", input="unused", apply=True), api, {"project": "PF"})
+            jira.execute(command, api, {"project": "PF"})
         self.assertEqual([c[0] for c in http.calls], ["GET"])
 
     def test_create_update_preview_and_apply_exact_fields(self):
@@ -179,8 +184,9 @@ class IntegrationTests(unittest.TestCase):
         jira.execute(args("transition", key="PF-1", to="31", apply=True), api, {"project": "PF"})
         self.assertEqual(http.calls[-1][3], {"transition": {"id": "31"}})
         api, http = client([(200, IDENTITY), (200, transitions)])
+        command = args("transition", key="PF-1", to="unavailable", apply=True)
         with self.assertRaises(jira.Failure):
-            jira.execute(args("transition", key="PF-1", to="unavailable", apply=True), api, {"project": "PF"})
+            jira.execute(command, api, {"project": "PF"})
 
     def test_main_never_prints_tracebacks_or_unexpected_secret_exceptions(self):
         out, err = io.StringIO(), io.StringIO()

@@ -37,8 +37,9 @@ class SafetyTests(unittest.TestCase):
                         ["update", "PF-1", "--input", "fixture.json"],
                         ["transition", "PF-1", "--to", "Done"]):
             for flag in ("--a", "--app", "--apply=true"):
+                parser = jira.parser()
                 with self.subTest(command=command[0], flag=flag), self.assertRaises(jira.Failure):
-                    jira.parser().parse_args([*command, flag])
+                    parser.parse_args([*command, flag])
             self.assertFalse(jira.parser().parse_args(command).apply)
             self.assertTrue(jira.parser().parse_args([*command, "--apply"]).apply)
 
