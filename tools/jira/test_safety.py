@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import tempfile
 from contextlib import redirect_stderr, redirect_stdout
+import time
 import unittest
 from unittest.mock import patch
 
@@ -13,6 +14,24 @@ from test_jira import (SECRETS, FakeHTTP, IDENTITY, args, client, standard_creat
 
 
 class SafetyTests(unittest.TestCase):
+    # KAN-27: the credential email check without a backtracking regex, unchanged in what it accepts.
+    EMAIL_SHAPES = [("a@b.c", True), ("first.last@sub.example.com", True), ("üser@exämple.de", True),
+                    ("a@b", False), ("a@@b.c", False), ("a@b.", False), ("@b.c", False), ("a b@c.d", False),
+                    ("a@b c.d", False), ("a@.c", False), ("a@b.c.", True), ("a@.b.c", True), ("a.@b.c", True),
+                    ("a@b..c", True), ("a:b@c.d", False), ("", False), (".@a.b", True), ("a@b.c@d.e", False),
+                    ("a" + chr(9) + "@b.c", False), ("a@b.c" + chr(10), False), ("a@b" + chr(160) + ".c", False), ("x@y.zz", True), ("a@-.b", True)]
+
+    def test_credential_email_shape_is_unchanged(self):
+        for email, valid in self.EMAIL_SHAPES:
+            with self.subTest(email=email):
+                self.assertEqual(jira.is_email_shape(email), valid)
+
+    def test_credential_email_check_runs_in_linear_time(self):
+        for email in ("a@" + "b" * 100000, "a@" + "." * 100000, "a" * 100000 + "@b", "a@" + "b." * 50000 + " "):
+            started = time.perf_counter()
+            jira.is_email_shape(email)
+            self.assertLess(time.perf_counter() - started, 0.1)
+
     def test_abbreviated_apply_is_not_authorization(self):
         for command in (["create", "--input", "fixture.json"],
                         ["update", "PF-1", "--input", "fixture.json"],

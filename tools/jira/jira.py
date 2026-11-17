@@ -146,11 +146,21 @@ def require_success(status):
         raise Failure(messages.get(status, "Jira request rejected") + " (HTTP " + str(status) + ")")
 
 
+def is_email_shape(value):
+    """One '@' with no ':' before it, no whitespace, and a dot inside the domain
+    with text on both sides. A scan instead of a backtracking regex (KAN-27)."""
+    local, separator, domain = value.partition("@")
+    if not local or not separator or "@" in domain or ":" in local or any(ch.isspace() for ch in value):
+        return False
+    dot = domain.find(".", 1)
+    return 0 < dot < len(domain) - 1
+
+
 class Jira:
     def __init__(self, secrets, mode="auto", http=None, allow_writes=False):
         self.site = site_url(secrets["site"])
         email, token = secrets["email"], secrets["token"]
-        if not re.fullmatch(r"[^\s:@]+@[^\s@]+\.[^\s@]+", email) or not token or any(c in token for c in "\r\n\0"):
+        if not is_email_shape(email) or not token or any(c in token for c in "\r\n\0"):
             raise Failure("Invalid email or API credential")
         self.auth = "Basic " + base64.b64encode((email + ":" + token).encode()).decode()
         self.sensitive = [token, parse.quote(token, safe=""), self.auth,
