@@ -54,3 +54,12 @@ test('adversarial lines redact in linear time', () => {
     assert.ok(performance.now() - started < 100, `took ${Math.round(performance.now() - started)} ms`);
   }
 });
+
+test('a line with thousands of CR-separated labels redacts every value without overflowing the stack', () => {
+  const cr = String.fromCharCode(13);
+  const line = ('secret=1' + cr).repeat(12000);
+  const started = performance.now();
+  const output = redactStartupLog(line);
+  assert.ok(performance.now() - started < 1000, `took ${Math.round(performance.now() - started)} ms`);
+  assert.equal(output, ('secret=[value redacted]' + cr).repeat(12000));
+});

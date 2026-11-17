@@ -261,6 +261,8 @@ the evidence is equivalence, not new coverage:
 
 - **Startup redaction:** byte-identical output on a 7,240-case corpus; the old
   pattern took about 9 s on a 100,000-character line, the new scan is linear.
+  A test pins 12,000 CR-separated labels on one line (the final review found
+  that an earlier recursive version overflowed the stack there).
 - **Catalog and inventory SQL:** identical parsed JSON before and after on the
   local stack, still read-only.
 - **pgTAP:** 3 files, 65 tests before and after; wrong error codes in the new key

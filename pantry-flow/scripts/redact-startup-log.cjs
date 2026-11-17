@@ -30,21 +30,34 @@ function wordsEndAt(text, words, last, end) {
 }
 const labelEndsAt = (text, end) => SECRET_LABELS.some(words => wordsEndAt(text, words, words.length - 1, end));
 
-// "<label> : value" keeps the label and separator and redacts the rest of the line.
+// "<label> : value" keeps the label and separator and redacts the value up to
+// the next lone CR, U+2028 or U+2029, then scans on from there.
 function redactLabels(line) {
-  for (let sep = 0; sep < line.length; sep++) {
-    if (!SEPARATORS.includes(line[sep])) continue;
-    let end = sep;
-    while (end > 0 && isSpace(line[end - 1])) end--;
-    if (!labelEndsAt(line, end)) continue;
-    let value = sep + 1;
-    while (value < line.length && isSpace(line[value])) value++;
-    const rest = line.slice(value);
+  let out = '';
+  let segment = line;
+  for (;;) {
+    const value = labelValueStart(segment);
+    if (value < 0) return out + segment;
+    const rest = segment.slice(value);
     const stop = rest.search(LINE_END);
-    const kept = line.slice(0, value) + '[value redacted]';
-    return stop < 0 ? kept : kept + redactLabels(rest.slice(stop));
+    out += segment.slice(0, value) + '[value redacted]';
+    if (stop < 0) return out;
+    segment = rest.slice(stop);
   }
-  return line;
+}
+
+// Index where the value of the first "<label> :" in text starts, or -1.
+function labelValueStart(text) {
+  for (let sep = 0; sep < text.length; sep++) {
+    if (!SEPARATORS.includes(text[sep])) continue;
+    let end = sep;
+    while (end > 0 && isSpace(text[end - 1])) end--;
+    if (!labelEndsAt(text, end)) continue;
+    let value = sep + 1;
+    while (value < text.length && isSpace(text[value])) value++;
+    return value;
+  }
+  return -1;
 }
 
 // scheme://userinfo@ keeps the scheme and replaces the userinfo.
