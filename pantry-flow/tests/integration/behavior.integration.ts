@@ -37,7 +37,8 @@ test('real local Auth/PostgREST behavior from migrations 00001–00003', async t
     await t.test('two households and anonymous callers cannot cross authorization boundaries', async () => {
       for (const [actor, owner] of [[b, a], [a, b]]) {
         for (const table of ['pantry_items', 'pantry_households', 'pantry_household_members', 'profiles']) {
-          const filter = table === 'pantry_items' ? 'household_id' : table === 'pantry_households' || table === 'profiles' ? 'id' : 'user_id';
+          const filter = ({ pantry_items: 'household_id', pantry_households: 'id', profiles: 'id',
+            pantry_household_members: 'user_id' } as Record<string, string>)[table];
           const value = table === 'pantry_items' || table === 'pantry_households' ? owner.household : owner.id;
           assert.deepEqual(ok(await actor.client.from(table).select('*').eq(filter, value)), []);
         }

@@ -140,7 +140,8 @@ export function splitShoppingItems(items: ShoppingItem[]): { open: ShoppingItem[
     const at = a.completed_at ?? '';
     const bt = b.completed_at ?? '';
     if (at !== bt) return at < bt ? 1 : -1;
-    return a.id < b.id ? 1 : a.id > b.id ? -1 : 0;
+    if (a.id === b.id) return 0;
+    return a.id < b.id ? 1 : -1;
   });
   return { open, completed };
 }
