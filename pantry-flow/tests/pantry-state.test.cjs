@@ -178,3 +178,19 @@ test('a pantry write on a loaded list issues no re-read', async () => {
   assert.deepEqual(ids(f.first.items), ['a', 'new']);
   f.dispose();
 });
+
+test('a refresh that sees an added pantry row before the insert returns leaves one entry', async () => {
+  const f = fixture();
+  await act(async () => f.reads[0].resolve([named('a', 'A')]));
+  const pending = deferred();
+  f.mutation(pending.promise);
+  let adding, refresh;
+  act(() => { adding = f.first.addItem(named('new', 'New')); });
+  act(() => { refresh = f.second.fetchItems(); });
+  await act(async () => { f.reads[1].resolve([named('new', 'New'), named('a', 'A')]); await refresh; });
+  await act(async () => { pending.resolve({ data: named('new', 'New'), error: null }); await adding; });
+  assert.deepEqual(f.first.items.map(i => i.id), ['new', 'a']);
+  assert.deepEqual(f.second.items.map(i => i.id), ['new', 'a']);
+  assert.equal(f.first.loading, false);
+  f.dispose();
+});

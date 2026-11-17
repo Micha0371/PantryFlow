@@ -42,7 +42,8 @@ function usePantryState() {
         .select().single();
       if (err) throw err;
       const item = parseItem(data);
-      if (isCurrent(scope)) { generation.current++; setLoading(false); setItems(prev => [item, ...prev]); }
+      // A refresh may already hold this row; replace it instead of adding a copy.
+      if (isCurrent(scope)) { generation.current++; setLoading(false); setItems(prev => [item, ...prev.filter(it => it.id !== item.id)]); }
       return item;
     } finally {
       rereadIfUnloaded(unloaded);
