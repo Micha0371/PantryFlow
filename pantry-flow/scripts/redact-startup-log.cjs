@@ -9,7 +9,7 @@ const SECRET_LABELS = [['anon', 'key'], ['service', 'role'], ['service', 'role',
   ['access', 'token'], ['refresh', 'token']];
 const SEPARATORS = ':=|';
 const JOINS = ' _-';
-const LINE_END = new RegExp('[' + String.fromCharCode(13, 0x2028, 0x2029) + ']');
+const LINE_END = new RegExp('[' + String.fromCodePoint(13, 0x2028, 0x2029) + ']');
 const isSpace = ch => /\s/.test(ch);
 const isLetter = ch => /[a-z]/i.test(ch);
 const isSchemeChar = ch => /[a-z0-9+.-]/i.test(ch);
@@ -51,17 +51,20 @@ function redactLabels(line) {
 function redactUserinfo(line) {
   let out = '';
   let from = 0;
-  for (let at = line.indexOf('://'); at >= 0; at = line.indexOf('://', at + 1)) {
+  let at = line.indexOf('://');
+  while (at >= 0) {
     let start = at;
     while (start > from && isSchemeChar(line[start - 1])) start--;
     while (start < at && !isLetter(line[start])) start++;
     let end = at + 3;
     while (end < line.length && !isUserinfoEnd(line[end])) end++;
+    let next = at + 1;
     if (start < at && end > at + 3 && line[end] === '@') {
       out += line.slice(from, at + 3) + '[credentials redacted]@';
       from = end + 1;
-      at = end;
+      next = end + 1;
     }
+    at = line.indexOf('://', next);
   }
   return out + line.slice(from);
 }
