@@ -53,6 +53,8 @@ Also:
 
 ## Decisions for the owner
 
+**Owner decisions (2026-11-17, plan approved):** D1 yes; D2 one PR, one commit per task; D3 phone check approved.
+
 - **D1, scope boundary. Recommended:** as above. `frontend/` and `backend/` stay out; deleting the scaffold would be its own ticket. The 95 Minor findings stay out.
 - **D2, one PR. Recommended:** one PR with one commit per task, so each area can be reviewed on its own. Alternative: two PRs, tooling and tests first, app code second.
 - **D3, phone check. Recommended: yes, about 15 minutes.** Tasks 5 and 6 change app code (tab icons, button styles, context values). The emulator CI runs every flow but doesn't assert visuals. The owner looks at the tab bar, the buttons and sign-in on the phone, with a new build.
