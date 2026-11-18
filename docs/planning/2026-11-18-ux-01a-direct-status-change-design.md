@@ -1,6 +1,6 @@
 # UX-01A: direct pantry status change (design)
 
-**Status:** proposed, awaiting the owner's approval. UX-01B (KAN-91) starts only after approval.
+**Status:** **approved by the owner on 2026-11-18**, with the clarifications in section 5.11 (see the decision record in section 8). UX-01B (KAN-91) follows its own reviewed implementation plan.
 
 - **Jira:** KAN-90 (UX-01A), parent KAN-87 (T11).
 - **Implemented by:** KAN-91 (UX-01B).
@@ -169,14 +169,16 @@ Near the bottom of the list:
 3. **On failure:** the badge keeps the old status and a notice explains the result (5.5). The status is never shown as changed before the database confirmed it.
 
 **One status change at a time on the list:**
-- While a change or its prompt is in progress, the other status controls are disabled: dimmed, and reported as disabled to screen readers.
+- While a status **write** is in flight, the other status controls are disabled: dimmed, and reported as disabled to screen readers.
 - A save usually takes well under a second, so a pantry sweep isn't slowed.
-- It guarantees prompts never stack.
-- The item content stays tappable. The provider's per-item lock already protects a pending item.
+- The prompt that may follow is a native modal dialog, which blocks the list while it's visible.
+- Section 5.11 defines what happens when that dialog is lost, and why a lost dialog can never leave the controls disabled.
+- The changed item's **content** (its edit action) is also disabled while its write is in flight (5.11).
 
 **Status-only write (recommended, needs approval because it narrows KAN-91's "reuse the existing update operation"):**
 - **The problem:** today's `updateItem` writes name, category, location and status together. Called from a list that hasn't refreshed yet, it would silently undo a rename or recategorization made on another device.
 - **The fix:** a status change from the list writes **only `status`**. It goes through the same provider, with the same pending lock, scope guards, CR-01 recovery and household filter. Only the payload is narrower.
+- **Approved by the owner on 2026-11-18.** The write is also concurrency-safe; the exact contract is in 5.11.
 
 **Validation and errors for the status-only write** (designer's call):
 - It validates only that the status is one of In Stock, Low and Out.
@@ -185,7 +187,7 @@ Near the bottom of the list:
   - a missing record (CR-01) gives "This item is no longer available.";
   - everything else, including the provider's "Item change is already pending" lock error, gives "Could not save item.".
 
-**Which status counts as "previous" for D3:** the item's status in the list at the moment of commit.
+**Which status counts as "previous" for D3:** the status the database held at the moment of the write, not merely the cached one. Section 5.11 shows how this is established.
 
 ### 5.4 D3 shopping prompt, restated for the list
 
@@ -224,7 +226,8 @@ The prompt is the existing native dialog: title "Add to shopping list?", the ite
 
 | Situation | What the user sees |
 | --- | --- |
-| Network or server error | The badge keeps the old status. Notice: "Status not changed" / "Could not save item." / OK. Retry by tapping the badge again (2 taps). |
+| Network, permission or server error | The badge keeps the old status. Notice: "Status not changed" / "Could not save item." / OK. Retry by tapping the badge again (2 taps). These errors are never treated as a missing record. |
+| Status changed on another device first | Handled by the concurrency-safe contract (5.11): no wrong prompt, and the list adopts the database's status. |
 | Item deleted on another device (CR-01) | The row disappears and the list refreshes. Notice: "This item is no longer available." |
 | The same item is already being changed (pending lock) | Can't happen from the list, because other status controls are disabled. A change from the edit screen at the same moment fails safely with the generic notice. |
 | User or household changed, or screen left mid-save | The provider discards the result for the new scope. No prompt, no add, no notice on the new screen. |
@@ -292,6 +295,46 @@ New keys, with the builder naming them:
 
 Existing keys are reused: the status labels, `err_save_item`, `err_item_missing`, the shopping prompt and notice keys, and `common_ok`.
 
+### 5.11 Concurrency, navigation and lifecycle (owner clarifications, 2026-11-18)
+
+**Concurrency-safe status contract**
+
+The list holds a cached status P for the item, and the user selects S, with S ≠ P (S = P is a no-op in the client, 5.2). The write is a compare-and-set on the status, using only the existing table and PostgREST:
+
+1. **Update** `status = S` where `id`, `household_id` **and `status = P`** match, returning the row. Use `maybeSingle()`, so "no row matched" is a normal result, not an error.
+2. **A row is returned:** the database held P at the write, so P is the authoritative previous status. D3 applies to P → S.
+3. **No row matched:** one read of `id` and `household_id` disambiguates:
+   - **No row:** the item is missing for this household. The existing CR-01 recovery applies: drop the row, re-read the list, and show "This item is no longer available.".
+   - **The row's status A equals S:** someone already set it. There is no write and no prompt; the list adopts the returned row and reports success.
+   - **A differs from S:** retry the compare-and-set once with A as the previous status. On success, D3 applies to A → S. If the retry also matches nothing, the list adopts a fresh read and shows "Status not changed" / "Could not save item.". There is no further retry.
+4. **Any error** (network, permission, server) at any step is a failed status update. The old status stays, and it is never treated as missing.
+
+**Why this contract:**
+- **Rejected, a database function** returning the old and new status: it needs a migration and the hosted migration process, which is unnecessary infrastructure.
+- **Rejected, an unconditional write with the cached status:** it gives a wrong prompt decision whenever the cache is stale.
+
+**The prompt and the link** use the returned row: its name, its id and its `household_id`. Never use the cached values.
+
+**Navigation during a pending write**
+- **The per-item lock** lives in the shared provider (`pendingItems`), so it covers both entry points.
+- **The real risk is a stale edit screen,** not a double write. The edit screen loads the item once. Opened during a pending status write, it would show the old status, and a later Save (a full-item write) would undo the status change.
+- **So the changed item's content is disabled while its status write is in flight.** This is the simple guarantee the owner allowed. Its edit action returns as soon as the write settles: on success, failure, or a confirmed missing record.
+- **Prompts and notices** appear only while the pantry list is the focused screen (`current()`), with the household unchanged (5.4). A completion that arrives after the user switched tabs or opened another item updates the list silently: no prompt, no notice and no add. After a failure, the badge already shows the true, old status.
+
+**Operation lifecycle and the lost-dialog rule**
+- **The list-wide lock covers the status write only.** It is released in every outcome: success, failure, missing record, a redundant selection, and unmount.
+- **While the shopping prompt is visible,** the native modal dialog blocks the list by itself.
+- **Why a lost dialog can't disable the controls:** a lost dialog (KAN-36: a native alert that never answers after the app was backgrounded) holds no lock.
+- **Each prompt carries a token.** The token is invalidated by any of: a newer status change, the list losing focus, a household or user change, or unmount.
+- **A late answer from an invalidated prompt** does nothing: no add and no notice.
+- **Obsolete callbacks** (an old household, user or screen) can't change the current screen or start a shopping add. They are blocked by the provider's scope guards, the household check, `current()` and the prompt token.
+
+**Error distinction**
+- **The status update failed:** title "Status not changed", the old status stays.
+- **The status update succeeded but the shopping add failed:** the existing "Not added to the shopping list" notice with its reason, and the new status stays.
+
+The CR-01 contract (merged in #43, `isMissingPantryItem`) is reused only after the disambiguating read confirms the item is absent.
+
 ## 6. Criteria UX-01B must prove (in addition to KAN-91)
 
 - **The D3 transition matrix in 5.4:** no write and no prompt for the same status; a prompt exactly for the four prompting transitions.
@@ -299,6 +342,19 @@ Existing keys are reused: the status labels, `err_save_item`, `err_item_missing`
 - **Double and fast taps:** only one menu, one write and one prompt. Other status controls are disabled during a change.
 - **Scope:** a change that resolves after a household, user or screen change writes nothing into the new scope and prompts nothing.
 - **Status-only payload:** the write sends only `status`. A concurrent rename made elsewhere survives (provider test, plus an integration read-back).
+- **The concurrency contract in 5.11:**
+  - cached status equal to the database status;
+  - a stale cache with a different database status: a single retry, with D3 decided from the database status;
+  - the database already holding S: no write, no prompt;
+  - a missing row, confirmed by the read;
+  - an error at each step, never treated as missing.
+
+  This is proven through real PostgREST in the integration suite.
+- **Lifecycle:**
+  - the item's edit action is disabled exactly while its write is in flight;
+  - the list-wide lock is released in every outcome;
+  - a lost or late prompt answer adds nothing after the prompt is invalidated;
+  - no prompt or notice appears over another screen.
 - **Edit screen:** its D3 prompt tests pass unchanged after the extraction.
 - **Positioning:** the menu stays fully on screen for the first and last rows, on a small screen and at the largest font scale. TalkBack focus moves into the menu and back. This is checked on the phone, with the fallback rule in section 4 if it fails.
 - **TalkBack walk-through (5.6):** checked on the phone and recorded, with an extended Maestro journey and database read-back.
@@ -315,4 +371,8 @@ Existing keys are reused: the status labels, `err_save_item`, `err_item_missing`
 | Date | Decision | By |
 | --- | --- | --- |
 | 2026-11-18 | Usage scenarios, the owner's preferred direction (anchored selector, sibling controls, commit on select, D3 prompt after success, no batch mode) and the constraints in sections 2–3 | Owner |
-| *pending* | Approve approach A with fallback B, the status-only write (5.3) and the household check before the prompt (5.4) | Owner |
+| 2026-11-18 | **Approved:** approach A with fallback B. The fallback keeps identical interaction semantics and tap-count targets, and the final choice rests on native positioning and TalkBack evidence from the phone. | Owner |
+| 2026-11-18 | **Approved:** the status-only write (5.3), preferred over a full-item update that could overwrite concurrently modified fields | Owner |
+| 2026-11-18 | **Approved:** household checks before the shopping prompt and the shopping add, at both entry points (5.4) | Owner |
+| 2026-11-18 | **Clarifications** (5.11): the concurrency-safe contract, using the database's previous status for D3 and the returned row for the prompt and link; navigation safety, disabling the item's edit action while its write is pending; lock release in every outcome, with lost or late dialogs unable to block or add; the error distinction; the CR-01 integration; accessibility verification; preserving the edit screen's behavior and tests; no batch mode, coach marks, onboarding or hints | Owner |
+| 2026-11-18 | **Designer's calls in 5.11:** compare-and-set with one disambiguating read and at most one retry; the list-wide lock covers the write, and the native dialog's own modality covers the prompt. The owner accepted locking during the prompt as well, but a write-only lock is simpler and can't be stranded by a lost dialog. | Designer |
