@@ -1,6 +1,15 @@
 # Slice 3 — independent Codex assessment integration (Jira dry run)
 
-**Status: DRY RUN. No Jira writes for this operation have been made.** Applying it requires the product owner's approval.
+**Status: APPROVED by the product owner on 2026-11-18** ("approved with your recommendations"). The decisions in section E were accepted as recommended:
+- **S3-C1:** apply this delta.
+- **S3-C2:** fix CR-01 before the supervised beta.
+- **S3-C3:** no upload of private APKs to public scanners without a separate authorization.
+- **S3-C4:** mandatory GitHub approvals stay off; GOV-01 records in every PR whether its review was independent.
+- **S3-C5:** session storage is decided through SEC-06 before public release, with no change before then.
+- **S3-C6:** native "blocks" links are optional and added by hand.
+- **S3-C7:** the Codex report is committed as a separate benchmark.
+
+The text below is the approved dry run; the outcome is in the [creation record](2026-11-18-slice-3-codex-integration-created.md).
 
 - **Operation ID:** `PF-S3-CODEX-INTEGRATION-20261118`
 - **Drafts:** [2026-11-18-slice-3-codex-integration-drafts.json](2026-11-18-slice-3-codex-integration-drafts.json)
