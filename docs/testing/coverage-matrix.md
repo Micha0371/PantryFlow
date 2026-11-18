@@ -88,11 +88,11 @@ list after a cold restart. They show the completed item's strikethrough and
 filled check, and the rename and completion persisting across the restart.
 Screenshots stay in ignored `.verification`.
 
-[CI run 43218155689](https://github.com/Micha0371/VSCode-Environment/actions/runs/43218155689) on fd47ba6 passed all four jobs, including the emulator
+[CI run 43218155689](https://github.com/Micha0371/PantryFlow/actions/runs/43218155689) on fd47ba6 passed all four jobs, including the emulator
 Android job. That run predates the KAN-17 add-error fix and the review
 assertions added to the shopping flow after the phone run (Bread back under
 "To buy" after reopen, Rye bread back after retry, a single Milk after the
-rejected prompt add). [CI run 43300263994](https://github.com/Micha0371/VSCode-Environment/actions/runs/43300263994) on 0cc3bf0, which includes all of
+rejected prompt add). [CI run 43300263994](https://github.com/Micha0371/PantryFlow/actions/runs/43300263994) on 0cc3bf0, which includes all of
 them, passed all four jobs, including the emulator Android job. Later commits
 only change documentation.
 
@@ -148,7 +148,7 @@ driver) and are not counted.
 
 After the green phone run, the final review raised both "no second edit screen"
 waits from 5 s to 15 s. That change has not run on the phone; it ran on the
-emulator in [CI run 43334319720](https://github.com/Micha0371/VSCode-Environment/actions/runs/43334319720)
+emulator in [CI run 43334319720](https://github.com/Micha0371/PantryFlow/actions/runs/43334319720)
 on 50352d3, which passed all four jobs, including the Android job with both
 double taps. The Pantry double tap stays on
 the name text "Milk", which the phone run showed opening the row; the row's
@@ -190,7 +190,7 @@ a TalkBack attempt without the speech display, where only the
 owner's hearing recorded the announcement. Screenshots stay in ignored
 `.verification`.
 
-The first CI run on fc22508 ([run 43979888156](https://github.com/Micha0371/VSCode-Environment/actions/runs/43979888156))
+The first CI run on fc22508 ([run 43979888156](https://github.com/Micha0371/PantryFlow/actions/runs/43979888156))
 failed in the Android job at the new step: on the emulator's shorter screen
 the focused name field's keyboard covers Save, so waiting for Save timed out.
 The step now waits for the name field, closes the keyboard with a tap on the
@@ -201,7 +201,7 @@ The final step was shown failing on the pre-fix APK on the phone (a second
 Add Item screen after Cancel), and Slice 1.1 passed with it on the fixed APK.
 In that phone run the shopping journey's cold restart tapped the home screen's
 "Shopping" icon before the app came forward; that run is not counted.
-[CI run 43988001632](https://github.com/Micha0371/VSCode-Environment/actions/runs/43988001632)
+[CI run 43988001632](https://github.com/Micha0371/PantryFlow/actions/runs/43988001632)
 on 09b489b passed all four jobs, including the emulator Android job with the
 add double tap and both KAN-33 double taps.
 
@@ -252,7 +252,7 @@ returns to the app.
 
 Screenshots stay in ignored `.verification`.
 
-[CI run 43998165097](https://github.com/Micha0371/VSCode-Environment/actions/runs/43998165097)
+[CI run 43998165097](https://github.com/Micha0371/PantryFlow/actions/runs/43998165097)
 on d9e5cd5 passed all four jobs, including the emulator Android job.
 
 Limits: no iOS run (PF-IOS-001); the Maestro flows are unchanged.
@@ -466,7 +466,7 @@ The startup fix is commit `85d0114`, separate from the harness commits. Local
 fast checks pass (50 Node checks, one RNTL case, target safety and typecheck).
 A fresh ARM64 build passed and the patched diagnostic test APK is installed.
 A token-free native error callback displayed translated recovery. Full CI run
-[42709533982](https://github.com/Micha0371/VSCode-Environment/actions/runs/42709533982)
+[42709533982](https://github.com/Micha0371/PantryFlow/actions/runs/42709533982)
 passed fast, database, Windows tooling and fresh Android/Maestro at `85d0114`.
 The real confirmation sent at 23:17 Berlin time was opened at 23:33. The patched
 app reached the actual callback and displayed invalid/expired recovery rather
