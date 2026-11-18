@@ -1,4 +1,4 @@
-const { test } = require('node:test');
+const { test, mock } = require('node:test');
 const assert = require('node:assert/strict');
 const React = require('react');
 const { create, act } = require('react-test-renderer');
@@ -27,6 +27,13 @@ function setup(os = 'android') {
   const setFocus = value => act(() => { focus.focused = value; focus.listeners.forEach(fn => fn(value)); });
   return { mod, announced, setFocus, focus };
 }
+
+// On focus, the announcement waits until TalkBack has spoken the selected tab;
+// otherwise "Shopping selected" cuts it off (KAN-39 phone check, 2026-11-18).
+const withTimers = fn => {
+  mock.timers.enable({ apis: ['setTimeout'] });
+  try { fn(ms => act(() => mock.timers.tick(ms))); } finally { mock.timers.reset(); }
+};
 
 function mount(hook, message) {
   const Probe = ({ message: m }) => { hook(m); return null; };
@@ -59,54 +66,78 @@ test('the same error announces again after it was cleared, as after a failed ret
   } finally { probe.unmount(); }
 });
 
-test('a focused screen announces its error once on mount', () => {
+test('a focused screen announces its error once, after the tab has been spoken', () => withTimers(tick => {
   const { mod, announced } = setup();
   const probe = mount(mod.useFocusedErrorAnnouncement, 'Could not load the shopping list.');
   try {
+    assert.equal(mod.FOCUS_ANNOUNCEMENT_DELAY_MS, 1000);
+    tick(999);
+    assert.deepEqual(announced, []);
+    tick(1);
+    assert.deepEqual(announced, ['Could not load the shopping list.']);
+    tick(5000);
     assert.deepEqual(announced, ['Could not load the shopping list.']);
   } finally { probe.unmount(); }
-});
+}));
 
-test('an error on an unfocused screen waits until the screen is focused', () => {
+test('leaving the screen before the delay ends cancels the announcement', () => withTimers(tick => {
+  const { mod, announced, setFocus } = setup();
+  const probe = mount(mod.useFocusedErrorAnnouncement, 'Could not load the shopping list.');
+  try {
+    tick(500);
+    setFocus(false);
+    tick(1000);
+    assert.deepEqual(announced, []);
+  } finally { probe.unmount(); }
+}));
+
+test('an error on an unfocused screen waits until the screen is focused', () => withTimers(tick => {
   const { mod, announced, setFocus, focus } = setup();
   focus.focused = false;
   const probe = mount(mod.useFocusedErrorAnnouncement, null);
   try {
     probe.update('Could not load the shopping list.');
+    tick(2000);
     assert.deepEqual(announced, []);
     setFocus(true);
+    tick(1000);
     assert.deepEqual(announced, ['Could not load the shopping list.']);
   } finally { probe.unmount(); }
-});
+}));
 
-test('returning to a screen that still shows its error announces it again', () => {
+test('returning to a screen that still shows its error announces it again', () => withTimers(tick => {
   const { mod, announced, setFocus } = setup();
   const probe = mount(mod.useFocusedErrorAnnouncement, 'Could not load the shopping list.');
   try {
+    tick(1000);
     setFocus(false);
     setFocus(true);
+    tick(1000);
     assert.deepEqual(announced, ['Could not load the shopping list.', 'Could not load the shopping list.']);
   } finally { probe.unmount(); }
-});
+}));
 
-test('a focused screen announces a new error when it appears', () => {
+test('an error that appears on the visible screen is announced at once, as after Try again', () => withTimers(tick => {
   const { mod, announced } = setup();
   const probe = mount(mod.useFocusedErrorAnnouncement, null);
   try {
-    assert.deepEqual(announced, []);
+    tick(1000);
     probe.update('Could not load the pantry.');
     assert.deepEqual(announced, ['Could not load the pantry.']);
+    tick(2000);
+    assert.deepEqual(announced, ['Could not load the pantry.']);
   } finally { probe.unmount(); }
-});
+}));
 
-test('iOS makes no announcement', () => {
+test('iOS makes no announcement', () => withTimers(tick => {
   const { mod, announced } = setup('ios');
   const a = mount(mod.useErrorAnnouncement, 'Could not load.');
   const b = mount(mod.useFocusedErrorAnnouncement, 'Could not load.');
   try {
+    tick(2000);
     assert.deepEqual(announced, []);
   } finally { a.unmount(); b.unmount(); }
-});
+}));
 
 test('InlineError keeps one polite live region mounted and puts the alert inside it', () => {
   const { InlineError } = load('components/InlineError.tsx', {

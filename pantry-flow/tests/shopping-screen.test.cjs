@@ -1,4 +1,4 @@
-const { test } = require('node:test');
+const { test, mock } = require('node:test');
 const assert = require('node:assert/strict');
 const React = require('react');
 const { create, act } = require('react-test-renderer');
@@ -63,17 +63,23 @@ test('a failed load shows the error with retry, not an empty list', () => {
   } finally { act(() => r.unmount()); }
 });
 
-test('a failed load is announced to TalkBack once, on the focused tab (KAN-39)', () => {
-  announced.length = 0;
-  const r = render({ error: 'err_load_shopping' });
+test('a failed load is announced to TalkBack once, after the tab is spoken (KAN-39)', () => {
+  mock.timers.enable({ apis: ['setTimeout'] });
   try {
-    assert.deepEqual(announced, ['err_load_shopping']);
-  } finally { act(() => r.unmount()); }
-  announced.length = 0;
-  const ok = render({ items: [row('a')] });
-  try {
-    assert.deepEqual(announced, []);
-  } finally { act(() => ok.unmount()); }
+    announced.length = 0;
+    const r = render({ error: 'err_load_shopping' });
+    try {
+      assert.deepEqual(announced, []);
+      act(() => mock.timers.tick(1000));
+      assert.deepEqual(announced, ['err_load_shopping']);
+    } finally { act(() => r.unmount()); }
+    announced.length = 0;
+    const ok = render({ items: [row('a')] });
+    try {
+      act(() => mock.timers.tick(1000));
+      assert.deepEqual(announced, []);
+    } finally { act(() => ok.unmount()); }
+  } finally { mock.timers.reset(); }
 });
 
 test('an empty list shows the empty state without an add action', () => {
