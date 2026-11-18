@@ -9,13 +9,15 @@ const pantryShopping = load('lib/pantry-shopping.ts');
 const STATUSES = ['in_stock', 'low', 'out'];
 
 function setup({ addItem } = {}) {
-  const log = { alerts: [], adds: [] };
+  const log = { alerts: [], adds: [], pantry: 0 };
   const scope = { householdId: 'h' };
   const { useShoppingPrompt } = load('hooks/useShoppingPrompt.ts', {
     'react-native': { Alert: { alert: (...args) => log.alerts.push(args) } },
     '@/hooks/useShoppingItems': { useShoppingItems: () => ({
       addItem: async input => { log.adds.push(input); return (addItem ?? (async () => ({})))(input); } }) },
     '@/hooks/household-scope': { useHouseholdScope: () => scope },
+    // The hook must never reach pantry state: any use of this stub is recorded.
+    '@/hooks/usePantryItems': { usePantryItems: () => { log.pantry++; return new Proxy({}, { get: () => () => { log.pantry++; } }); } },
     '@/lib/shopping-data': shoppingData, '@/lib/pantry-shopping': pantryShopping,
     '@/lib/i18n': { useTranslation: () => ({ t: key => key }) },
   });
@@ -119,7 +121,7 @@ test('a failed add shows the translated shopping notice; the hook never touches 
     assert.equal(h.log.alerts[1][1], 'err_duplicate_shopping_item');
     await act(async () => { h.press('common_ok'); await h.flush(); });
     await p;
-    // No pantry provider is stubbed, so the hook cannot reach pantry state; it only exposes the prompt API.
+    assert.equal(h.log.pantry, 0);
     assert.deepEqual(Object.keys(h.hook()).sort(), ['invalidate', 'offer', 'prompting']);
   } finally { act(() => h.renderer.unmount()); }
 });
@@ -149,4 +151,48 @@ test('an answer after unmount adds nothing and shows no notice', async () => {
   await p;
   assert.equal(h.log.adds.length, 0);
   assert.equal(h.log.alerts.length, 1);
+});
+
+test('a household change while the prompt is open makes a later Add do nothing', async () => {
+  // Covers the case valid()'s own household comparison cannot: A -> B -> A before the answer.
+  const h = setup();
+  try {
+    const p = offer(h, { saved: item('low'), previous: 'in_stock', current: yes });
+    await h.flush();
+    h.scope.householdId = 'other';
+    h.rerender();
+    h.scope.householdId = 'h';
+    h.rerender();
+    assert.equal(h.hook().prompting, false);
+    await act(async () => { h.press('shopping_prompt_add'); await h.flush(); });
+    await p;
+    assert.equal(h.log.adds.length, 0);
+  } finally { act(() => h.renderer.unmount()); }
+});
+
+test('a late answer to an obsolete offer does not clear a newer prompt', async () => {
+  const h = setup();
+  try {
+    const first = offer(h, { saved: item('low'), previous: 'in_stock', current: yes });
+    const pressA = h.log.alerts.at(-1)[2];
+    const second = offer(h, { saved: item('out', { id: '2', name: 'Eggs' }), previous: 'in_stock', current: yes });
+    const pressB = h.log.alerts.at(-1)[2];
+    assert.equal(h.log.alerts.length, 2);
+    await act(async () => { pressA.find(b => b.text === 'shopping_prompt_skip').onPress(); await h.flush(); });
+    await first;
+    assert.equal(h.hook().prompting, true);
+    await act(async () => { pressB.find(b => b.text === 'shopping_prompt_skip').onPress(); await h.flush(); });
+    await second;
+    assert.equal(h.hook().prompting, false);
+  } finally { act(() => h.renderer.unmount()); }
+});
+
+test('offer requests the native dialog synchronously', () => {
+  const h = setup();
+  try {
+    let p;
+    act(() => { p = h.hook().offer({ saved: item('low'), previous: 'in_stock', current: yes }); });
+    assert.equal(h.log.alerts.length, 1);
+    assert.ok(p instanceof Promise);
+  } finally { act(() => h.renderer.unmount()); }
 });

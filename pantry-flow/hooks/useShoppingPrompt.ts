@@ -49,7 +49,19 @@ export function useShoppingPrompt() {
     return () => { mounted.current = false; token.current++; };
   }, []);
 
-  const invalidate = useCallback(() => { token.current++; }, []);
+  // Invalidating ends any open prompt's claim on `prompting`, so clear it here:
+  // the obsolete offer's finally no longer owns the state.
+  const invalidate = useCallback(() => { token.current++; setPrompting(false); }, []);
+
+  // A household or identity change makes every open prompt obsolete, even if the
+  // household later changes back.
+  const seenHousehold = useRef(householdId);
+  useEffect(() => {
+    if (seenHousehold.current === householdId) return;
+    seenHousehold.current = householdId;
+    token.current++;
+    setPrompting(false);
+  }, [householdId]);
 
   const offer = async (args: { saved: PantryItem; previous: StatusKey; current: () => boolean }): Promise<void> => {
     const { saved, previous, current } = args;
@@ -68,7 +80,7 @@ export function useShoppingPrompt() {
         await notice(t('shopping_prompt_failed_title'), t(shoppingErrorKey(shoppingError)), t('common_ok'));
       }
     } finally {
-      if (mounted.current) setPrompting(false);
+      if (mounted.current && token.current === mine) setPrompting(false);
     }
   };
 
