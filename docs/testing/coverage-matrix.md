@@ -318,6 +318,28 @@ the evidence is equivalence, not new coverage:
   i18n context values; the test proxy's control, PKCE, delayed-write and 502
   paths; the Jira CLI suite grew from 45 to 47 tests (the new email-shape cases).
 
+### KAN-85 and KAN-86 review minors
+
+These close the review minors from the KAN-32/36 and KAN-27 packages and three
+from the KAN-39/84 package (PR #39). Nothing in the app's behavior changes.
+
+- **Pinned with new tests**, each shown failing with a deliberate mutation:
+  - a pantry write that settles after a household change does not re-read for
+    the new household (`isCurrent` guard, pantry-state.test.cjs);
+  - a successful write on a loaded list clears an earlier refresh error;
+  - a failure notice answered late, after Cancel, navigates, alerts and adds
+    nothing (edit-item-prompt.test.cjs);
+  - a Pantry load error on an unfocused tab is announced only once the tab is
+    focused (screens.test.cjs).
+- **Fixed:** the proxy's 502 test uses an upstream that drops connections
+  instead of a closed port; `get_issue` marks its unused argument `_args`; the
+  Jira suite count above; `announceError` lives in `lib/accessibility.ts`, so
+  `Input` no longer depends on the router.
+- **Declined:**
+  - Cancel stays enabled during the shopping add after a pantry save, so nothing can lock the form (KAN-36). A failure notice missed after an explicit Cancel is the same outcome as a late answer.
+  - After a write on a list that never loaded, the re-read briefly shows only the new row. This is unreachable through the UI and the end state is correct; the pantry and shopping providers stay alike.
+  - AuthGate announces the session restore error as soon as it appears. That error comes seconds after start, when the request fails, and the phone showed such a late error is read correctly.
+
 ## Slice 1.1 baseline coverage
 
 | ID | Approved behavior / observable outcome | Reused automated coverage | Additional coverage | Manual / deferred limit |
