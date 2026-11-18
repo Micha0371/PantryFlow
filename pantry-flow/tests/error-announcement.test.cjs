@@ -158,3 +158,40 @@ test('InlineError keeps one polite live region mounted and puts the alert inside
     assert.equal(text.props.testID, 'err');
   } finally { act(() => renderer.unmount()); }
 });
+
+test('an error that appears during the delay after focus is spoken when the delay ends (final review I2)', () => withTimers(tick => {
+  const { mod, announced } = setup();
+  const probe = mount(mod.useFocusedErrorAnnouncement, null);
+  try {
+    tick(300);
+    probe.update('Could not load the pantry.');
+    assert.deepEqual(announced, [], 'TalkBack is still speaking the screen');
+    tick(700);
+    assert.deepEqual(announced, ['Could not load the pantry.']);
+  } finally { probe.unmount(); }
+}));
+
+test('an error cleared and re-shown during the delay is spoken once (final review M1)', () => withTimers(tick => {
+  const { mod, announced } = setup();
+  const probe = mount(mod.useFocusedErrorAnnouncement, 'E');
+  try {
+    tick(200);
+    probe.update(null);
+    probe.update('E');
+    probe.update('B');
+    probe.update('E');
+    tick(800);
+    assert.deepEqual(announced, ['E']);
+  } finally { probe.unmount(); }
+}));
+
+test('an error that is gone when the delay ends is not spoken', () => withTimers(tick => {
+  const { mod, announced } = setup();
+  const probe = mount(mod.useFocusedErrorAnnouncement, 'E');
+  try {
+    tick(500);
+    probe.update(null);
+    tick(500);
+    assert.deepEqual(announced, []);
+  } finally { probe.unmount(); }
+}));

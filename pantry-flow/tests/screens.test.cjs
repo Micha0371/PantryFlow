@@ -375,3 +375,32 @@ for (const [file, fill, failing] of [
     } finally { act(() => renderer.unmount()); }
   });
 }
+
+test('the Edit Item screen announces a missing item or failed load as an alert (final review I1)', () => {
+  const constants = load('lib/constants.ts');
+  const data = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
+  const { default: Screen } = load('app/edit-item/[id].tsx', { ...shared,
+    'expo-router': { useRouter: () => ({ back: () => {} }), useLocalSearchParams: () => ({ id: '1' }),
+      useFocusEffect: callback => React.useEffect(callback, [callback]) },
+    '@/components/AuthGate': { AuthGate: ({ children }) => children },
+    '@/components/Input': { Input: 'Input' }, '@/components/OptionChips': { OptionChips: 'OptionChips' },
+    '@/hooks/useItemMutation': load('hooks/useItemMutation.ts', { 'expo-router': {
+      useFocusEffect: callback => React.useEffect(callback, [callback]) } }),
+    '@/lib/pantry-data': data, '@/lib/constants': constants,
+    '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
+    '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
+    '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'),
+    '@/hooks/usePantryItems': { usePantryItems: () => ({ householdId: 'h', loading: false, error: 'err_load_items',
+      retry: () => {}, updateItem: async () => ({}), deleteItem: async () => {}, getItem: () => undefined }) },
+  });
+  mock.timers.enable({ apis: ['setTimeout'] });
+  announced.length = 0;
+  let renderer;
+  try {
+    act(() => { renderer = create(React.createElement(Screen)); });
+    const alert = renderer.root.find(n => n.type === 'Text' && n.props.accessibilityRole === 'alert');
+    assert.equal(alert.props.children, 'err_load_items');
+    act(() => mock.timers.tick(1000));
+    assert.deepEqual(announced, ['err_load_items']);
+  } finally { if (renderer) act(() => renderer.unmount()); mock.timers.reset(); }
+});

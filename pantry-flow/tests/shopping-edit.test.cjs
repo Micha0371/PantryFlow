@@ -207,3 +207,18 @@ test('a missing item or failed load is announced on the detail screen (KAN-39)',
     assert.deepEqual(announced, []);
   } finally { act(() => ok.renderer.unmount()); mock.timers.reset(); }
 });
+
+test('each failed rename gives the field a new announceKey, so a repeated error is spoken (final review M3)', async () => {
+  const { renderer, by, field } = render({ state: { renameItem: async () => {
+    throw Object.assign(new Error('dup'), { code: '23505' });
+  } } });
+  try {
+    const before = field().props.announceKey;
+    await act(async () => by('shopping-edit-save').props.onPress());
+    const first = field().props.announceKey;
+    await act(async () => by('shopping-edit-save').props.onPress());
+    assert.ok(field().props.error);
+    assert.notEqual(first, before);
+    assert.notEqual(field().props.announceKey, first);
+  } finally { act(() => renderer.unmount()); }
+});

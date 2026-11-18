@@ -24,6 +24,7 @@ import { offersShoppingAdd } from '@/lib/pantry-shopping';
 import { useTranslation } from '@/lib/i18n';
 import { CATEGORIES, LOCATIONS, STATUSES } from '@/lib/constants';
 import { colors, radii, spacing, typography, StatusKey } from '@/lib/theme';
+import { useFocusedErrorAnnouncement } from '@/hooks/useErrorAnnouncement';
 
 // Resolves true on the affirmative button, false on the other button or dismissal.
 function ask(title: string, message: string, addLabel: string, skipLabel: string): Promise<boolean> {
@@ -92,6 +93,9 @@ function EditItemModalContent() {
     }
   }, [item, hydrated]);
 
+  const missing = !item && !removing.current && !loading;
+  useFocusedErrorAnnouncement(missing ? t(loadError ?? 'err_item_missing') : null);
+
   if (!item && removing.current) return <View style={styles.safe} />;
 
   if (loading && !item) {
@@ -105,7 +109,7 @@ function EditItemModalContent() {
   if (!item) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>{t(loadError ?? 'err_item_missing')}</Text>
+        <Text style={styles.errorText} accessibilityRole="alert">{t(loadError ?? 'err_item_missing')}</Text>
         <Button label={t('common_retry')} onPress={() => { void retry(); }} />
         <Button
           label={t('common_back')}

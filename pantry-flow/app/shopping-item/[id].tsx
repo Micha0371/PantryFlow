@@ -36,7 +36,13 @@ function EditShoppingItemContent() {
   const [name, setName] = useState('');
   const [hydrated, setHydrated] = useState(false);
   const { busy, run } = useItemMutation();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setErrorText] = useState<string | null>(null);
+  // Counts failed saves so a repeated identical error is announced again (KAN-84).
+  const [failures, setFailures] = useState(0);
+  const setError = (message: string | null) => {
+    setErrorText(message);
+    if (message) setFailures(n => n + 1);
+  };
   // The provider drops a removed row before the delete resolves; until the screen
   // has closed, that is this screen's own remove, not a missing item (KAN-35).
   const removing = useRef(false);
@@ -127,6 +133,7 @@ function EditShoppingItemContent() {
           onChangeText={setName}
           testID="shopping-edit-name"
           error={error}
+          announceKey={failures}
         />
 
         <View style={styles.actions}>
