@@ -2,6 +2,7 @@ import React, { ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Redirect } from 'expo-router';
 import { useAuth } from '@/lib/auth';
+import { useErrorAnnouncement } from '@/hooks/useErrorAnnouncement';
 import { useTranslation } from '@/lib/i18n';
 import { colors, spacing } from '@/lib/theme';
 import { Button } from './Button';
@@ -10,6 +11,8 @@ import { Button } from './Button';
 export function AuthGate({ children, requireSession = false }: { children: ReactNode; requireSession?: boolean }) {
   const { loading, error, session, retrySession } = useAuth();
   const { t } = useTranslation();
+  // AuthGate wraps whole layouts, so its error is announced without a screen focus (KAN-39).
+  useErrorAnnouncement(!loading && error ? t(error) : null);
   if (loading) return <View style={styles.center}><ActivityIndicator color={colors.primary} /></View>;
   if (error) return <View style={styles.center}>
     <Text accessibilityRole="alert">{t(error)}</Text>

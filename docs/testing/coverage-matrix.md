@@ -35,7 +35,8 @@ screens, the low/out prompt and the Android journey (steps 1–5).
 | SHOP-UI-02 | Inline add, complete/reopen, rename and confirmed remove with locks, translated errors and keyboard-safe tap settings; an add error clears as soon as the field is edited; an add error that arrives after the field was edited names the submitted item ("Milk: …"), and stays plain when the field holds the submitted text again (KAN-37); a failed complete/reopen error names its item and disappears once that item is removed or changed; household changes reset drafts/locks/feedback and discard obsolete add/toggle completions, including leaving and returning to the same household | shopping-screen.test.cjs, shopping-edit.test.cjs, components/shopping-add.test.tsx; leaving the edit screen during a save or remove abandons its callbacks through the shared `useItemMutation` (mutation.test.cjs) | Android first taps with the keyboard open on Add, a row circle, edit Save and Remove; tab-switch draft; confirmed remove: SHOP-E2E-01. The named add error (KAN-37) is unit-tested only: reaching it on a device needs an add that is still pending while the field is edited |
 | SHOP-UI-03 | A tap on a Pantry or Shopping row opens exactly one edit screen: further taps, on the same or another row, are ignored until the list is focused again, with a one-second fallback when no navigation took the focus away (KAN-33). The Pantry add actions (the empty-state Add Item button and the + button) share the Pantry list's lock, so a fast repeated tap opens one Add Item screen and a row tap right after an add is ignored (KAN-38) | single-open.test.cjs (hook rules, fake timers), shopping-screen.test.cjs and screens.test.cjs (repeated row taps; repeated add taps, + then row) | Android fast double tap on a Shopping and a Pantry row, then Cancel leaves no second edit screen: SHOP-E2E-01. The Shopping check was shown failing on the pre-fix APK; that run stopped there, so the Pantry check has only run green. Android fast double tap on the empty pantry's + button, then Cancel leaves no second Add Item screen (Slice 1.1 flow), shown failing on the pre-fix APK and passing on the fixed one; the empty-state button is unit-tested only. A tap after the fallback during a navigation slower than one second could still open a second screen |
 | SHOP-UI-04 | A successful remove closes the Shopping or Pantry edit screen without rendering or announcing the "no longer available" state; a missing item, a remove failing after the row was dropped, and a remove failing otherwise (form, values and error kept) behave as before (KAN-35) | shopping-edit.test.cjs, edit-item-remove.test.cjs, with a successful delete that drops the row before it resolves, as both providers do. The "fails after the row was dropped" case is a provider behavior of Shopping only (a missing row); for Pantry it guards the screen contract | The flash lasts one dismissal animation and is not asserted on a device |
-| SHOP-UI-05 | On Android, an error under a form field is announced by TalkBack when it appears or changes: the error text has the alert role inside an always-mounted polite live region (KAN-34). On iOS nothing announces it: React Native 0.88 maps the alert role to no VoiceOver trait and has no live regions, so this is part of PF-IOS-001 | input.test.cjs (unit: role, live region, region kept when empty, changed text) | Android TalkBack check by the owner: the Shopping duplicate add error is spoken on appear and again after an edit cleared it. Android only; no VoiceOver run. Screen-level errors that use only the alert role are not announced on Android: KAN-39 ([Slice 2] Announce screen-level errors to TalkBack) |
+| SHOP-UI-05 | On Android, an error under a form field is announced by TalkBack when it appears or changes: the error text has the alert role inside an always-mounted polite live region (KAN-34). On iOS nothing announces it: React Native 0.88 maps the alert role to no VoiceOver trait and has no live regions, so this is part of PF-IOS-001 | input.test.cjs (unit: role, live region, region kept when empty, changed text) | Android TalkBack check by the owner: the Shopping duplicate add error is spoken on appear and again after an edit cleared it. Android only; no VoiceOver run. Screen-level errors and a repeated identical form error: SHOP-UI-06 |
+| SHOP-UI-06 | On Android, TalkBack announces every screen-level error without the user moving focus (KAN-39). Errors that replace a screen (pantry and shopping list load, the Edit Item and shopping item detail screens) are announced while that screen is focused: for one second after focus nothing is spoken, so TalkBack's own tab announcement does not cut them off, then the error shown at that moment is; again on returning to the screen; and at once when they appear later on the visible screen; the session restore error (AuthGate) is announced when it appears. Errors inside a screen (shopping action, sign-out, Add Item load) use the same always-mounted live region as SHOP-UI-05. A failed submit that leaves the same field error is announced again (KAN-84): the six forms (Add Item, Edit Item, shopping add and rename, sign-in, registration) pass a new `announceKey` to `Input` on every failure. iOS is unchanged (PF-IOS-001) | error-announcement.test.cjs (hooks with fake focus and timers; `InlineError`), input.test.cjs, screens.test.cjs, shopping-screen.test.cjs, shopping-edit.test.cjs (unit: each site, the pre-mounted live regions, the repeated Add/Edit Item error, the `announceKey` wiring of sign-in, registration and Shopping add) | Android TalkBack checks by the owner: KAN-39 and KAN-84 evidence. The sign-out, session restore, item detail and action errors are unit-tested only; the test proxy cannot make them fail on a device |
 | SHOP-LINK-01 | The low/out prompt fires only on a change to low or out; Yes adds once, linked; No or dismiss adds nothing; the pantry save is never reverted; no prompt, add or failure notice once the edit screen has closed or lost focus; Delete and Save do nothing while the prompt is open; Cancel stays usable while the prompt or its failure notice is pending, so a native alert that never answers cannot lock the form, and a late answer after Cancel adds nothing (KAN-36) | edit-item-prompt.test.cjs, mutation.test.cjs, pantry-shopping.test.cjs (unit) | Android prompt wording, Back as Not now, Not now, Add and the duplicate notice: SHOP-E2E-01. A lost prompt (a save that returns while the app is in the background) locked the form on the pre-fix APK and is recovered by Cancel on the fixed one, checked once on the phone (KAN-32 and KAN-36 evidence); it is not part of the Maestro suite |
 | SHOP-LINK-02 | Shopping rename/complete/reopen/remove never change pantry data; pantry status changes create no shopping items; open duplicates are rejected with the duplicate key, a completed duplicate does not block, reopening into an open duplicate fails; pantry deletion keeps a named standalone shopping item | pantry-shopping.integration.ts against real local Auth/PostgREST with ordinary clients | Local stack only |
 | SHOP-E2E-01 | Android release-mode test APK: the low/out prompt (Back, Not now, Add, duplicate notice), a fast double tap on a Shopping and a Pantry row opening one edit screen, keyboard-open add, toggle, rename and remove, duplicate message cleared by editing, complete/reopen, remove cancel/confirm, tab-switch draft, cold restart, shopping load failure/retry and another household's empty list | `.maestro/slice-2-shopping.yaml` on real local Auth/PostgREST through the loopback proxy | Emulator in the CI Android job; physical phone results in the evidence section below |
@@ -119,10 +120,12 @@ Still open beyond Slice 2:
 - Hosted use of the Slice 2 schema, which follows the tracked hosted migration
   path (KAN-29, adopt the hosted migration-history baseline).
 - Low-priority follow-ups:
-  - KAN-39 (screen-level errors are not announced by TalkBack);
-  - KAN-84 (KAN-34/37/38 review follow-ups).
+  - KAN-85 (KAN-32/36 review follow-ups (minors));
+  - KAN-86 (KAN-27 review follow-ups (minors)).
 
-  KAN-37 is fixed; see the KAN-34, KAN-37 and KAN-38 Android evidence below.
+  KAN-37 was fixed by the KAN-34, KAN-37 and KAN-38 change (PR #36); see its
+  Android evidence below. KAN-39 and KAN-84 are covered by SHOP-UI-06 and their
+  evidence below.
 
 ### KAN-33 and KAN-35 Android evidence
 
@@ -168,15 +171,16 @@ against the local stack through the loopback proxy and `adb reverse`.
   steps; and cleanup.
 - **TalkBack (KAN-34, 2026-11-17):** TalkBack 17.1 with a German system
   language and "Display speech output" on. Alice's Shopping list held Milk. Adding
-  "Milk " showed the duplicate error, and TalkBack spoke "This item is already
-  on your shopping list. Warnhinweis" ("Warnhinweis" is the alert role in German).
+  "Milk " showed the duplicate error, and TalkBack's speech caption read "This
+  item is already on your shopping list.. Warnhinweis" ("Warnhinweis" is the
+  alert role in German).
   A backspace cleared the error; adding again showed it and TalkBack spoke it
   again. The owner operated the phone; the agent typed the text over ADB and took
   the screenshots.
 - **Screen-level error (optional check):** with shopping reads failing, the
   Shopping tab showed "Could not load the shopping list.", but TalkBack only
-  said "Shopping ausgewählt". That error uses only the alert role; it is
-  KAN-39, not fixed here.
+  said "Shopping ausgewählt". That error used only the alert role; KAN-39
+  fixed it later (see its evidence below).
 
 Earlier attempts are not counted: three red attempts that never reached the
 check (missing Maestro path, Java 8, characters dropped over Wi-Fi ADB), a green
@@ -252,6 +256,43 @@ Screenshots stay in ignored `.verification`.
 on d9e5cd5 passed all four jobs, including the emulator Android job.
 
 Limits: no iOS run (PF-IOS-001); the Maestro flows are unchanged.
+
+### KAN-39 and KAN-84 Android evidence
+
+The same phone (Xiaomi 23122PCD1G, Android 16, arm64-v8a, TalkBack on, German
+system language) ran over Wi-Fi ADB, against the local stack through the
+loopback proxy and `adb reverse`. The owner operated TalkBack.
+
+- **Tracer (2026-11-18), APK from 0c0615c (SHA-256 starting `67750b6b`):** with
+  shopping reads failing from app start, opening the Shopping tab gave only
+  "Shopping ausgewählt"; activating Try again, which shows the error on the
+  visible screen, was announced. So the announcement reaches TalkBack on
+  Android 16, but on a tab switch the tab announcement cut it off. A first
+  attempt does not count: the fault was switched on after sign-in, when the
+  shopping list had already loaded.
+- **Fix, APK from ed07f54 (SHA-256 starting `edd34a47`):** the announcement
+  waits one second after focus. Opening the Shopping tab gave "Shopping
+  ausgewählt", then the error; Pantry and back to Shopping announced it again.
+- **Final build, APK from 78a409c (SHA-256 starting `71a1c9c6`):**
+  - with pantry reads failing from app start, the error appeared on the
+    Pantry tab after the client's retries and TalkBack read it without a tap;
+  - with shopping reads failing from app start, opening Shopping, and Pantry
+    then Shopping again, read the error both times;
+  - Add Item with an empty name, Add Item pressed twice: "Name is required."
+    was read both times (KAN-84 item 3).
+- **Maestro on the phone (same APK, TalkBack off):** all six flows passed,
+  including the shopping journey with both cold-restart waits (KAN-84 item 5),
+  with the Slice 1.1 and shopping database checks. The run then stopped at the
+  check after the resend flow: Maestro hung 135 seconds inside its own
+  `launchApp` step (the app itself started in 0.6 s), so the 60-second
+  disposable link had expired when the check opened it. The two remaining
+  confirmation steps ran on the CI emulator, not on the phone. An earlier
+  attempt does not count: the phone canceled the unattended install of
+  Maestro's driver app.
+
+An antivirus app on the phone (AVG) flagged the sideloaded test APK as
+suspicious and offered to uninstall it; it was dismissed. Screenshots stay in
+ignored `.verification`.
 
 ### KAN-27 quality cleanup (no behavior change)
 

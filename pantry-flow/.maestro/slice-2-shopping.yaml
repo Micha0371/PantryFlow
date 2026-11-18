@@ -289,6 +289,12 @@ name: Slice 2 shopping journey
 - stopApp
 - launchApp:
     stopApp: false
+# Wait for the app before tapping a tab: on a phone whose home screen has a
+# "Shopping" icon, an early tap hit the launcher instead (KAN-84).
+- extendedWaitUntil:
+    visible:
+      id: pantry-screen
+    timeout: 15000
 - tapOn: Shopping
 - extendedWaitUntil:
     visible:
@@ -307,6 +313,12 @@ name: Slice 2 shopping journey
 - stopApp
 - launchApp:
     stopApp: false
+# Wait for the app before tapping a tab: on a phone whose home screen has a
+# "Shopping" icon, an early tap hit the launcher instead (KAN-84).
+- extendedWaitUntil:
+    visible:
+      id: pantry-screen
+    timeout: 15000
 - tapOn: Shopping
 - extendedWaitUntil:
     visible: Could not load the shopping list.

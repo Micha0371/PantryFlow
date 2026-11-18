@@ -15,6 +15,7 @@ import { usePantryItems } from '@/hooks/usePantryItems';
 import { useSingleOpen } from '@/hooks/useSingleOpen';
 import { useTranslation } from '@/lib/i18n';
 import { colors, radii, spacing, typography } from '@/lib/theme';
+import { useFocusedErrorAnnouncement } from '@/hooks/useErrorAnnouncement';
 
 export default function PantryScreen() {
   // One lock for rows and add actions: a tap burst opens one screen (KAN-33, KAN-38).
@@ -23,6 +24,7 @@ export default function PantryScreen() {
   const { items, loading, error, retry } = usePantryItems();
 
   const showLoading = loading && items.length === 0;
+  useFocusedErrorAnnouncement(error ? t(error) : null);
 
   if (error) {
     return (

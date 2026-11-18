@@ -13,11 +13,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { AuthGate } from '@/components/AuthGate';
+import { useFocusedErrorAnnouncement } from '@/hooks/useErrorAnnouncement';
 import { useItemMutation } from '@/hooks/useItemMutation';
 import { useShoppingItems } from '@/hooks/useShoppingItems';
 import { SHOPPING_NAME_MAX, shoppingErrorKey } from '@/lib/shopping-data';
 import { useTranslation } from '@/lib/i18n';
 import { colors, spacing, typography } from '@/lib/theme';
+import { useFormError } from '@/hooks/useFormError';
 
 export default function EditShoppingItemModal() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -35,7 +37,7 @@ function EditShoppingItemContent() {
   const [name, setName] = useState('');
   const [hydrated, setHydrated] = useState(false);
   const { busy, run } = useItemMutation();
-  const [error, setError] = useState<string | null>(null);
+  const { error, failures, setError } = useFormError();
   // The provider drops a removed row before the delete resolves; until the screen
   // has closed, that is this screen's own remove, not a missing item (KAN-35).
   const removing = useRef(false);
@@ -46,6 +48,9 @@ function EditShoppingItemContent() {
       setHydrated(true);
     }
   }, [item, hydrated]);
+
+  const missing = !item && !removing.current && !loading;
+  useFocusedErrorAnnouncement(missing ? t(loadError ?? 'err_shopping_missing') : null);
 
   if (!item && removing.current) return <View style={styles.safe} />;
 
@@ -123,6 +128,7 @@ function EditShoppingItemContent() {
           onChangeText={setName}
           testID="shopping-edit-name"
           error={error}
+          announceKey={failures}
         />
 
         <View style={styles.actions}>

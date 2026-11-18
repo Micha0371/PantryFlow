@@ -15,6 +15,7 @@ import { Input } from '@/components/Input';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { colors, spacing, typography } from '@/lib/theme';
+import { useFormError } from '@/hooks/useFormError';
 
 export default function RegisterScreen() {
   const { t } = useTranslation();
@@ -26,7 +27,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { error, failures, setError } = useFormError();
   const submitLock = useRef(false);
 
   const onSubmit = async () => {
@@ -94,6 +95,7 @@ export default function RegisterScreen() {
             onChangeText={setPassword}
             testID="register-password"
             error={error}
+            announceKey={failures}
           />
 
           <Button

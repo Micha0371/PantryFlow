@@ -4,11 +4,14 @@ import { EmptyState } from '@/components/EmptyState';
 import { ShoppingItem } from '@/components/ShoppingItem';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import { InlineError } from '@/components/InlineError';
 import { useShoppingItems } from '@/hooks/useShoppingItems';
 import { useSingleOpen } from '@/hooks/useSingleOpen';
+import { useFocusedErrorAnnouncement } from '@/hooks/useErrorAnnouncement';
 import { useTranslation } from '@/lib/i18n';
 import { SHOPPING_NAME_MAX, shoppingErrorKey, splitShoppingItems, type ShoppingItem as ShoppingItemData } from '@/lib/shopping-data';
 import { colors, spacing, typography } from '@/lib/theme';
+import { useFormError } from '@/hooks/useFormError';
 
 type ToggleFailure = { itemId: string; name: string; updatedAt: string; key: string };
 
@@ -28,7 +31,7 @@ function HouseholdShoppingScreen() {
   // The field's latest text, readable when a pending add settles (KAN-37).
   const fieldText = useRef('');
   const [busy, setBusy] = useState(false);
-  const [addError, setAddError] = useState<string | null>(null);
+  const { error: addError, failures: addFailures, setError: setAddError } = useFormError();
   // A toggle failure belongs to one item: it names the item and is hidden once that item
   // is removed or changed by a later successful write (updated_at is server-set). A
   // missing-item failure stays until the next action, because the row is already gone.
@@ -88,6 +91,7 @@ function HouseholdShoppingScreen() {
   }, [completeItem, reopenItem]);
 
   const showLoading = loading && items.length === 0;
+  useFocusedErrorAnnouncement(error ? t(error) : null);
 
   if (error) {
     return (
@@ -126,6 +130,7 @@ function HouseholdShoppingScreen() {
           placeholder={t('shopping_add_placeholder')}
           maxLength={SHOPPING_NAME_MAX}
           error={addError}
+          announceKey={addFailures}
           returnKeyType="done"
           submitBehavior="submit"
           onSubmitEditing={() => { void submit(); }}
@@ -145,11 +150,11 @@ function HouseholdShoppingScreen() {
   return (
     <View style={styles.container} testID="shopping-screen">
       {addBar}
-      {visibleActionError ? (
-        <Text style={styles.actionError} accessibilityRole="alert" testID="shopping-action-error">
-          {`${visibleActionError.name}: ${t(visibleActionError.key)}`}
-        </Text>
-      ) : null}
+      <InlineError
+        message={visibleActionError ? `${visibleActionError.name}: ${t(visibleActionError.key)}` : null}
+        style={styles.actionError}
+        testID="shopping-action-error"
+      />
       {items.length === 0 ? (
         <EmptyState title={t('shopping_empty_title')} subtitle={t('shopping_empty_subtitle')} />
       ) : (

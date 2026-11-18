@@ -1,4 +1,4 @@
-const { test } = require('node:test');
+const { test, mock } = require('node:test');
 const assert = require('node:assert/strict');
 const React = require('react');
 const { create, act } = require('react-test-renderer');
@@ -13,7 +13,13 @@ const routerStubs = push => {
   const expoRouter = { useRouter: () => ({ push }), useFocusEffect: callback => React.useEffect(callback, [callback]) };
   return { 'expo-router': expoRouter, '@/hooks/useSingleOpen': load('hooks/useSingleOpen.ts', { 'expo-router': expoRouter }) };
 };
-const shared = { ...routerStubs(route => pushes.push(route)), 'react-native': native, '@/lib/theme': theme, '@expo/vector-icons': { Ionicons: 'Icon' },
+const announced = [];
+const announcing = { Platform: { OS: 'android' }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } };
+const shared = { ...routerStubs(route => pushes.push(route)), 'react-native': native,
+  '@/hooks/useErrorAnnouncement': load('hooks/useErrorAnnouncement.ts', { 'react-native': announcing,
+    'expo-router': { useFocusEffect: callback => React.useEffect(callback, [callback]) } }),
+  '@/components/InlineError': load('components/InlineError.tsx', { 'react-native': { Text: 'Text', View: 'View' } }),
+  '@/hooks/useFormError': load('hooks/useFormError.ts'), '@/lib/theme': theme, '@expo/vector-icons': { Ionicons: 'Icon' },
   '@/lib/i18n': { useTranslation: () => ({ t }) }, '@/components/Button': { Button: 'Button' }, '@/components/Input': { Input: 'Input' },
   '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/ShoppingItem': { ShoppingItem: 'Row' },
   '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }) };
@@ -57,6 +63,25 @@ test('a failed load shows the error with retry, not an empty list', () => {
     act(() => r.root.findByProps({ testID: 'shopping-retry' }).props.onPress());
     assert.equal(retries, 1);
   } finally { act(() => r.unmount()); }
+});
+
+test('a failed load is announced to TalkBack once, after the tab is spoken (KAN-39)', () => {
+  mock.timers.enable({ apis: ['setTimeout'] });
+  try {
+    announced.length = 0;
+    const r = render({ error: 'err_load_shopping' });
+    try {
+      assert.deepEqual(announced, []);
+      act(() => mock.timers.tick(1000));
+      assert.deepEqual(announced, ['err_load_shopping']);
+    } finally { act(() => r.unmount()); }
+    announced.length = 0;
+    const ok = render({ items: [row('a')] });
+    try {
+      act(() => mock.timers.tick(1000));
+      assert.deepEqual(announced, []);
+    } finally { act(() => ok.unmount()); }
+  } finally { mock.timers.reset(); }
 });
 
 test('an empty list shows the empty state without an add action', () => {
@@ -266,7 +291,7 @@ test('the list keeps the first tap with the keyboard open', () => {
 function renderToggle(state) {
   const r = renderAdd(state);
   const rowProps = item => r.renderer.root.findByType('SectionList').props.renderItem({ item }).props;
-  const alerts = () => r.renderer.root.findAll(n => n.props.testID === 'shopping-action-error');
+  const alerts = () => r.renderer.root.findAll(n => n.type === 'Text' && n.props.testID === 'shopping-action-error');
   return { ...r, rowProps, alerts };
 }
 
@@ -522,5 +547,36 @@ test('a missing-item error stays after the row is dropped and names the item', a
     state.items = [row('2')];
     act(() => renderer.update(React.createElement(renderer.root.type)));
     assert.equal(alertText(alerts), 'Milk: err_shopping_missing');
+  } finally { act(() => renderer.unmount()); }
+});
+
+test('a failed toggle error appears inside a live region that was already mounted (KAN-39)', async () => {
+  const items = [row('1')];
+  const { renderer, rowProps, alerts } = renderToggle({ items, completeItem: async () => {
+    throw Object.assign(new Error('gone'), { code: 'PGRST116' });
+  } });
+  const regions = () => renderer.root.findAll(n => n.type === 'View' && n.props.accessibilityLiveRegion === 'polite');
+  try {
+    const before = regions();
+    assert.equal(before.length, 1, 'one live region for the action error before it appears');
+    assert.equal(alerts().length, 0);
+    await act(async () => { rowProps(items[0]).onToggle(); });
+    assert.equal(regions()[0], before[0]);
+    assert.equal(alerts().length, 1);
+    assert.equal(alerts()[0].parent, before[0]);
+  } finally { act(() => renderer.unmount()); }
+});
+
+test('each failed add gives the field a new announceKey, so a repeated error is spoken (KAN-84)', async () => {
+  const { renderer, input, submit } = renderAdd({ addItem: async () => { throw duplicate(); } });
+  try {
+    act(() => input().props.onChangeText('Milk'));
+    const before = input().props.announceKey;
+    await act(async () => { submit().props.onPress(); });
+    const first = input().props.announceKey;
+    await act(async () => { submit().props.onPress(); });
+    assert.equal(input().props.error, 'err_duplicate_shopping_item');
+    assert.notEqual(first, before);
+    assert.notEqual(input().props.announceKey, first);
   } finally { act(() => renderer.unmount()); }
 });

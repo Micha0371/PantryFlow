@@ -23,6 +23,8 @@ import {
   LOCATIONS,
 } from '@/lib/constants';
 import { colors, spacing, typography } from '@/lib/theme';
+import { InlineError } from '@/components/InlineError';
+import { useFormError } from '@/hooks/useFormError';
 
 export default function AddItemModal() {
   return <AuthGate requireSession><AddItemModalContent /></AuthGate>;
@@ -37,7 +39,7 @@ function AddItemModalContent() {
   const [category, setCategory] = useState<string>(DEFAULT_CATEGORY);
   const [location, setLocation] = useState<string>(DEFAULT_LOCATION);
   const { busy, run } = useItemMutation();
-  const [error, setError] = useState<string | null>(null);
+  const { error, failures, setError } = useFormError();
 
   const onSave = async () => {
     if (busy) return;
@@ -71,10 +73,8 @@ function AddItemModalContent() {
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.title}>{t('item_add_title')}</Text>
-        {loadError ? <View>
-          <Text accessibilityRole="alert">{t(loadError)}</Text>
-          <Button label={t('common_retry')} onPress={() => { void retry(); }} />
-        </View> : null}
+        <InlineError message={loadError ? t(loadError) : null} />
+        {loadError ? <Button label={t('common_retry')} onPress={() => { void retry(); }} /> : null}
 
         <Input
           label={t('item_name')}
@@ -86,6 +86,7 @@ function AddItemModalContent() {
           autoFocus
           testID="add-item-name"
           error={error}
+          announceKey={failures}
         />
 
         <Text style={styles.sectionLabel}>{t('item_category')}</Text>

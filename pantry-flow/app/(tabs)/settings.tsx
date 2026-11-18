@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Button } from '@/components/Button';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { colors, spacing } from '@/lib/theme';
+import { InlineError } from '@/components/InlineError';
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
@@ -30,7 +31,7 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <View style={styles.container} testID="settings-screen">
-        {error ? <Text accessibilityRole="alert">{t('err_signout')}</Text> : null}
+        <InlineError message={error ? t('err_signout') : null} />
         <Button
           label={t('auth_logout')}
           onPress={onSignOut}

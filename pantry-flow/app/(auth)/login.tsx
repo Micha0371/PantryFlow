@@ -15,6 +15,7 @@ import { Input } from '@/components/Input';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { colors, spacing, typography } from '@/lib/theme';
+import { useFormError } from '@/hooks/useFormError';
 
 export default function LoginScreen() {
   const { t } = useTranslation();
@@ -24,7 +25,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { error, failures, setError } = useFormError();
 
   const onSubmit = async () => {
     setError(null);
@@ -69,6 +70,7 @@ export default function LoginScreen() {
             onChangeText={setPassword}
             testID="login-password"
             error={error}
+            announceKey={failures}
           />
 
           <Button

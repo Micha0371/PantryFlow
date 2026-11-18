@@ -6,9 +6,15 @@ const { load } = require('./helpers.cjs');
 
 // KAN-34: an error shown under a form field must be announced by screen readers.
 const theme = load('lib/theme.ts');
+const announced = [];
+const announcement = load('hooks/useErrorAnnouncement.ts', {
+  'react-native': { Platform: { OS: 'android' }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } },
+  'expo-router': { useFocusEffect: () => {} } });
 const { Input } = load('components/Input.tsx', {
   'react-native': { Text: 'Text', TextInput: 'TextInput', View: 'View', StyleSheet: { create: s => s } },
   '@/lib/theme': theme,
+  '@/hooks/useErrorAnnouncement': announcement,
+  './InlineError': load('components/InlineError.tsx', { 'react-native': { Text: 'Text', View: 'View' } }),
 });
 
 function render(error) {
@@ -61,5 +67,27 @@ test('the field gets the error border only while an error is shown', () => {
     assert.equal(field().props.testID, 'field');
     act(() => renderer.update(React.createElement(Input, { error: null, testID: 'field' })));
     assert.equal(flat(field().props.style).borderColor, theme.colors.border);
+  } finally { act(() => renderer.unmount()); }
+});
+
+// KAN-84 item 3: a failed submit that leaves the same error does not change the
+// live region, so TalkBack would stay silent. A new announceKey speaks it once.
+test('an unchanged error is announced again when announceKey changes', () => {
+  announced.length = 0;
+  let renderer;
+  const el = (error, announceKey) => React.createElement(Input, { error, announceKey, testID: 'field' });
+  act(() => { renderer = create(el('Name is required.', 1)); });
+  try {
+    assert.deepEqual(announced, [], 'the first appearance is left to the live region');
+    act(() => renderer.update(el('Name is required.', 1)));
+    assert.deepEqual(announced, [], 'a re-render without a new key says nothing');
+    act(() => renderer.update(el('Name is required.', 2)));
+    assert.deepEqual(announced, ['Name is required.']);
+    act(() => renderer.update(el('Name is too long.', 3)));
+    assert.deepEqual(announced, ['Name is required.'], 'a changed error is left to the live region');
+    act(() => renderer.update(el(null, 4)));
+    assert.deepEqual(announced, ['Name is required.']);
+    act(() => renderer.update(el('Name is required.', 5)));
+    assert.deepEqual(announced, ['Name is required.'], 'an error that re-appears is left to the live region');
   } finally { act(() => renderer.unmount()); }
 });

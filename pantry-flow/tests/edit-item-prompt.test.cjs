@@ -23,6 +23,8 @@ function render({ updateItem, addItem, shopping = {}, current = 'in_stock' } = {
     ScrollView: 'ScrollView', KeyboardAvoidingView: 'KeyboardAvoidingView', Platform: { OS: 'android' },
     Alert: { alert: (...args) => log.alerts.push(args) }, StyleSheet: { create: s => s } };
   const { default: Screen } = load('app/edit-item/[id].tsx', {
+    // Announcements are covered in screens.test.cjs (KAN-39); inert here.
+    '@/hooks/useErrorAnnouncement': { useFocusedErrorAnnouncement: () => {} }, '@/hooks/useFormError': load('hooks/useFormError.ts'),
     'react-native': native, '@/lib/theme': theme, '@/lib/constants': constants,
     '@/lib/i18n': { useTranslation: () => ({ t }) },
     'expo-router': { useRouter: () => ({ back: () => { log.back++; } }), useLocalSearchParams: () => ({ id: '1' }) },
