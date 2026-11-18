@@ -48,6 +48,11 @@ export function isMissingPantryItem(error: unknown) {
 // in the database as `current` (UX-01B).
 export const PANTRY_STATUS_CONFLICT = 'PF_PANTRY_STATUS_CONFLICT';
 
+// An update step failed without a Postgres/PostgREST code (thrown, lost
+// connection, gateway page): the server may have committed. `cause` is the
+// original failure (A1).
+export const PANTRY_STATUS_UNKNOWN = 'PF_PANTRY_STATUS_UNKNOWN';
+
 export type StatusWriteResult =
   | { kind: 'changed'; item: PantryItem; previous: StatusKey }
   | { kind: 'already'; item: PantryItem };
@@ -60,11 +65,23 @@ export async function writeItemStatus(
 ): Promise<StatusWriteResult> {
   const valid = (value: string) => (STATUSES as readonly string[]).includes(value);
   if (!valid(next) || !valid(previous)) throw new Error('Invalid pantry item');
+  const uncertain = (cause: unknown) => Object.assign(
+    new Error('Pantry status change outcome is unknown', { cause }), { code: PANTRY_STATUS_UNKNOWN });
   const attempt = async (prev: StatusKey): Promise<PantryItem | null> => {
-    const { data, error } = await client.from('pantry_items')
-      .update({ status: next }).eq('id', id).eq('household_id', householdId).eq('status', prev)
-      .select().maybeSingle();
-    if (error) throw error;
+    let result;
+    try {
+      result = await client.from('pantry_items')
+        .update({ status: next }).eq('id', id).eq('household_id', householdId).eq('status', prev)
+        .select().maybeSingle();
+    } catch (cause) {
+      throw uncertain(cause);
+    }
+    const { data, error } = result;
+    if (error) {
+      // A coded error is a confirmed rejection; anything else may have committed.
+      const code = typeof error === 'object' && 'code' in error ? error.code : undefined;
+      throw typeof code === 'string' && code !== '' ? error : uncertain(error);
+    }
     return data ? parseItem(data) : null;
   };
   const read = async (): Promise<PantryItem> => {
@@ -74,7 +91,8 @@ export async function writeItemStatus(
     if (!data) throw Object.assign(new Error('Pantry item is missing'), { code: PANTRY_MISSING });
     return parseItem(data);
   };
-  const changed = await attempt(previous);
+  // Selecting the status the caller already believes in is only a check, never a write.
+  const changed = previous === next ? null : await attempt(previous);
   if (changed) return { kind: 'changed', item: changed, previous };
   const current = await read();
   if (current.status === next) return { kind: 'already', item: current };

@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { localStack, fixtures, cleanup, emails, password } from './local-stack';
-import { writeItemStatus, PANTRY_MISSING } from '../../lib/pantry-data';
+import { createClient } from '@supabase/supabase-js';
+import { localStack, fixtures, cleanup, emails, password, localUrl } from './local-stack';
+import { writeItemStatus, PANTRY_MISSING, PANTRY_STATUS_UNKNOWN } from '../../lib/pantry-data';
 
 async function rejection(work: Promise<unknown>): Promise<unknown> {
   try { await work; } catch (error) { return error; }
@@ -86,5 +87,23 @@ test('a deleted row and a foreign household\'s row both throw PF_PANTRY_MISSING'
   assert.equal(gone.code, PANTRY_MISSING);
   const foreign = await rejection(writeItemStatus(b.client, b.household, milk.id, 'low', 'out')) as { code?: string };
   assert.equal(foreign.code, PANTRY_MISSING);
+  assert.equal((await read(milk.id)).status, 'low');
+}));
+
+test('a lost response after a committed write reports an unknown outcome and the database holds the new status', () => scenario(async ({ stack, a, add, read }) => {
+  const milk = await add('Milk');
+  // Performs every PATCH against the real server, then drops the response.
+  const lossy = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const response = await fetch(input, init);
+    if (init?.method === 'PATCH') { await response.arrayBuffer(); throw new TypeError('network connection lost'); }
+    return response;
+  };
+  const flaky = createClient(localUrl, stack.key, {
+    auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: lossy },
+  });
+  const login = await flaky.auth.signInWithPassword({ email: emails[0], password });
+  assert.equal(login.error, null);
+  const error = await rejection(writeItemStatus(flaky, a.household, milk.id, 'in_stock', 'low')) as { code?: string };
+  assert.equal(error.code, PANTRY_STATUS_UNKNOWN);
   assert.equal((await read(milk.id)).status, 'low');
 }));
