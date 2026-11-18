@@ -1,6 +1,6 @@
 # PantryFlow — Product and Engineering Quality Assessment
 
-> **QA baseline.** Committed on 2026-11-18 as PantryFlow's first graded quality baseline, at Slice 2 completion on `main` `ec0dbdd`. The assessment text below is unchanged from the delivered report. Its findings F-01 to F-19 are reconciled into the Slice 3 backlog in the [QA integration dry run](../planning/2026-11-18-slice-3-qa-integration-dry-run.md). Later assessments (QA-01) are compared against this file.
+> **QA baseline.** Committed on 2026-11-18 as PantryFlow's first graded quality baseline, at Slice 2 completion on `main` `ec0dbdd`. The assessment text below is unchanged from the delivered report. Its findings F-01 to F-19 are reconciled into the Slice 3 backlog in the [QA integration dry run](../planning/2026-11-18-slice-3-qa-integration-dry-run.md). Later assessments (QA-01) are compared against this file. After this assessment, the owner accepted Slice 2 and tagged `ec0dbdd` as `pantryflow/slice-2-baseline` (2026-11-18). The "no Slice 2 baseline tag" statements below describe the state at assessment time. One sentence about the scope of a locally stored credential was removed before publication in this public repository.
 
 **Date:** 2026-11-18
 **Assessed reference:** `Micha0371/VSCode-Environment`, `origin/main` at `ec0dbddc2b4e6ca08f19605cde6e2e7892b7aba1`. This is the merge of PR #40, the last Slice 2 follow-up.
@@ -358,7 +358,7 @@ See section D. Evidence: repository plans, PR descriptions, git history, the ign
 | 12.3 | AI-generated test quality | 88 | B+ | Mutation-proven. One test pinned half of a guard until the review (KAN-85 I1). React Native string stubs. One hanging-on-regression case. |
 | 12.4 | Verification and evidence integrity | 90 | A− | Failures and flakes are reported with causes. Two recorded lapses: commit `58bb9f3` was made on a red suite and its ledger first claimed "245/245", then was corrected; a coverage note overstated "unreachable", later corrected. |
 | 12.5 | Human oversight and decision governance | 93 | A | The owner approves plans, pushes, PR creation scope and every Jira transition; final reviews by a separate model instance; traceable rulings. |
-| 12.6 | Security and operational guardrails | 91 | A− | Credentials are read inside scripts and never printed. The hosted environment and the release APK were untouched. The required checks are enforced by GitHub, not by the agent. The stored OAuth token has broader scopes (repo, workflow) than the approved use (PR creation). |
+| 12.6 | Security and operational guardrails | 91 | A− | Credentials are read inside scripts and never printed. The hosted environment and the release APK were untouched. The required checks are enforced by GitHub, not by the agent. |
 | 12.7 | Efficiency of AI-assisted engineering | 78 | C+ | Heavy ceremony for small packages: a plan, ledger, review and multiple CI runs for 11 minors. Several redo cycles (phone setup errors, Maestro stalls, a red commit). The useful output per unit of process is moderate. Claude Code is the only agent with evidence in this period; Codex, ChatGPT and Emergent allocation is NOT VERIFIED. |
 
 **Average:** 88 (B+).

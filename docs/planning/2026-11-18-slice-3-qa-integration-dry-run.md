@@ -1,6 +1,17 @@
 # Slice 3 — quality-assessment integration (Jira dry run)
 
-**Status: DRY RUN. No Jira writes have been made.** Applying the operations below requires the product owner's approval of this report. Backlog approval, implementation authorization, external-beta approval and public-release approval remain separate decisions.
+**Status: APPROVED by the product owner on 2026-11-18** ("approved, slice 2 accepted, please tag, kan 6 approved for closure … slice 2 tag is current baseline for regression testing"). Backlog approval does not authorize implementation, an external beta or a public release; those remain separate decisions.
+
+**Owner decisions recorded with the approval:**
+- **S3-Q1:** this plan is approved.
+- **S3-Q2:** Slice 2 is accepted. The annotated tag `pantryflow/slice-2-baseline` → `ec0dbdd` was created and pushed, and it is the current baseline for regression testing.
+- **S3-Q14:** KAN-6 was moved to Fertig.
+
+These decisions changed the approved drafts in two ways:
+- The KAN-40, KAN-41 and KAN-52 refinement texts now record the acceptance and the tag.
+- One refinement was added to KAN-49, recording the regression baseline. That makes 18 refinements instead of 17.
+
+The baseline table below shows the state before approval.
 
 - **Operation ID:** `PF-S3-QA-INTEGRATION-20261118`
 - **Drafts:** [2026-11-18-slice-3-qa-integration-drafts.json](2026-11-18-slice-3-qa-integration-drafts.json), the exact payloads for section C.
@@ -108,7 +119,7 @@ No new Epic: KAN-40 already carries the revised objective. Summary:
 
 - **New Tasks (3):** PF-S3-T11 usability (High), PF-S3-T12 engineering (Medium), PF-S3-T13 governance (Medium), all under KAN-40.
 - **New Subtasks (25):** 10 under PF-S3-T11, 6 under PF-S3-T12, 2 under PF-S3-T13, and 7 under existing Tasks: A11Y-01 (KAN-45), A11Y-02 (KAN-47), SEC-01, SEC-02 and OPS-01 (KAN-46), QA-01 (KAN-49), BETA-01 (KAN-50).
-- **Refinements (17):** existing descriptions are kept verbatim and a dated block is appended.
+- **Refinements (18):** existing descriptions are kept verbatim and a dated block is appended.
 - **Links:** none native (see S3-Q13).
 - **Deferred:** see section G.
 
@@ -691,7 +702,7 @@ Acceptance criteria:
 Definition of done: findings, options and a recommendation are documented in the repository, and the owner's decision is recorded. No implementation is part of this item.
 ```
 
-### C.2 Refinements of existing issues (17)
+### C.2 Refinements of existing issues (18)
 
 The existing description stays verbatim; the text below is appended, and the label `qa-2026-11-18` is added to the existing labels. Summary, parent, priority and status are not changed.
 
@@ -702,7 +713,7 @@ Refinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-202
 Revised objective (owner, 2026-11-18): PantryFlow - Slice 3: Usability, Product Refinement and Launch Readiness. The title was already changed by the owner; this replaces the earlier "hardening, not a feature-expansion slice" objective.
 Slice 3 shall: resolve relevant findings of the 2026-11-18 quality assessment; reduce the effort of everyday household use; complete missing user-facing workflows; resolve accessibility, security and privacy requirements; prepare a meaningful external beta; improve release and operational readiness; preserve the Slice 1.1 and Slice 2 foundation.
 Product principle: PantryFlow must reduce household administration, not become another administrative obligation. Usability simplification is an explicit objective; it is not a visual redesign, and features are not added to match competitor lists. Sharing and premium remain excluded (see KAN-51 for the proposed roadmap).
-Baseline correction: current reference is main ec0dbdd (PR #40). Slice 2 follow-ups KAN-27, KAN-32 to KAN-39 and KAN-84 to KAN-86 are Fertig. KAN-6 is still Backlog and no Slice 2 baseline tag exists (KAN-52).
+Baseline correction: the owner accepted Slice 2 on 2026-11-18. Annotated tag pantryflow/slice-2-baseline -> ec0dbdd (merge of PR #40) is the current baseline for regression testing; KAN-6 is Fertig. Slice 2 follow-ups KAN-27, KAN-32 to KAN-39 and KAN-84 to KAN-86 are Fertig.
 Finding traceability F-01 to F-19: see the plan named below.
 Additional workstreams:
 T11 = {PF-S3-T11} - [Slice 3] Simplify everyday household workflows
@@ -715,7 +726,7 @@ New subtasks under existing Tasks: {PF-S3-T5-S3} (A11Y-01, KAN-45), {PF-S3-T7-S4
 
 ```text
 Refinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.
-Corrections: current reference is main ec0dbdd, not 2186d50. KAN-34 was merged (PR #36) and is Fertig, as are KAN-27, KAN-32 to KAN-39 and KAN-84 to KAN-86; the carried-finding dispositions can cite their merged evidence.
+Corrections: current reference is tag pantryflow/slice-2-baseline (main ec0dbdd), not 2186d50; the owner accepted Slice 2 on 2026-11-18 and KAN-6 is Fertig. KAN-34 was merged (PR #36) and is Fertig, as are KAN-27, KAN-32 to KAN-39 and KAN-84 to KAN-86; the carried-finding dispositions can cite their merged evidence.
 Added input: the finding dispositions F-01 to F-19 in the plan below. The owner decisions now also include the F-10 roadmap (KAN-51), the D5 revision for pantry search (UX-02) and the UX-01A interaction design.
 ```
 
@@ -736,8 +747,17 @@ Additional acceptance criteria:
 
 ```text
 Refinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.
-Current evidence (verified 2026-11-18): main is ec0dbdd (PR #40). All Slice 2 follow-ups (KAN-27, KAN-32 to KAN-39, KAN-84 to KAN-86) are Fertig with PRs #36 to #40; CI runs 44211292067, 44216675581 and 44225392722 (manual, including android) passed, the last on attempt 2 after a Gradle download flake; phone, TalkBack and Maestro evidence is recorded in those PRs. No open PRs. KAN-6 is Backlog. Tags: only pantryflow/slice-1.1-baseline and pantryflow/sdk58-validated; no Slice 2 baseline tag.
-The 2026-11-18 quality assessment (docs/quality/2026-11-18-quality-assessment-baseline.md) is an input to the acceptance record, not a substitute for the owner's acceptance. A pantryflow/slice-2-baseline tag on the accepted commit needs separate authorization.
+Current evidence (verified 2026-11-18): main is ec0dbdd (PR #40). All Slice 2 follow-ups (KAN-27, KAN-32 to KAN-39, KAN-84 to KAN-86) are Fertig with PRs #36 to #40; CI runs 44211292067, 44216675581 and 44225392722 (manual, including android) passed, the last on attempt 2 after a Gradle download flake; phone, TalkBack and Maestro evidence is recorded in those PRs. No open PRs. Push CI on ec0dbdd (run 44230970219) and the SonarCloud main gate are green; ec0dbdd's tree is identical to 505ab2b, which passed the full android run.
+Acceptance: the owner accepted Slice 2 on 2026-11-18. Annotated tag pantryflow/slice-2-baseline -> ec0dbdd was created and pushed on the owner's instruction; it is the current baseline for regression testing. KAN-6 was moved to Fertig with the owner's approval.
+The 2026-11-18 quality assessment (docs/quality/2026-11-18-quality-assessment-baseline.md) was an input to the acceptance, not a substitute for it.
+```
+
+#### KAN-49
+
+```text
+Refinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.
+Regression baseline (owner decision 2026-11-18): tag pantryflow/slice-2-baseline -> ec0dbdd replaces main 2186d50 and the KAN-23 to KAN-26 evidence as the reference for Slice 3 regression comparisons. Its full android evidence is run 44225392722 on the tree-identical 505ab2b.
+Added subtask: {PF-S3-T9-S4} (QA-01) runs an independent assessment against docs/quality/2026-11-18-quality-assessment-baseline.md.
 ```
 
 #### KAN-53
@@ -886,8 +906,8 @@ The main serial chain is: decisions → UX-01A → UX-01B → German (KAN-44) �
 
 | ID | Decision | Recommendation | Where it lands |
 |---|---|---|---|
-| S3-Q1 | Approve this dry run, then apply 28 creates and 17 refinements | Approve | This operation |
-| S3-Q2 | Accept Slice 2, and authorize a `pantryflow/slice-2-baseline` tag on `ec0dbdd` | Accept and tag, once you've reviewed KAN-52's evidence | KAN-52, KAN-6 |
+| S3-Q1 | Approve this dry run, then apply 28 creates and 18 refinements | **Approved 2026-11-18** | This operation |
+| S3-Q2 | Accept Slice 2, and authorize a `pantryflow/slice-2-baseline` tag on `ec0dbdd` | **Accepted 2026-11-18; tag created and pushed** | KAN-52, KAN-6 |
 | S3-Q3 | Roadmap: Slice 4 basic sharing; 1.0 as a free public app; premium later on validated demand; any item-count safety limit kept separate from monetization | Approve as proposed (appendix 1); amend the PRD only by an explicit note | KAN-51 |
 | S3-Q4 | Revise D5: pantry search moves into Slice 3; sort and filter follow the UX-03 evaluation | Approve | KAN-51, UX-02, UX-03 |
 | S3-Q5 | Direct status interaction design | Decide after UX-01A presents the options | UX-01A |
@@ -899,20 +919,20 @@ The main serial chain is: decisions → UX-01A → UX-01B → German (KAN-44) �
 | S3-Q11 | Adopt risk-tiered governance | Approve after GOV-01 | GOV-01 |
 | S3-Q12 | Commit the three untracked 2026-11-17 Slice 3 planning files from the main checkout. Jira descriptions cite them, but they exist only locally. | Commit them unchanged in this PR | Repository |
 | S3-Q13 | Native Jira dependency links: the CLI can't create them | Keep descriptive references; add native "blocks" links by hand only if you want them on the board | Jira |
-| S3-Q14 | Close KAN-6 | After S3-Q2 | KAN-6 |
+| S3-Q14 | Close KAN-6 | **Approved and done 2026-11-18** | KAN-6 |
 | S3-Q15 | Usability-study recruitment and consent (UX-08) | Decide when UX-08A is ready | UX-08A |
 
 ## G. Issue counts
 
 | Measure | Count |
 |---|---|
-| Existing Slice 3 issues reused (KAN-40 to KAN-83) | 44: 17 refined, 27 unchanged |
-| Existing issues requiring changes (description append and one label) | 17: KAN-40, 41, 42, 43, 45, 46, 50, 51, 52, 53, 63, 64, 65, 66, 67, 72, 74 |
+| Existing Slice 3 issues reused (KAN-40 to KAN-83) | 44: 18 refined, 26 unchanged |
+| Existing issues requiring changes (description append and one label) | 18: KAN-40, 41, 42, 43, 45, 46, 49, 50, 51, 52, 53, 63, 64, 65, 66, 67, 72, 74 |
 | New Tasks | 3: PF-S3-T11 usability, PF-S3-T12 engineering, PF-S3-T13 governance |
 | New Subtasks | 25: UX-01A, UX-01B, UX-02 to UX-07, UX-08A, UX-08B (10); A11Y-01 (KAN-45); A11Y-02 (KAN-47); SEC-01, SEC-02, OPS-01 (KAN-46); QA-01 (KAN-49); BETA-01 (KAN-50); TEST-01, TEST-02, CI-01, TEST-03, PERF-01, ARCH-02 (T12); GOV-01, GOV-02 (T13) |
 | New native dependency links | 0. Not supported by the CLI; dependencies are written into descriptions (S3-Q13). |
 | Deferred findings | 0 fully deferred. F-15 and F-16 are conditional and may close with no change. F-17 is already addressed and gets a refresh. |
-| Issues deleted, reparented, re-prioritized or transitioned | 0 |
+| Issues deleted, reparented or re-prioritized | 0. KAN-6 was transitioned to Fertig separately, on the owner's explicit approval. |
 
 **Deferred functionality** (unchanged exclusions, or decisions still outstanding):
 - household sharing (proposed for Slice 4);
@@ -930,7 +950,7 @@ The main serial chain is: decisions → UX-01A → UX-01B → German (KAN-44) �
 1. Re-read every target issue and confirm it hasn't changed since this dry run: compare `updated` timestamps with the baseline. If one has changed, stop and reconcile before writing.
 2. Check the project for the new backlog-ID labels (for example `pf-s3-t11`). Skip any create whose label already exists, and reconcile partial writes before any retry.
 3. Create the 3 Tasks first, then the 25 Subtasks. For each: write the input to `tools/jira/*.local.json`, preview, apply with the exact `--apply` flag, then read it back (parent, type, labels, priority, description).
-4. Resolve the `{PF-S3-…}` placeholders to the created keys. Apply the 17 refinements: the new description is the existing description verbatim plus the appended block; the labels are the existing labels plus `qa-2026-11-18`. Preview, apply, read back.
+4. Resolve the `{PF-S3-…}` placeholders to the created keys. Apply the 18 refinements: the new description is the existing description verbatim plus the appended block; the labels are the existing labels plus `qa-2026-11-18`. Preview, apply, read back.
 5. Run a final paginated read-back of the whole Slice 3 hierarchy, and write a creation record next to this file.
 6. One writer, sequential. No automatic retries. Credentials are never printed.
 
