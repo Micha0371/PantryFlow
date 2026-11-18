@@ -1,0 +1,804 @@
+{
+  "status": "dry-run-awaiting-owner-approval",
+  "date": "2026-11-17",
+  "project": "KAN",
+  "baseline": "2186d50414c6f7ea8a78c938f973efede3f7192e",
+  "operationId": "PF-S3-BACKLOG-20261117",
+  "counts": {
+    "Epic": 1,
+    "Task": 10,
+    "Subtask": 29
+  },
+  "nativeDependencyLinks": "Not supported by the current approved CLI; descriptions will contain dependencies. No CLI extension or native links assumed.",
+  "existingIssuesToReuse": [
+    "KAN-6",
+    "KAN-23",
+    "KAN-24",
+    "KAN-25",
+    "KAN-26",
+    "KAN-27",
+    "KAN-32",
+    "KAN-34",
+    "KAN-36",
+    "KAN-37",
+    "KAN-38",
+    "KAN-39"
+  ],
+  "completedRegressionReferences": [
+    "KAN-33",
+    "KAN-35"
+  ],
+  "issues": [
+    {
+      "alias": "EPIC",
+      "parentAlias": null,
+      "type": "Epic",
+      "releaseClassification": "Development readiness; general public release; platform-specific gates recorded separately",
+      "dependsOn": [
+        "KAN-6 final acceptance; T1 readiness decision before implementation"
+      ],
+      "payload": {
+        "summary": "PantryFlow — Slice 3: Production Hardening and Launch Readiness",
+        "issueTypeId": "10006",
+        "description": "Backlog ID: PF-S3-EPIC\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Development readiness; general public release; platform-specific gates recorded separately\n\nObjective: Prepare the free PantryFlow application for a controlled beta and an explicit launch decision, preserving validated Pantry and Shopping behavior. This is hardening, not a feature-expansion slice.\n\nBaseline: Slice 1.1 annotated tag pantryflow/slice-1.1-baseline -> df57e2f. Latest merged reference is main 2186d50 (PR #35). Exact-head scheduled full CI 43871390297 and push CI 43357560354 passed; Sonar gate is green. No Slice 2 baseline tag exists and KAN-6 remains Backlog, although KAN-7/11/15/19/23 and their core subtasks are Fertig. Reuse KAN-6/KAN-23/KAN-24/25/26 acceptance evidence; do not create duplicate Slice 2 closure work or claim acceptance from status alone.\n\nScope: approve source/decision reconciliation; password recovery; secure account/data lifecycle; English/German launch content and preference UX; accessibility acceptance using existing fixes; security/privacy/migration/recovery review; independent iOS readiness; conditional website/feedback planning; complete regression and beta/readiness evidence. All Slice 3 implementation depends on T1 approval and explicit Slice 2 acceptance. Website stack, feedback behavior, deletion retention, first-launch/profile-locale precedence and platform/beta choice remain decisions, not silently approved implementations.\n\nExit criteria: approved scope traced to acceptance cases; mandatory requirements implemented and reviewed; core automated gates green on exact final head and protected main; Android native/device evidence; iOS evidence or explicitly separate iOS NO-GO; security/privacy/operations blockers resolved or explicitly dispositioned where permissible; reproducible fixture cleanup; final Slice 3 GO/NO-GO record; separate public-release decision. No unresolved confirmed blocking defect may be waived by a green test count. Account deletion cannot destroy unrelated household data. Strict pantry uniqueness and shopping D1–D4 remain unchanged.\n\nReuse existing open KAN-27/32/34/36/37/38/39; completed KAN-33 and KAN-35 are regression references, not new implementation work. No existing issue reparenting, status/priority changes or native dependency writes are included. Dependencies will be explicit descriptions because the approved CLI has no native issue-link operation.\n\nReuse pantry-flow and its existing Expo Router, lib/auth.tsx, lib/supabase.ts, AuthGate, household-scope, household-list, data modules, useItemMutation/current(), useSingleOpen, theme/components/i18n, migrations 00001–00004, Node/Jest-RNTL, pgTAP, local Auth/PostgREST and Maestro harness. Do not build parallel auth, authorization, CRUD or test frameworks.\n\nExclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\n\nSources: current main 2186d50414c6f7ea8a78c938f973efede3f7192e; docs/A_PantryFlow_PRD.md; docs/F_Final_Corrected_Analysis.md (historical scope only); docs/planning/slice-2-implementation-plan.md D1–D6; docs/testing/coverage-matrix.md; docs/testing/production-follow-ups.md; owner Slice 3 planning brief received 2026-11-17. No standalone approved Slice 3 specification was found; scope/implementation decisions below remain gated.",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-epic"
+        ],
+        "priorityId": "2"
+      }
+    },
+    {
+      "alias": "T1",
+      "parentAlias": "EPIC",
+      "type": "Task",
+      "releaseClassification": "Blocks Slice 3 implementation; planning/discovery may proceed",
+      "dependsOn": [
+        "KAN-6/KAN-23 evidence; owner final Slice 2 acceptance"
+      ],
+      "payload": {
+        "summary": "[Slice 3] Approve scope, baseline and carried-finding dispositions",
+        "issueTypeId": "10008",
+        "description": "Backlog ID: PF-S3-T1\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Blocks Slice 3 implementation; planning/discovery may proceed\n\nProblem/objective: Reconcile historical specifications with current implementation before treating Slice 3 work as approved.\n\nScope: Produce the Slice 3 decision register and readiness record. Reuse KAN-6/KAN-23 closure evidence; triage existing debt, not replacement fix tickets.\n\nTechnical context: main 2186d50; docs/planning/slice-2-implementation-plan.md; docs/testing/coverage-matrix.md; existing KAN-6/23/27/32/34/36/37/38/39.\nReuse pantry-flow and its existing Expo Router, lib/auth.tsx, lib/supabase.ts, AuthGate, household-scope, household-list, data modules, useItemMutation/current(), useSingleOpen, theme/components/i18n, migrations 00001–00004, Node/Jest-RNTL, pgTAP, local Auth/PostgREST and Maestro harness. Do not build parallel auth, authorization, CRUD or test frameworks.\n\nDependencies: KAN-6/KAN-23 evidence; owner final Slice 2 acceptance\n\nAcceptance criteria:\n- Scope precedence resolves old sharing/premium/post-MVP-password wording in favor of later approved decisions and this hardening brief.\n- Slice 2 acceptance is explicitly recorded using existing issues; exact baseline commit and any authorized tag are recorded, not invented.\n- No open PR is overlooked; current merged-main CI evidence and hosted/local environment evidence are referenced with limits.\n- Existing KAN-27/32/34/36/37/38/39 each receives an assessed severity, reachability, owner and development/Android/iOS/public-release disposition in the record; do not alter them without approval.\n- Owner reports KAN-34 is in CI and final review on 2026-11-17; reuse it and record final checks, review and merge evidence before treating it as delivered in main.\n- Owner decides filters, profile-name editing, first-launch language behavior, deletion policy, beta platform and proposed website/feedback scope before related implementation.\n\nRequired tests/evidence: Read-only repository/Jira/CI audit; compare evidence and exact commits, not new duplicate tests or hosted queries without authorization.\n\nSecurity/privacy: no secrets, recovery links, pantry/shopping contents or account identifiers in public logs; use isolated fixtures and exact cleanup. Destructive behavior requires approved lifecycle semantics and authorization at execution.\n\nRelease priority: High (Jira ID 2); gate classification is Blocks Slice 3 implementation; planning/discovery may proceed, independent of priority.\n\nExclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\n\nDefinition of done: criteria and child activities have independently reviewable evidence on an exact commit; required checks pass; limitations/deferred findings have an owner and disposition; relevant docs/matrix are updated. A ticket marked done does not authorize publication.\n\nReferences: KAN-6, KAN-23–27, KAN-32–39; PR #35; D1–D6\nSources: current main 2186d50414c6f7ea8a78c938f973efede3f7192e; docs/A_PantryFlow_PRD.md; docs/F_Final_Corrected_Analysis.md (historical scope only); docs/planning/slice-2-implementation-plan.md D1–D6; docs/testing/coverage-matrix.md; docs/testing/production-follow-ups.md; owner Slice 3 planning brief received 2026-11-17. No standalone approved Slice 3 specification was found; scope/implementation decisions below remain gated.",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t1"
+        ],
+        "priorityId": "2"
+      }
+    },
+    {
+      "alias": "T1-S1",
+      "parentAlias": "T1",
+      "type": "Subtask",
+      "releaseClassification": "Blocks Slice 3 implementation; planning/discovery may proceed",
+      "dependsOn": [
+        "T1 prerequisites"
+      ],
+      "payload": {
+        "summary": "Reconcile Slice 3 scope and obtain product decisions",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T1-S1\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Blocks Slice 3 implementation; planning/discovery may proceed\n\nObjective: Reconcile Slice 3 scope and obtain product decisions.\nParent scope: Approve scope, baseline and carried-finding dispositions.\nTechnical context: main 2186d50; docs/planning/slice-2-implementation-plan.md; docs/testing/coverage-matrix.md; existing KAN-6/23/27/32/34/36/37/38/39.\n\nObservable acceptance criteria:\n- A versioned scope register identifies mandatory, conditional, proposed and excluded requirements.\n- No standalone approved Slice 3 spec is claimed; current brief and source precedence are recorded.\n- Filters/localization boundary and older sharing/premium conflicts have explicit decisions.\n\nValidation: Owner review of the traceability/decision register; no runtime change.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T1; KAN-6, KAN-23–27, KAN-32–39; PR #35; D1–D6",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t1-s1"
+        ]
+      }
+    },
+    {
+      "alias": "T1-S2",
+      "parentAlias": "T1",
+      "type": "Subtask",
+      "releaseClassification": "Blocks Slice 3 implementation; planning/discovery may proceed",
+      "dependsOn": [
+        "T1 prerequisites"
+      ],
+      "payload": {
+        "summary": "Assemble the Slice 2 baseline acceptance record using existing closure issues",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T1-S2\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Blocks Slice 3 implementation; planning/discovery may proceed\n\nObjective: Assemble the Slice 2 baseline acceptance record using existing closure issues.\nParent scope: Approve scope, baseline and carried-finding dispositions.\nTechnical context: main 2186d50; docs/planning/slice-2-implementation-plan.md; docs/testing/coverage-matrix.md; existing KAN-6/23/27/32/34/36/37/38/39.\n\nObservable acceptance criteria:\n- Reuse KAN-6/KAN-23–26 outcomes rather than recreate execution tickets.\n- Record main 2186d50, full run 43871390297, phone/emulator evidence and any limitations; verify no outstanding PR.\n- Obtain final Slice 2 acceptance; tag only if separately authorized.\n\nValidation: Read-only evidence comparison; any new validation uses the existing harness and disposable environment.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T1; KAN-6, KAN-23–27, KAN-32–39; PR #35; D1–D6",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t1-s2"
+        ]
+      }
+    },
+    {
+      "alias": "T1-S3",
+      "parentAlias": "T1",
+      "type": "Subtask",
+      "releaseClassification": "Blocks Slice 3 implementation; planning/discovery may proceed",
+      "dependsOn": [
+        "T1 prerequisites"
+      ],
+      "payload": {
+        "summary": "Reassess existing functional and tooling findings for release impact",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T1-S3\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Blocks Slice 3 implementation; planning/discovery may proceed\n\nObjective: Reassess existing functional and tooling findings for release impact.\nParent scope: Approve scope, baseline and carried-finding dispositions.\nTechnical context: main 2186d50; docs/planning/slice-2-implementation-plan.md; docs/testing/coverage-matrix.md; existing KAN-6/23/27/32/34/36/37/38/39.\n\nObservable acceptance criteria:\n- Reference KAN-27/32/34/36/37/38/39 with owners, reachability and release classifications; no duplicate fixes.\n- Retain KAN-33/35 as fixed regressions; KAN-34 is actively in CI/final review per owner, with final delivery evidence pending.\n- Candidate quick-add/bulk/undo/export stays proposed, not implementation scope.\n\nValidation: Inspect current code and existing reproductions; record failing-before evidence in original tickets when actual fixes are later authorized.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T1; KAN-6, KAN-23–27, KAN-32–39; PR #35; D1–D6",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t1-s3"
+        ]
+      }
+    },
+    {
+      "alias": "T2",
+      "parentAlias": "EPIC",
+      "type": "Task",
+      "releaseClassification": "Mandatory public-release authentication gate; platform-specific link evidence",
+      "dependsOn": [
+        "T1 approved readiness; T4 translation contract; T7 for iOS release qualification"
+      ],
+      "payload": {
+        "summary": "[Slice 3] Implement and qualify password recovery",
+        "issueTypeId": "10008",
+        "description": "Backlog ID: PF-S3-T2\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory public-release authentication gate; platform-specific link evidence\n\nProblem/objective: Users cannot recover a forgotten password in the current AuthProvider/UI.\n\nScope: Add request, native reset, password update and translated recovery feedback through Supabase Auth; preserve confirmation/session flows.\n\nTechnical context: lib/auth.tsx lacks recovery/update-password operations; reuse lib/email-confirmation.ts, app/auth/callback.tsx, app/+native-intent.tsx, lib/native-auth-crypto.ts, AuthGate and existing SMTP/deep-link configuration.\nReuse pantry-flow and its existing Expo Router, lib/auth.tsx, lib/supabase.ts, AuthGate, household-scope, household-list, data modules, useItemMutation/current(), useSingleOpen, theme/components/i18n, migrations 00001–00004, Node/Jest-RNTL, pgTAP, local Auth/PostgREST and Maestro harness. Do not build parallel auth, authorization, CRUD or test frameworks.\n\nDependencies: T1 approved readiness; T4 translation contract; T7 for iOS release qualification\n\nAcceptance criteria:\n- A user requests recovery without disclosing whether an email exists and can set a new password through the intended native flow.\n- Valid, invalid, expired, reused and wrong-purpose links are handled safely on warm/cold start; failure recovers without exposing tokens or unintended account replacement.\n- Restart, logout, session restoration and original confirmation journeys still pass; actual delivered recovery email is verified separately from mocks.\n- Redirect/template/SMTP changes are separately authorized at execution; no token in logs or source.\n\nRequired tests/evidence: Node/Jest screen and auth tests; local Auth/API tests with isolated fixtures; Android native warm/cold link and actual mail receipt; iOS via T7.\n\nSecurity/privacy: no secrets, recovery links, pantry/shopping contents or account identifiers in public logs; use isolated fixtures and exact cleanup. Destructive behavior requires approved lifecycle semantics and authorization at execution.\n\nRelease priority: High (Jira ID 2); gate classification is Mandatory public-release authentication gate; platform-specific link evidence, independent of priority.\n\nExclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\n\nDefinition of done: criteria and child activities have independently reviewable evidence on an exact commit; required checks pass; limitations/deferred findings have an owner and disposition; relevant docs/matrix are updated. A ticket marked done does not authorize publication.\n\nReferences: PF-AUTH-001; PF-EMAIL-001; existing confirmation/native-link tests\nSources: current main 2186d50414c6f7ea8a78c938f973efede3f7192e; docs/A_PantryFlow_PRD.md; docs/F_Final_Corrected_Analysis.md (historical scope only); docs/planning/slice-2-implementation-plan.md D1–D6; docs/testing/coverage-matrix.md; docs/testing/production-follow-ups.md; owner Slice 3 planning brief received 2026-11-17. No standalone approved Slice 3 specification was found; scope/implementation decisions below remain gated.",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t2"
+        ],
+        "priorityId": "2"
+      }
+    },
+    {
+      "alias": "T2-S1",
+      "parentAlias": "T2",
+      "type": "Subtask",
+      "releaseClassification": "Mandatory public-release authentication gate; platform-specific link evidence",
+      "dependsOn": [
+        "T2 prerequisites"
+      ],
+      "payload": {
+        "summary": "Define recovery routing and implement request/update-password operations",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T2-S1\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory public-release authentication gate; platform-specific link evidence\n\nObjective: Define recovery routing and implement request/update-password operations.\nParent scope: Implement and qualify password recovery.\nTechnical context: lib/auth.tsx lacks recovery/update-password operations; reuse lib/email-confirmation.ts, app/auth/callback.tsx, app/+native-intent.tsx, lib/native-auth-crypto.ts, AuthGate and existing SMTP/deep-link configuration.\n\nObservable acceptance criteria:\n- Approved design distinguishes recovery from signup-confirmation callbacks and checks allowed redirects.\n- Extend the existing AuthProvider/Supabase client; add no parallel auth client or backend.\n- Request and update failures have safe translated retry behavior.\n\nValidation: Unit/component tests of operations, route parsing, privacy-preserving request responses and invalid-link handling.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T2; PF-AUTH-001; PF-EMAIL-001; existing confirmation/native-link tests",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t2-s1"
+        ]
+      }
+    },
+    {
+      "alias": "T2-S2",
+      "parentAlias": "T2",
+      "type": "Subtask",
+      "releaseClassification": "Mandatory public-release authentication gate; platform-specific link evidence",
+      "dependsOn": [
+        "T2 prerequisites"
+      ],
+      "payload": {
+        "summary": "Build the password-reset screens and interruption recovery",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T2-S2\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory public-release authentication gate; platform-specific link evidence\n\nObjective: Build the password-reset screens and interruption recovery.\nParent scope: Implement and qualify password recovery.\nTechnical context: lib/auth.tsx lacks recovery/update-password operations; reuse lib/email-confirmation.ts, app/auth/callback.tsx, app/+native-intent.tsx, lib/native-auth-crypto.ts, AuthGate and existing SMTP/deep-link configuration.\n\nObservable acceptance criteria:\n- Request, password entry and success/recovery screens are gated appropriately.\n- Save locks, field validation, keyboard handling and accessibility reuse existing patterns.\n- Leaving a screen or changing identity cannot cause stale navigation or session replacement.\n\nValidation: Behavioral tests for successful/rejected/interrupted requests and duplicate submits; native selectors independent of translation.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T2; PF-AUTH-001; PF-EMAIL-001; existing confirmation/native-link tests",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t2-s2"
+        ]
+      }
+    },
+    {
+      "alias": "T2-S3",
+      "parentAlias": "T2",
+      "type": "Subtask",
+      "releaseClassification": "Mandatory public-release authentication gate; platform-specific link evidence",
+      "dependsOn": [
+        "T2 prerequisites"
+      ],
+      "payload": {
+        "summary": "Verify real recovery delivery, deep links and authentication regressions",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T2-S3\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory public-release authentication gate; platform-specific link evidence\n\nObjective: Verify real recovery delivery, deep links and authentication regressions.\nParent scope: Implement and qualify password recovery.\nTechnical context: lib/auth.tsx lacks recovery/update-password operations; reuse lib/email-confirmation.ts, app/auth/callback.tsx, app/+native-intent.tsx, lib/native-auth-crypto.ts, AuthGate and existing SMTP/deep-link configuration.\n\nObservable acceptance criteria:\n- Delivered recovery link works on Android warm and force-stopped start and permits authentication with the new password.\n- Expired/invalid/replayed links, resend/retry and restart have recorded outcomes; signup confirmation still works.\n- iOS results are recorded under T7, not inferred from Android; fixture cleanup is verified.\n\nValidation: Local integration plus controlled hosted mail/device test with separately authorized settings and disposable accounts; restore temporary settings.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T2; PF-AUTH-001; PF-EMAIL-001; existing confirmation/native-link tests",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t2-s3"
+        ]
+      }
+    },
+    {
+      "alias": "T3",
+      "parentAlias": "EPIC",
+      "type": "Task",
+      "releaseClassification": "Mandatory public-release data lifecycle gate; policy/design approval blocks implementation",
+      "dependsOn": [
+        "T1 scope; approved deletion/retention/security-boundary decision before implementation; T6 review; T8 external request content"
+      ],
+      "payload": {
+        "summary": "[Slice 3] Define and implement secure account deletion and retention",
+        "issueTypeId": "10008",
+        "description": "Backlog ID: PF-S3-T3\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory public-release data lifecycle gate; policy/design approval blocks implementation\n\nProblem/objective: No supported account-deletion UI exists; existing owner cascades make an unspecified delete operation dangerous.\n\nScope: Agree lifecycle/retention semantics first, then implement least-privilege deletion of the authenticated account, in-app confirmation and required external request path.\n\nTechnical context: 00001: profiles and owner households cascade from auth.users; membership cascades. 00002: pantry created_by is nullable ON DELETE SET NULL. 00004: shopping created_by SET NULL, household rows cascade, pantry link SET NULL. No invitation/sharing UI exists.\nReuse pantry-flow and its existing Expo Router, lib/auth.tsx, lib/supabase.ts, AuthGate, household-scope, household-list, data modules, useItemMutation/current(), useSingleOpen, theme/components/i18n, migrations 00001–00004, Node/Jest-RNTL, pgTAP, local Auth/PostgREST and Maestro harness. Do not build parallel auth, authorization, CRUD or test frameworks.\n\nDependencies: T1 scope; approved deletion/retention/security-boundary decision before implementation; T6 review; T8 external request content\n\nAcceptance criteria:\n- A lifecycle table explicitly describes auth/profile/membership/owned household/pantry/shopping/link/creator and backup-retention outcomes.\n- Owner consents to destructive outcomes; cancellation changes nothing; identity/re-authentication requirements are defined and enforced server-side.\n- Only the authenticated account can be targeted; no service-role/admin key reaches the app, browser, CI logs or public artifacts.\n- Unrelated accounts/households remain byte-for-byte unaffected; missing/expired sessions and repeated/interrupted requests have predictable outcomes.\n- Synthetic shared-membership cases are handled only under an approved policy; stop on unexpected shared ownership, do not silently cascade or invent sharing semantics.\n- The account cannot log back in after completed deletion; cached profile/pantry/shopping/auth data is cleared; any retention exceptions are disclosed.\n\nRequired tests/evidence: Real local PostgreSQL/Auth authorization, cascade and no-loss comparisons with ordinary users; UI cancel/confirm/error tests; Android and iOS device evidence; external-path verification when required.\n\nSecurity/privacy: no secrets, recovery links, pantry/shopping contents or account identifiers in public logs; use isolated fixtures and exact cleanup. Destructive behavior requires approved lifecycle semantics and authorization at execution.\n\nRelease priority: High (Jira ID 2); gate classification is Mandatory public-release data lifecycle gate; policy/design approval blocks implementation, independent of priority.\n\nExclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\n\nDefinition of done: criteria and child activities have independently reviewable evidence on an exact commit; required checks pass; limitations/deferred findings have an owner and disposition; relevant docs/matrix are updated. A ticket marked done does not authorize publication.\n\nReferences: PF-DATA-001; migrations 00001/00002/00004; existing author-deletion fixtures; T8/T10\nSources: current main 2186d50414c6f7ea8a78c938f973efede3f7192e; docs/A_PantryFlow_PRD.md; docs/F_Final_Corrected_Analysis.md (historical scope only); docs/planning/slice-2-implementation-plan.md D1–D6; docs/testing/coverage-matrix.md; docs/testing/production-follow-ups.md; owner Slice 3 planning brief received 2026-11-17. No standalone approved Slice 3 specification was found; scope/implementation decisions below remain gated.",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t3"
+        ],
+        "priorityId": "2"
+      }
+    },
+    {
+      "alias": "T3-S1",
+      "parentAlias": "T3",
+      "type": "Subtask",
+      "releaseClassification": "Mandatory public-release data lifecycle gate; policy/design approval blocks implementation",
+      "dependsOn": [
+        "T3 prerequisites"
+      ],
+      "payload": {
+        "summary": "Approve the deletion, retention and privileged-boundary design",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T3-S1\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory public-release data lifecycle gate; policy/design approval blocks implementation\n\nObjective: Approve the deletion, retention and privileged-boundary design.\nParent scope: Define and implement secure account deletion and retention.\nTechnical context: 00001: profiles and owner households cascade from auth.users; membership cascades. 00002: pantry created_by is nullable ON DELETE SET NULL. 00004: shopping created_by SET NULL, household rows cascade, pantry link SET NULL. No invitation/sharing UI exists.\n\nObservable acceptance criteria:\n- Document actual foreign-key effects and proposed sole-household deletion outcomes.\n- Decide recent-auth, backup/log retention, unexpected membership handling and required external requests.\n- Approve a narrow Supabase-managed privileged boundary; no custom app server or secrets in clients.\n\nValidation: Review a threat model and table-by-table lifecycle matrix before destructive implementation.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T3; PF-DATA-001; migrations 00001/00002/00004; existing author-deletion fixtures; T8/T10",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t3-s1"
+        ]
+      }
+    },
+    {
+      "alias": "T3-S2",
+      "parentAlias": "T3",
+      "type": "Subtask",
+      "releaseClassification": "Mandatory public-release data lifecycle gate; policy/design approval blocks implementation",
+      "dependsOn": [
+        "T3 prerequisites"
+      ],
+      "payload": {
+        "summary": "Implement authenticated deletion and in-app confirmation",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T3-S2\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory public-release data lifecycle gate; policy/design approval blocks implementation\n\nObjective: Implement authenticated deletion and in-app confirmation.\nParent scope: Define and implement secure account deletion and retention.\nTechnical context: 00001: profiles and owner households cascade from auth.users; membership cascades. 00002: pantry created_by is nullable ON DELETE SET NULL. 00004: shopping created_by SET NULL, household rows cascade, pantry link SET NULL. No invitation/sharing UI exists.\n\nObservable acceptance criteria:\n- Only current validated identity is deletable; fabricated user IDs, anonymous/expired tokens and cross-account requests fail.\n- Confirmation explains owned data consequences; cancellation is non-destructive.\n- Success clears local state; failure/interruption has safe read-back and recovery without blind destructive retries.\n\nValidation: Failing-before unit/component and local Auth/API tests; deterministic disposable fixtures only.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T3; PF-DATA-001; migrations 00001/00002/00004; existing author-deletion fixtures; T8/T10",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t3-s2"
+        ]
+      }
+    },
+    {
+      "alias": "T3-S3",
+      "parentAlias": "T3",
+      "type": "Subtask",
+      "releaseClassification": "Mandatory public-release data lifecycle gate; policy/design approval blocks implementation",
+      "dependsOn": [
+        "T3 prerequisites"
+      ],
+      "payload": {
+        "summary": "Verify deletion isolation, retention disclosures and external requests",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T3-S3\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory public-release data lifecycle gate; policy/design approval blocks implementation\n\nObjective: Verify deletion isolation, retention disclosures and external requests.\nParent scope: Define and implement secure account deletion and retention.\nTechnical context: 00001: profiles and owner households cascade from auth.users; membership cascades. 00002: pantry created_by is nullable ON DELETE SET NULL. 00004: shopping created_by SET NULL, household rows cascade, pantry link SET NULL. No invitation/sharing UI exists.\n\nObservable acceptance criteria:\n- Before/after snapshots prove intended cascades and preservation of unrelated data and surviving attribution.\n- Repeat/interrupted request semantics and post-delete authentication are tested.\n- Approved external path from T8 is usable and matches the policy; evidence excludes personal payloads and secrets.\n\nValidation: Local two-household authorization/no-loss tests, native-device checks and controlled external workflow verification.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T3; PF-DATA-001; migrations 00001/00002/00004; existing author-deletion fixtures; T8/T10",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t3-s3"
+        ]
+      }
+    },
+    {
+      "alias": "T4",
+      "parentAlias": "EPIC",
+      "type": "Task",
+      "releaseClassification": "Mandatory EN/DE public-release gate; filters/extra languages are not automatically included",
+      "dependsOn": [
+        "T1 localization/first-launch/profile-precedence decision; T2/T3 new-string inventory"
+      ],
+      "payload": {
+        "summary": "[Slice 3] Complete English/German launch content and language preferences",
+        "issueTypeId": "10008",
+        "description": "Backlog ID: PF-S3-T4\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory EN/DE public-release gate; filters/extra languages are not automatically included\n\nProblem/objective: de.ts is a stub and Settings only signs out; PRD language selection and EN/DE launch content are not delivered.\n\nScope: Complete EN/DE content, language settings and approved device/profile preference behavior; reconcile first-launch requirements before building UX.\n\nTechnical context: lib/i18n/index.tsx has locale/setLocale/t, AsyncStorage user_language and English fallback; de.ts empty; profiles.language allows en/de and own-column updates in 00002; app/(tabs)/settings.tsx has no language selector.\nReuse pantry-flow and its existing Expo Router, lib/auth.tsx, lib/supabase.ts, AuthGate, household-scope, household-list, data modules, useItemMutation/current(), useSingleOpen, theme/components/i18n, migrations 00001–00004, Node/Jest-RNTL, pgTAP, local Auth/PostgREST and Maestro harness. Do not build parallel auth, authorization, CRUD or test frameworks.\n\nDependencies: T1 localization/first-launch/profile-precedence decision; T2/T3 new-string inventory\n\nAcceptance criteria:\n- All shipped screens, auth flows, alerts, validation and state errors have reviewed EN/DE strings; no raw translation keys reach user-visible UI.\n- Changing language updates visible UI and survives restart; approved profile/device conflict, offline failure and account-switch semantics are tested.\n- Native alerts/labels and German text expansion work at supported font sizes without clipping actionable controls.\n- Database enum/name semantics remain unchanged; pantry filters or extra languages require an explicit separate scope decision.\n\nRequired tests/evidence: Key-parity/missing-key and i18n lifecycle tests; settings component tests; German native screenshots and keyboard/font-size checks on Android and iOS.\n\nSecurity/privacy: no secrets, recovery links, pantry/shopping contents or account identifiers in public logs; use isolated fixtures and exact cleanup. Destructive behavior requires approved lifecycle semantics and authorization at execution.\n\nRelease priority: High (Jira ID 2); gate classification is Mandatory EN/DE public-release gate; filters/extra languages are not automatically included, independent of priority.\n\nExclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\n\nDefinition of done: criteria and child activities have independently reviewable evidence on an exact commit; required checks pass; limitations/deferred findings have an owner and disposition; relevant docs/matrix are updated. A ticket marked done does not authorize publication.\n\nReferences: PF-I18N-001; PRD §13; D5; lib/i18n; profiles_language_valid\nSources: current main 2186d50414c6f7ea8a78c938f973efede3f7192e; docs/A_PantryFlow_PRD.md; docs/F_Final_Corrected_Analysis.md (historical scope only); docs/planning/slice-2-implementation-plan.md D1–D6; docs/testing/coverage-matrix.md; docs/testing/production-follow-ups.md; owner Slice 3 planning brief received 2026-11-17. No standalone approved Slice 3 specification was found; scope/implementation decisions below remain gated.",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t4"
+        ],
+        "priorityId": "2"
+      }
+    },
+    {
+      "alias": "T4-S1",
+      "parentAlias": "T4",
+      "type": "Subtask",
+      "releaseClassification": "Mandatory EN/DE public-release gate; filters/extra languages are not automatically included",
+      "dependsOn": [
+        "T4 prerequisites"
+      ],
+      "payload": {
+        "summary": "Complete and review the English/German translation catalogue",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T4-S1\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory EN/DE public-release gate; filters/extra languages are not automatically included\n\nObjective: Complete and review the English/German translation catalogue.\nParent scope: Complete English/German launch content and language preferences.\nTechnical context: lib/i18n/index.tsx has locale/setLocale/t, AsyncStorage user_language and English fallback; de.ts empty; profiles.language allows en/de and own-column updates in 00002; app/(tabs)/settings.tsx has no language selector.\n\nObservable acceptance criteria:\n- Cover current and new approved screens/alerts/errors with matching EN/DE keys.\n- Fix verified encoding/copy defects without changing domain rules.\n- A reproducible missing-key check prevents internal keys being shown.\n\nValidation: Automated key coverage and representative error rendering; human German copy review.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T4; PF-I18N-001; PRD §13; D5; lib/i18n; profiles_language_valid",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t4-s1"
+        ]
+      }
+    },
+    {
+      "alias": "T4-S2",
+      "parentAlias": "T4",
+      "type": "Subtask",
+      "releaseClassification": "Mandatory EN/DE public-release gate; filters/extra languages are not automatically included",
+      "dependsOn": [
+        "T4 prerequisites"
+      ],
+      "payload": {
+        "summary": "Implement language selection and approved preference persistence",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T4-S2\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory EN/DE public-release gate; filters/extra languages are not automatically included\n\nObjective: Implement language selection and approved preference persistence.\nParent scope: Complete English/German launch content and language preferences.\nTechnical context: lib/i18n/index.tsx has locale/setLocale/t, AsyncStorage user_language and English fallback; de.ts empty; profiles.language allows en/de and own-column updates in 00002; app/(tabs)/settings.tsx has no language selector.\n\nObservable acceptance criteria:\n- Reuse I18nProvider/setLocale and existing profile own-column permission.\n- Language selection and any first-launch step follow the owner-approved rule.\n- Restore/profile/device races and account switches cannot leak another user preference; failed persistence recovers.\n\nValidation: Unit/component/local API checks of EN/DE selection, restart, fallback and profile boundaries.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T4; PF-I18N-001; PRD §13; D5; lib/i18n; profiles_language_valid",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t4-s2"
+        ]
+      }
+    },
+    {
+      "alias": "T4-S3",
+      "parentAlias": "T4",
+      "type": "Subtask",
+      "releaseClassification": "Mandatory EN/DE public-release gate; filters/extra languages are not automatically included",
+      "dependsOn": [
+        "T4 prerequisites"
+      ],
+      "payload": {
+        "summary": "Validate bilingual layout, font scaling and native messages",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T4-S3\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory EN/DE public-release gate; filters/extra languages are not automatically included\n\nObjective: Validate bilingual layout, font scaling and native messages.\nParent scope: Complete English/German launch content and language preferences.\nTechnical context: lib/i18n/index.tsx has locale/setLocale/t, AsyncStorage user_language and English fallback; de.ts empty; profiles.language allows en/de and own-column updates in 00002; app/(tabs)/settings.tsx has no language selector.\n\nObservable acceptance criteria:\n- German labels, forms, section headings and alerts remain usable with text expansion.\n- Keyboard-open actions and screen-reader labels use the selected language.\n- Record native evidence separately by platform and language.\n\nValidation: Android physical/automated checks and iOS checks via T7; screenshots contain only fixtures.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T4; PF-I18N-001; PRD §13; D5; lib/i18n; profiles_language_valid",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t4-s3"
+        ]
+      }
+    },
+    {
+      "alias": "T5",
+      "parentAlias": "EPIC",
+      "type": "Task",
+      "releaseClassification": "Public-release accessibility gate; separate Android TalkBack and iOS VoiceOver gates",
+      "dependsOn": [
+        "T1 existing-finding reconciliation; KAN-34 and KAN-39 remediation/read-back; T4 translations; T7 iOS"
+      ],
+      "payload": {
+        "summary": "[Slice 3] Qualify native accessibility using the existing remediation tickets",
+        "issueTypeId": "10008",
+        "description": "Backlog ID: PF-S3-T5\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Public-release accessibility gate; separate Android TalkBack and iOS VoiceOver gates\n\nProblem/objective: Role-only errors are not sufficient TalkBack evidence; KAN-34 and KAN-39 already own the fixes.\n\nScope: Audit and verify accessibility across existing/new flows; reuse KAN-34/39 implementation, do not recreate error-announcement fixes.\n\nTechnical context: components/Input.tsx on inspected main still renders plain error Text. Owner confirms KAN-34 is currently in CI and final review (2026-11-17); use its final review/check/merge evidence when available. KAN-39 is the distinct screen-level announcement follow-up. Row checkbox/button roles and useSingleOpen already exist.\nReuse pantry-flow and its existing Expo Router, lib/auth.tsx, lib/supabase.ts, AuthGate, household-scope, household-list, data modules, useItemMutation/current(), useSingleOpen, theme/components/i18n, migrations 00001–00004, Node/Jest-RNTL, pgTAP, local Auth/PostgREST and Maestro harness. Do not build parallel auth, authorization, CRUD or test frameworks.\n\nDependencies: T1 existing-finding reconciliation; KAN-34 and KAN-39 remediation/read-back; T4 translations; T7 iOS\n\nAcceptance criteria:\n- The screen/control inventory covers labels, focus order, checked/disabled/busy states, touch targets, font scaling and contrast.\n- Existing form-error and screen-level announcement tickets are reused and verified on merged code.\n- TalkBack actually announces representative form and whole-screen errors without manual focus; VoiceOver has separate evidence before iOS release.\n- Password reset, account deletion and locale/feedback UX participate in the audit; automated props alone are not claimed device evidence.\n\nRequired tests/evidence: Jest/native-prop regressions plus physical TalkBack and VoiceOver walkthroughs; exact build/platform/version and limitations recorded.\n\nSecurity/privacy: no secrets, recovery links, pantry/shopping contents or account identifiers in public logs; use isolated fixtures and exact cleanup. Destructive behavior requires approved lifecycle semantics and authorization at execution.\n\nRelease priority: High (Jira ID 2); gate classification is Public-release accessibility gate; separate Android TalkBack and iOS VoiceOver gates, independent of priority.\n\nExclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\n\nDefinition of done: criteria and child activities have independently reviewable evidence on an exact commit; required checks pass; limitations/deferred findings have an owner and disposition; relevant docs/matrix are updated. A ticket marked done does not authorize publication.\n\nReferences: KAN-34; KAN-39; existing SHOP-UI coverage; components/Input and AuthGate\nSources: current main 2186d50414c6f7ea8a78c938f973efede3f7192e; docs/A_PantryFlow_PRD.md; docs/F_Final_Corrected_Analysis.md (historical scope only); docs/planning/slice-2-implementation-plan.md D1–D6; docs/testing/coverage-matrix.md; docs/testing/production-follow-ups.md; owner Slice 3 planning brief received 2026-11-17. No standalone approved Slice 3 specification was found; scope/implementation decisions below remain gated.",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t5"
+        ],
+        "priorityId": "2"
+      }
+    },
+    {
+      "alias": "T5-S1",
+      "parentAlias": "T5",
+      "type": "Subtask",
+      "releaseClassification": "Public-release accessibility gate; separate Android TalkBack and iOS VoiceOver gates",
+      "dependsOn": [
+        "T5 prerequisites"
+      ],
+      "payload": {
+        "summary": "Audit accessibility contracts and reconcile existing error fixes",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T5-S1\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Public-release accessibility gate; separate Android TalkBack and iOS VoiceOver gates\n\nObjective: Audit accessibility contracts and reconcile existing error fixes.\nParent scope: Qualify native accessibility using the existing remediation tickets.\nTechnical context: components/Input.tsx on inspected main still renders plain error Text. Owner confirms KAN-34 is currently in CI and final review (2026-11-17); use its final review/check/merge evidence when available. KAN-39 is the distinct screen-level announcement follow-up. Row checkbox/button roles and useSingleOpen already exist.\n\nObservable acceptance criteria:\n- Inventory current/new routes and native controls with labels, states, focus and touch-target criteria.\n- Reuse KAN-34 (currently in CI/final review) and KAN-39; record final delivery evidence and do not open duplicate fix work.\n- Any newly confirmed gap has a specific reproduction and scoped follow-up rather than blanket redesign.\n\nValidation: Component/state assertions and code audit against merged main; no unsupported web-only roles.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T5; KAN-34; KAN-39; existing SHOP-UI coverage; components/Input and AuthGate",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t5-s1"
+        ]
+      }
+    },
+    {
+      "alias": "T5-S2",
+      "parentAlias": "T5",
+      "type": "Subtask",
+      "releaseClassification": "Public-release accessibility gate; separate Android TalkBack and iOS VoiceOver gates",
+      "dependsOn": [
+        "T5 prerequisites"
+      ],
+      "payload": {
+        "summary": "Record physical TalkBack and VoiceOver acceptance",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T5-S2\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Public-release accessibility gate; separate Android TalkBack and iOS VoiceOver gates\n\nObjective: Record physical TalkBack and VoiceOver acceptance.\nParent scope: Qualify native accessibility using the existing remediation tickets.\nTechnical context: components/Input.tsx on inspected main still renders plain error Text. Owner confirms KAN-34 is currently in CI and final review (2026-11-17); use its final review/check/merge evidence when available. KAN-39 is the distinct screen-level announcement follow-up. Row checkbox/button roles and useSingleOpen already exist.\n\nObservable acceptance criteria:\n- TalkBack checks shopping load error plus another screen-level error and an Input error.\n- VoiceOver covers equivalent flows on an actual supported iOS build/device.\n- Focus, language, error announcements, checkbox state and destructive confirmation are usable; failures keep the relevant platform NO-GO.\n\nValidation: Dated physical-device acceptance with exact commit/build and assistive-technology versions; fixture-only screenshots.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T5; KAN-34; KAN-39; existing SHOP-UI coverage; components/Input and AuthGate",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t5-s2"
+        ]
+      }
+    },
+    {
+      "alias": "T6",
+      "parentAlias": "EPIC",
+      "type": "Task",
+      "releaseClassification": "Mandatory public-release security/data/operations gate; hosted execution separately authorized",
+      "dependsOn": [
+        "T1 readiness; T3 approved lifecycle; KAN-27 tooling issue reused; T10 deployment/environment decision"
+      ],
+      "payload": {
+        "summary": "[Slice 3] Qualify security, migrations and operational recovery",
+        "issueTypeId": "10008",
+        "description": "Backlog ID: PF-S3-T6\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory public-release security/data/operations gate; hosted execution separately authorized\n\nProblem/objective: Existing security coverage and development DB evidence must be extended to new lifecycle paths and a production operating model.\n\nScope: Review RLS/grants/constraints, auth lifecycle, premium exposure, secrets/logging, dependency exposure, migration upgrades and practical recovery.\n\nTechnical context: Reuse migrations 00001–00004, catalog-snapshot.sql, baseline-inventory.sql, guarded hosted procedures, PG17 assertion, redacted diagnostics and local integration fixtures. Hosted oiqteedkfwmcertgxqga remains documented non-production; no fresh hosted verification in this planning assignment.\nReuse pantry-flow and its existing Expo Router, lib/auth.tsx, lib/supabase.ts, AuthGate, household-scope, household-list, data modules, useItemMutation/current(), useSingleOpen, theme/components/i18n, migrations 00001–00004, Node/Jest-RNTL, pgTAP, local Auth/PostgREST and Maestro harness. Do not build parallel auth, authorization, CRUD or test frameworks.\n\nDependencies: T1 readiness; T3 approved lifecycle; KAN-27 tooling issue reused; T10 deployment/environment decision\n\nAcceptance criteria:\n- Independent ordinary users cannot cross household/profile/lifecycle boundaries or escalate profiles.is_premium; strict pantry uniqueness and shopping D1–D4 remain enforced under direct API/concurrent tests.\n- Unused premium flags receive an exposure review; authorized data audit/correction, if any, is separately approved; no premium feature is implemented.\n- Current dependency/advisory exposure and log/artifact redaction are reassessed with owner/date; dated 23-moderate/one-low counts are not treated as current.\n- A real PG17 populated-upgrade test detects invalid/duplicate existing rows and proves no unintended loss; catalog/ledger exceptions and before/after artifacts are retained.\n- MVP backup/restore, rollback/forward-fix, recovery ownership and justified recovery targets are documented and rehearsed with disposable data.\n\nRequired tests/evidence: pgTAP/ordinary Auth/PostgREST and meaningful concurrent tests; secret-redaction tests; current audit/typecheck/gates; isolated populated-upgrade and restore rehearsal.\n\nSecurity/privacy: no secrets, recovery links, pantry/shopping contents or account identifiers in public logs; use isolated fixtures and exact cleanup. Destructive behavior requires approved lifecycle semantics and authorization at execution.\n\nRelease priority: High (Jira ID 2); gate classification is Mandatory public-release security/data/operations gate; hosted execution separately authorized, independent of priority.\n\nExclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\n\nDefinition of done: criteria and child activities have independently reviewable evidence on an exact commit; required checks pass; limitations/deferred findings have an owner and disposition; relevant docs/matrix are updated. A ticket marked done does not authorize publication.\n\nReferences: PF-DATA-001; PF-PREMIUM-001; PF-EMAIL-002; KAN-27/28/29/30/31; docs/security/tooling-advisories.md\nSources: current main 2186d50414c6f7ea8a78c938f973efede3f7192e; docs/A_PantryFlow_PRD.md; docs/F_Final_Corrected_Analysis.md (historical scope only); docs/planning/slice-2-implementation-plan.md D1–D6; docs/testing/coverage-matrix.md; docs/testing/production-follow-ups.md; owner Slice 3 planning brief received 2026-11-17. No standalone approved Slice 3 specification was found; scope/implementation decisions below remain gated.",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t6"
+        ],
+        "priorityId": "2"
+      }
+    },
+    {
+      "alias": "T6-S1",
+      "parentAlias": "T6",
+      "type": "Subtask",
+      "releaseClassification": "Mandatory public-release security/data/operations gate; hosted execution separately authorized",
+      "dependsOn": [
+        "T6 prerequisites"
+      ],
+      "payload": {
+        "summary": "Review and test authorization, lifecycle and unused premium exposure",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T6-S1\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory public-release security/data/operations gate; hosted execution separately authorized\n\nObjective: Review and test authorization, lifecycle and unused premium exposure.\nParent scope: Qualify security, migrations and operational recovery.\nTechnical context: Reuse migrations 00001–00004, catalog-snapshot.sql, baseline-inventory.sql, guarded hosted procedures, PG17 assertion, redacted diagnostics and local integration fixtures. Hosted oiqteedkfwmcertgxqga remains documented non-production; no fresh hosted verification in this planning assignment.\n\nObservable acceptance criteria:\n- Extend existing two-household RLS/grant/direct-API cases to reset/deletion/preference operations.\n- Preserve creator and timestamp restrictions, pantry/shopping unique rules and no client admin secrets.\n- Record premium exposure and any anomalous data as a decision, never silently reset entitlement flags.\n\nValidation: Threat review plus local ordinary-user SQL/API tests; management reads only with execution authorization.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T6; PF-DATA-001; PF-PREMIUM-001; PF-EMAIL-002; KAN-27/28/29/30/31; docs/security/tooling-advisories.md",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t6-s1"
+        ]
+      }
+    },
+    {
+      "alias": "T6-S2",
+      "parentAlias": "T6",
+      "type": "Subtask",
+      "releaseClassification": "Mandatory public-release security/data/operations gate; hosted execution separately authorized",
+      "dependsOn": [
+        "T6 prerequisites"
+      ],
+      "payload": {
+        "summary": "Reassess dependencies, logging and sender operational risks",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T6-S2\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory public-release security/data/operations gate; hosted execution separately authorized\n\nObjective: Reassess dependencies, logging and sender operational risks.\nParent scope: Qualify security, migrations and operational recovery.\nTechnical context: Reuse migrations 00001–00004, catalog-snapshot.sql, baseline-inventory.sql, guarded hosted procedures, PG17 assertion, redacted diagnostics and local integration fixtures. Hosted oiqteedkfwmcertgxqga remains documented non-production; no fresh hosted verification in this planning assignment.\n\nObservable acceptance criteria:\n- Recompute advisories and document reachability/remediation decisions; reuse KAN-27 for its existing non-security findings.\n- Diagnostic artifacts redact secrets and no user list contents or reset URLs are logged.\n- Review sender/auth domain operation and DMARC reporting/enforcement options without changing policy automatically.\n\nValidation: Existing redaction/CI checks; current audit evidence from primary upstream sources at implementation; DNS/SMTP changes remain separately authorized.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T6; PF-DATA-001; PF-PREMIUM-001; PF-EMAIL-002; KAN-27/28/29/30/31; docs/security/tooling-advisories.md",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t6-s2"
+        ]
+      }
+    },
+    {
+      "alias": "T6-S3",
+      "parentAlias": "T6",
+      "type": "Subtask",
+      "releaseClassification": "Mandatory public-release security/data/operations gate; hosted execution separately authorized",
+      "dependsOn": [
+        "T6 prerequisites"
+      ],
+      "payload": {
+        "summary": "Rehearse populated migrations and backup/recovery procedures",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T6-S3\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory public-release security/data/operations gate; hosted execution separately authorized\n\nObjective: Rehearse populated migrations and backup/recovery procedures.\nParent scope: Qualify security, migrations and operational recovery.\nTechnical context: Reuse migrations 00001–00004, catalog-snapshot.sql, baseline-inventory.sql, guarded hosted procedures, PG17 assertion, redacted diagnostics and local integration fixtures. Hosted oiqteedkfwmcertgxqga remains documented non-production; no fresh hosted verification in this planning assignment.\n\nObservable acceptance criteria:\n- PG17 migration rehearsal includes representative existing rows and invalid/duplicate preconditions.\n- Retain before/after schema/ledger/row evidence; preserve reviewed hosted helper exceptions and stop on unexpected drift.\n- A disposable restore/recovery rehearsal records owners, time/data-loss targets and tested recovery steps.\n\nValidation: Real isolated Supabase/PostgreSQL upgrade/restore tests; never reset or restore hosted user data during qualification.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T6; PF-DATA-001; PF-PREMIUM-001; PF-EMAIL-002; KAN-27/28/29/30/31; docs/security/tooling-advisories.md",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t6-s3"
+        ]
+      }
+    },
+    {
+      "alias": "T7",
+      "parentAlias": "EPIC",
+      "type": "Task",
+      "releaseClassification": "Blocks iOS release only; Android may be assessed independently",
+      "dependsOn": [
+        "T1 platform/budget decision; Apple membership/signing/build access and iPhone availability; T2/T3/T4/T5 feature contracts"
+      ],
+      "payload": {
+        "summary": "[Slice 3] Prepare and validate iOS builds and TestFlight readiness",
+        "issueTypeId": "10008",
+        "description": "Backlog ID: PF-S3-T7\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Blocks iOS release only; Android may be assessed independently\n\nProblem/objective: Android/Windows evidence does not establish iOS build, native link, usability or release readiness.\n\nScope: Identify Apple/build/device prerequisites; prepare an iOS test build, native behavior and practical existing-harness extension; document TestFlight readiness without distributing automatically.\n\nTechnical context: app.json: ios.bundleIdentifier com.pantryflow.app and scheme pantryflow. Existing CI builds Android only; no verified iOS build pipeline or signing setup. Reuse Expo configuration, auth callback/native-link logic and Maestro flows where supported.\nReuse pantry-flow and its existing Expo Router, lib/auth.tsx, lib/supabase.ts, AuthGate, household-scope, household-list, data modules, useItemMutation/current(), useSingleOpen, theme/components/i18n, migrations 00001–00004, Node/Jest-RNTL, pgTAP, local Auth/PostgREST and Maestro harness. Do not build parallel auth, authorization, CRUD or test frameworks.\n\nDependencies: T1 platform/budget decision; Apple membership/signing/build access and iPhone availability; T2/T3/T4/T5 feature contracts\n\nAcceptance criteria:\n- Prerequisites, credential ownership, bundle identity, schemes and environment separation are documented; paid services/purchases require separate approval.\n- A fresh native iOS build from an exact reviewed commit runs on the selected device; no simulator-only or Android evidence is presented as physical iOS acceptance.\n- Signup/confirmation/recovery warm/cold links, restart/session/logout, pantry/shopping CRUD/duplicates/prompts and interruptions pass on iOS.\n- Safe areas, keyboard-first-tap, navigation, icons/fonts, EN/DE and VoiceOver have platform-specific evidence.\n- TestFlight signing, metadata, testers and distribution procedure are prepared; beta upload/invites/release need separate explicit authorization.\n\nRequired tests/evidence: iOS build validation; reusable Maestro scenarios where practical plus documented manual gaps; physical iPhone smoke and VoiceOver; auth delivery evidence.\n\nSecurity/privacy: no secrets, recovery links, pantry/shopping contents or account identifiers in public logs; use isolated fixtures and exact cleanup. Destructive behavior requires approved lifecycle semantics and authorization at execution.\n\nRelease priority: High (Jira ID 2); gate classification is Blocks iOS release only; Android may be assessed independently, independent of priority.\n\nExclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\n\nDefinition of done: criteria and child activities have independently reviewable evidence on an exact commit; required checks pass; limitations/deferred findings have an owner and disposition; relevant docs/matrix are updated. A ticket marked done does not authorize publication.\n\nReferences: PF-IOS-001; app.json; existing .maestro and run-e2e.cjs; T2/T5/T10\nSources: current main 2186d50414c6f7ea8a78c938f973efede3f7192e; docs/A_PantryFlow_PRD.md; docs/F_Final_Corrected_Analysis.md (historical scope only); docs/planning/slice-2-implementation-plan.md D1–D6; docs/testing/coverage-matrix.md; docs/testing/production-follow-ups.md; owner Slice 3 planning brief received 2026-11-17. No standalone approved Slice 3 specification was found; scope/implementation decisions below remain gated.",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t7"
+        ],
+        "priorityId": "2"
+      }
+    },
+    {
+      "alias": "T7-S1",
+      "parentAlias": "T7",
+      "type": "Subtask",
+      "releaseClassification": "Blocks iOS release only; Android may be assessed independently",
+      "dependsOn": [
+        "T7 prerequisites"
+      ],
+      "payload": {
+        "summary": "Resolve iOS prerequisites and produce an isolated native test build",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T7-S1\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Blocks iOS release only; Android may be assessed independently\n\nObjective: Resolve iOS prerequisites and produce an isolated native test build.\nParent scope: Prepare and validate iOS builds and TestFlight readiness.\nTechnical context: app.json: ios.bundleIdentifier com.pantryflow.app and scheme pantryflow. Existing CI builds Android only; no verified iOS build pipeline or signing setup. Reuse Expo configuration, auth callback/native-link logic and Maestro flows where supported.\n\nObservable acceptance criteria:\n- Record Apple/build-machine or EAS access, costs, signing ownership and available iPhone.\n- Verify com.pantryflow.app identity and approved test/development scheme/environment separation.\n- Produce a fresh exact-commit iOS build without exposing signing or management credentials.\n\nValidation: Build logs and install/read-back evidence; remain explicitly blocked if external prerequisites are unavailable.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T7; PF-IOS-001; app.json; existing .maestro and run-e2e.cjs; T2/T5/T10",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t7-s1"
+        ]
+      }
+    },
+    {
+      "alias": "T7-S2",
+      "parentAlias": "T7",
+      "type": "Subtask",
+      "releaseClassification": "Blocks iOS release only; Android may be assessed independently",
+      "dependsOn": [
+        "T7 prerequisites"
+      ],
+      "payload": {
+        "summary": "Extend native regression coverage and validate iPhone behavior",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T7-S2\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Blocks iOS release only; Android may be assessed independently\n\nObjective: Extend native regression coverage and validate iPhone behavior.\nParent scope: Prepare and validate iOS builds and TestFlight readiness.\nTechnical context: app.json: ios.bundleIdentifier com.pantryflow.app and scheme pantryflow. Existing CI builds Android only; no verified iOS build pipeline or signing setup. Reuse Expo configuration, auth callback/native-link logic and Maestro flows where supported.\n\nObservable acceptance criteria:\n- Reuse or adapt existing Maestro scenarios when practical; document unsupported automation explicitly.\n- Physical iOS checks cover auth cold/warm links, Pantry/Shopping operations, keyboard/navigation, safe areas, fonts and EN/DE.\n- VoiceOver evidence is coordinated with T5 and no iOS gate is closed from Android results.\n\nValidation: Fresh iOS build, device walkthrough, automated reports where supported and explicit manual evidence/cleanup.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T7; PF-IOS-001; app.json; existing .maestro and run-e2e.cjs; T2/T5/T10",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t7-s2"
+        ]
+      }
+    },
+    {
+      "alias": "T7-S3",
+      "parentAlias": "T7",
+      "type": "Subtask",
+      "releaseClassification": "Blocks iOS release only; Android may be assessed independently",
+      "dependsOn": [
+        "T7 prerequisites"
+      ],
+      "payload": {
+        "summary": "Prepare TestFlight and iOS beta-validation requirements",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T7-S3\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Blocks iOS release only; Android may be assessed independently\n\nObjective: Prepare TestFlight and iOS beta-validation requirements.\nParent scope: Prepare and validate iOS builds and TestFlight readiness.\nTechnical context: app.json: ios.bundleIdentifier com.pantryflow.app and scheme pantryflow. Existing CI builds Android only; no verified iOS build pipeline or signing setup. Reuse Expo configuration, auth callback/native-link logic and Maestro flows where supported.\n\nObservable acceptance criteria:\n- Document distribution/signing/metadata/privacy prerequisites, tester selection and beta feedback/exit criteria.\n- Create a dry-run distribution checklist and record unresolved external requirements.\n- Do not upload, invite users or publish without separate authorization.\n\nValidation: Review checklist and exact-build evidence; approved beta run is later execution, not this planning activity.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T7; PF-IOS-001; app.json; existing .maestro and run-e2e.cjs; T2/T5/T10",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t7-s3"
+        ]
+      }
+    },
+    {
+      "alias": "T8",
+      "parentAlias": "EPIC",
+      "type": "Task",
+      "releaseClassification": "Independent proposed website/feedback stream; required public information gates public release",
+      "dependsOn": [
+        "T1 scope approval; separate owner confirmation of stack/repository/feedback; T3 deletion policy; T6 data/privacy inventory"
+      ],
+      "payload": {
+        "summary": "[Slice 3] Decide and prepare HouseholdKit website and privacy-safe feedback",
+        "issueTypeId": "10008",
+        "description": "Backlog ID: PF-S3-T8\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Independent proposed website/feedback stream; required public information gates public release\n\nProblem/objective: Public product/support/privacy/deletion information and a feedback channel need an independent owned workstream.\n\nScope: First approve website/feedback decisions; only then build approved pages/channels in a separate website workstream and minimal approved Settings entry.\n\nTechnical context: householdkit.app is owned; auth.householdkit.app serves authentication mail. No website implementation/repository/hosting approval is established in current app repo. Astro + TypeScript + Cloudflare Pages in a separate repository is a proposal, not a selected architecture.\nReuse pantry-flow and its existing Expo Router, lib/auth.tsx, lib/supabase.ts, AuthGate, household-scope, household-list, data modules, useItemMutation/current(), useSingleOpen, theme/components/i18n, migrations 00001–00004, Node/Jest-RNTL, pgTAP, local Auth/PostgREST and Maestro harness. Do not build parallel auth, authorization, CRUD or test frameworks.\n\nDependencies: T1 scope approval; separate owner confirmation of stack/repository/feedback; T3 deletion policy; T6 data/privacy inventory\n\nAcceptance criteria:\n- A decision brief confirms or rejects the proposed stack, repo, hosting costs and feedback mechanism before implementation.\n- Approved landing/product/privacy/support/FAQ/deletion/beta/release-note/legal content has an owner and review status, with URLs usable before public release.\n- Any required external deletion request route is genuine, secure and testable rather than merely a broken mailto or empty form.\n- If Send feedback is approved, Settings distinguishes bug/usability/feature feedback and requests only user-approved diagnostics; no automatic content/token/credential upload.\n- This issue does not change DNS, SMTP, infrastructure, accounts or hosting until explicitly authorized.\n\nRequired tests/evidence: Content/link/form accessibility tests and privacy payload inspection after design approval; external request round-trip with fixtures; platform Settings tests only if approved.\n\nSecurity/privacy: no secrets, recovery links, pantry/shopping contents or account identifiers in public logs; use isolated fixtures and exact cleanup. Destructive behavior requires approved lifecycle semantics and authorization at execution.\n\nRelease priority: Medium (Jira ID 3); gate classification is Independent proposed website/feedback stream; required public information gates public release, independent of priority.\n\nExclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\n\nDefinition of done: criteria and child activities have independently reviewable evidence on an exact commit; required checks pass; limitations/deferred findings have an owner and disposition; relevant docs/matrix are updated. A ticket marked done does not authorize publication.\n\nReferences: Owner Slice 3 brief H; householdkit.app; T3 deletion policy; T10 release gate\nSources: current main 2186d50414c6f7ea8a78c938f973efede3f7192e; docs/A_PantryFlow_PRD.md; docs/F_Final_Corrected_Analysis.md (historical scope only); docs/planning/slice-2-implementation-plan.md D1–D6; docs/testing/coverage-matrix.md; docs/testing/production-follow-ups.md; owner Slice 3 planning brief received 2026-11-17. No standalone approved Slice 3 specification was found; scope/implementation decisions below remain gated.",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t8"
+        ],
+        "priorityId": "3"
+      }
+    },
+    {
+      "alias": "T8-S1",
+      "parentAlias": "T8",
+      "type": "Subtask",
+      "releaseClassification": "Independent proposed website/feedback stream; required public information gates public release",
+      "dependsOn": [
+        "T8 prerequisites"
+      ],
+      "payload": {
+        "summary": "Approve website architecture, repository and feedback scope",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T8-S1\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Independent proposed website/feedback stream; required public information gates public release\n\nObjective: Approve website architecture, repository and feedback scope.\nParent scope: Decide and prepare HouseholdKit website and privacy-safe feedback.\nTechnical context: householdkit.app is owned; auth.householdkit.app serves authentication mail. No website implementation/repository/hosting approval is established in current app repo. Astro + TypeScript + Cloudflare Pages in a separate repository is a proposal, not a selected architecture.\n\nObservable acceptance criteria:\n- Compare proposed Astro/TypeScript/Cloudflare Pages with budget and existing domain/mail setup.\n- Owner selects repository/hosting/channel and approves or defers Send feedback detail.\n- Document essential public information versus optional marketing/feedback extras; no setup or purchases yet.\n\nValidation: Owner-reviewed decision document and requirement/owner/cost table.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T8; Owner Slice 3 brief H; householdkit.app; T3 deletion policy; T10 release gate",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t8-s1"
+        ]
+      }
+    },
+    {
+      "alias": "T8-S2",
+      "parentAlias": "T8",
+      "type": "Subtask",
+      "releaseClassification": "Independent proposed website/feedback stream; required public information gates public release",
+      "dependsOn": [
+        "T8 prerequisites"
+      ],
+      "payload": {
+        "summary": "Prepare approved public content and account-deletion request path",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T8-S2\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Independent proposed website/feedback stream; required public information gates public release\n\nObjective: Prepare approved public content and account-deletion request path.\nParent scope: Decide and prepare HouseholdKit website and privacy-safe feedback.\nTechnical context: householdkit.app is owned; auth.householdkit.app serves authentication mail. No website implementation/repository/hosting approval is established in current app repo. Astro + TypeScript + Cloudflare Pages in a separate repository is a proposal, not a selected architecture.\n\nObservable acceptance criteria:\n- After decisions, implement only approved pages and required request routes in the selected independent website repository.\n- Privacy/support/deletion/beta and legal content matches actual app collection/retention and has review ownership.\n- Verify public URLs, accessibility and request routing before release without touching authentication DNS/SMTP implicitly.\n\nValidation: Website/link/content and secure request round-trip tests; legal/policy requirements verified against current applicable sources during execution.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T8; Owner Slice 3 brief H; householdkit.app; T3 deletion policy; T10 release gate",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t8-s2"
+        ]
+      }
+    },
+    {
+      "alias": "T8-S3",
+      "parentAlias": "T8",
+      "type": "Subtask",
+      "releaseClassification": "Independent proposed website/feedback stream; required public information gates public release",
+      "dependsOn": [
+        "T8 prerequisites"
+      ],
+      "payload": {
+        "summary": "Implement approved Settings feedback with diagnostic consent",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T8-S3\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Independent proposed website/feedback stream; required public information gates public release\n\nObjective: Implement approved Settings feedback with diagnostic consent.\nParent scope: Decide and prepare HouseholdKit website and privacy-safe feedback.\nTechnical context: householdkit.app is owned; auth.householdkit.app serves authentication mail. No website implementation/repository/hosting approval is established in current app repo. Astro + TypeScript + Cloudflare Pages in a separate repository is a proposal, not a selected architecture.\n\nObservable acceptance criteria:\n- Blocked until feedback behavior is approved; otherwise retain as explicitly deferred.\n- Separate bug/usability/feature categories and make sending user initiated.\n- No pantry/shopping contents, auth URLs, tokens, credentials or identifiable logs are included automatically.\n\nValidation: Component/native link and payload-redaction tests; device check on each supported release platform.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T8; Owner Slice 3 brief H; householdkit.app; T3 deletion policy; T10 release gate",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t8-s3"
+        ]
+      }
+    },
+    {
+      "alias": "T9",
+      "parentAlias": "EPIC",
+      "type": "Task",
+      "releaseClassification": "Mandatory Slice 3 acceptance gate; not public-release authorization",
+      "dependsOn": [
+        "T1 and all approved mandatory feature/review tasks; existing carried release blockers dispositioned; T7 for iOS GO"
+      ],
+      "payload": {
+        "summary": "[Slice 3] Extend regression coverage and record Slice 3 GO/NO-GO",
+        "issueTypeId": "10008",
+        "description": "Backlog ID: PF-S3-T9\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory Slice 3 acceptance gate; not public-release authorization\n\nProblem/objective: A new hardening slice needs reproducible behavioral evidence and a slice acceptance decision separate from publication.\n\nScope: Extend PF-TEST-001, execute full isolated regressions and native acceptance, then publish an exact-head acceptance/limitations record.\n\nTechnical context: Reuse tests/*.test.cjs, tests/components, tests/integration, supabase/tests/database, .maestro/slice-1-1.yaml, .maestro/slice-2-shopping.yaml, scripts/run-e2e.cjs, e2e-fixtures and .github/workflows/pantryflow-tests.yml.\nReuse pantry-flow and its existing Expo Router, lib/auth.tsx, lib/supabase.ts, AuthGate, household-scope, household-list, data modules, useItemMutation/current(), useSingleOpen, theme/components/i18n, migrations 00001–00004, Node/Jest-RNTL, pgTAP, local Auth/PostgREST and Maestro harness. Do not build parallel auth, authorization, CRUD or test frameworks.\n\nDependencies: T1 and all approved mandatory feature/review tasks; existing carried release blockers dispositioned; T7 for iOS GO\n\nAcceptance criteria:\n- Every approved Slice 3 outcome maps to an executable test or a named manual gate; known defects receive failing-before regressions.\n- TypeScript/Node/Jest, PG17 pgTAP, local Auth/API and Sonar checks pass on the final head and protected main.\n- Fresh Android build, complete Maestro journeys, database read-back, cleanup and physical-device smoke pass; keyboard/font/navigation/network-recovery limits are honest.\n- iOS evidence or an explicit iOS NO-GO/exclusion is recorded without blocking an independently approved Android-only decision.\n- Final Slice 3 GO requires closed mandatory requirements, no unresolved blocking security/privacy/data-loss defect, reviewed limitations and exact evidence; incomplete gates produce NO-GO.\n- A release tag is created only when separately authorized; slice acceptance alone never publishes the app.\n\nRequired tests/evidence: Existing fast/database/API/native suites plus actual-device lifecycle, keyboard, TalkBack/VoiceOver and bilingual checks; fixture cleanup failures fail the run.\n\nSecurity/privacy: no secrets, recovery links, pantry/shopping contents or account identifiers in public logs; use isolated fixtures and exact cleanup. Destructive behavior requires approved lifecycle semantics and authorization at execution.\n\nRelease priority: High (Jira ID 2); gate classification is Mandatory Slice 3 acceptance gate; not public-release authorization, independent of priority.\n\nExclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\n\nDefinition of done: criteria and child activities have independently reviewable evidence on an exact commit; required checks pass; limitations/deferred findings have an owner and disposition; relevant docs/matrix are updated. A ticket marked done does not authorize publication.\n\nReferences: PF-TEST-001; KAN-23/24/25/26 reused as baseline; docs/testing/README.md and coverage matrix\nSources: current main 2186d50414c6f7ea8a78c938f973efede3f7192e; docs/A_PantryFlow_PRD.md; docs/F_Final_Corrected_Analysis.md (historical scope only); docs/planning/slice-2-implementation-plan.md D1–D6; docs/testing/coverage-matrix.md; docs/testing/production-follow-ups.md; owner Slice 3 planning brief received 2026-11-17. No standalone approved Slice 3 specification was found; scope/implementation decisions below remain gated.",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t9"
+        ],
+        "priorityId": "2"
+      }
+    },
+    {
+      "alias": "T9-S1",
+      "parentAlias": "T9",
+      "type": "Subtask",
+      "releaseClassification": "Mandatory Slice 3 acceptance gate; not public-release authorization",
+      "dependsOn": [
+        "T9 prerequisites"
+      ],
+      "payload": {
+        "summary": "Extend the living behavioral matrix and isolated fixture coverage",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T9-S1\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory Slice 3 acceptance gate; not public-release authorization\n\nObjective: Extend the living behavioral matrix and isolated fixture coverage.\nParent scope: Extend regression coverage and record Slice 3 GO/NO-GO.\nTechnical context: Reuse tests/*.test.cjs, tests/components, tests/integration, supabase/tests/database, .maestro/slice-1-1.yaml, .maestro/slice-2-shopping.yaml, scripts/run-e2e.cjs, e2e-fixtures and .github/workflows/pantryflow-tests.yml.\n\nObservable acceptance criteria:\n- Map recovery, deletion, locale, accessibility and all approved hardening outcomes to existing harness layers.\n- Add meaningful failing-before regressions for confirmed defects and deterministic fixtures/cleanup.\n- Document interrupted and ambiguous-write behavior without claiming forced DB overlap from merely parallel requests.\n\nValidation: Review matrix against approved scope; run fast/local suites; credentials and production data stay out of fixtures.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T9; PF-TEST-001; KAN-23/24/25/26 reused as baseline; docs/testing/README.md and coverage matrix",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t9-s1"
+        ]
+      }
+    },
+    {
+      "alias": "T9-S2",
+      "parentAlias": "T9",
+      "type": "Subtask",
+      "releaseClassification": "Mandatory Slice 3 acceptance gate; not public-release authorization",
+      "dependsOn": [
+        "T9 prerequisites"
+      ],
+      "payload": {
+        "summary": "Run exact-head Android regression and physical-device qualification",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T9-S2\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory Slice 3 acceptance gate; not public-release authorization\n\nObjective: Run exact-head Android regression and physical-device qualification.\nParent scope: Extend regression coverage and record Slice 3 GO/NO-GO.\nTechnical context: Reuse tests/*.test.cjs, tests/components, tests/integration, supabase/tests/database, .maestro/slice-1-1.yaml, .maestro/slice-2-shopping.yaml, scripts/run-e2e.cjs, e2e-fixtures and .github/workflows/pantryflow-tests.yml.\n\nObservable acceptance criteria:\n- Fresh Android build passes Slice 1.1, shopping, confirmation and new approved auth/lifecycle flows.\n- Independent DB read-back and font/asset gate pass; fixtures/proxy/ADB cleanup is verified.\n- Physical checks include first-tap keyboard behavior, bilingual layout, navigation and TalkBack; record unsupported network/offline scenarios.\n\nValidation: Full workflow_dispatch on exact head plus physical phone acceptance; isolate test APK and local stack.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T9; PF-TEST-001; KAN-23/24/25/26 reused as baseline; docs/testing/README.md and coverage matrix",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t9-s2"
+        ]
+      }
+    },
+    {
+      "alias": "T9-S3",
+      "parentAlias": "T9",
+      "type": "Subtask",
+      "releaseClassification": "Mandatory Slice 3 acceptance gate; not public-release authorization",
+      "dependsOn": [
+        "T9 prerequisites"
+      ],
+      "payload": {
+        "summary": "Record final Slice 3 acceptance and platform-specific limitations",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T9-S3\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory Slice 3 acceptance gate; not public-release authorization\n\nObjective: Record final Slice 3 acceptance and platform-specific limitations.\nParent scope: Extend regression coverage and record Slice 3 GO/NO-GO.\nTechnical context: Reuse tests/*.test.cjs, tests/components, tests/integration, supabase/tests/database, .maestro/slice-1-1.yaml, .maestro/slice-2-shopping.yaml, scripts/run-e2e.cjs, e2e-fixtures and .github/workflows/pantryflow-tests.yml.\n\nObservable acceptance criteria:\n- Record exact final-head and merged-main CI/quality evidence and fulfilled acceptance outcomes.\n- State Slice 3 GO or NO-GO with owners for limitations, and independent Android/iOS readiness.\n- Keep public release behind T10 and require separate authorization for any tag or publication.\n\nValidation: Evidence review and reproducible report, not an unchecked completion checklist.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T9; PF-TEST-001; KAN-23/24/25/26 reused as baseline; docs/testing/README.md and coverage matrix",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t9-s3"
+        ]
+      }
+    },
+    {
+      "alias": "T10",
+      "parentAlias": "EPIC",
+      "type": "Task",
+      "releaseClassification": "Mandatory general public-release gate; Android and iOS decisions separate",
+      "dependsOn": [
+        "T9 Slice 3 GO; T2/T3/T4/T5/T6 public gates; T8 required public content; T7 before iOS beta/release"
+      ],
+      "payload": {
+        "summary": "[Slice 3] Prepare platform beta distribution and enforce the public-release gate",
+        "issueTypeId": "10008",
+        "description": "Backlog ID: PF-S3-T10\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory general public-release gate; Android and iOS decisions separate\n\nProblem/objective: Slice acceptance and test APKs do not establish public-store, privacy, distribution or operational readiness.\n\nScope: Prepare Android beta artifact/configuration and a separately reviewed platform/public release checklist; do not release automatically.\n\nTechnical context: Current app.json uses com.pantryflow.app/pantryflow while test harness uses com.pantryflow.test and local test configuration; maintain this separation. Use T7 for iOS/TestFlight and T8 for required public URLs, not parallel implementations.\nReuse pantry-flow and its existing Expo Router, lib/auth.tsx, lib/supabase.ts, AuthGate, household-scope, household-list, data modules, useItemMutation/current(), useSingleOpen, theme/components/i18n, migrations 00001–00004, Node/Jest-RNTL, pgTAP, local Auth/PostgREST and Maestro harness. Do not build parallel auth, authorization, CRUD or test frameworks.\n\nDependencies: T9 Slice 3 GO; T2/T3/T4/T5/T6 public gates; T8 required public content; T7 before iOS beta/release\n\nAcceptance criteria:\n- Android signed beta artifact, identifiers/versioning, production environment, permissions and distribution prerequisites are documented and verified without test keys/endpoints.\n- Current store/platform requirements, privacy disclosures, deletion requests, support, consent and operational ownership are verified against actual shipped behavior before submission.\n- Beta tester eligibility, feedback handling, rollback/incident contacts and success/stop criteria are approved; no invites or uploads without authorization.\n- Decision record independently states Android GO/NO-GO, iOS GO/NO-GO and general public-release GO/NO-GO with missing prerequisites.\n- Publication occurs only after explicit owner authorization of a concrete release artifact and checklist; no automated release from ticket closure.\n\nRequired tests/evidence: Artifact/configuration inspection; signed-install smoke on target platform; public-policy/support/request links; current store checklist and release evidence review.\n\nSecurity/privacy: no secrets, recovery links, pantry/shopping contents or account identifiers in public logs; use isolated fixtures and exact cleanup. Destructive behavior requires approved lifecycle semantics and authorization at execution.\n\nRelease priority: High (Jira ID 2); gate classification is Mandatory general public-release gate; Android and iOS decisions separate, independent of priority.\n\nExclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\n\nDefinition of done: criteria and child activities have independently reviewable evidence on an exact commit; required checks pass; limitations/deferred findings have an owner and disposition; relevant docs/matrix are updated. A ticket marked done does not authorize publication.\n\nReferences: PF-IOS-001/PF-AUTH-001/PF-I18N-001/PF-DATA-001; T7/T8/T9; app.json and environment separation\nSources: current main 2186d50414c6f7ea8a78c938f973efede3f7192e; docs/A_PantryFlow_PRD.md; docs/F_Final_Corrected_Analysis.md (historical scope only); docs/planning/slice-2-implementation-plan.md D1–D6; docs/testing/coverage-matrix.md; docs/testing/production-follow-ups.md; owner Slice 3 planning brief received 2026-11-17. No standalone approved Slice 3 specification was found; scope/implementation decisions below remain gated.",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t10"
+        ],
+        "priorityId": "2"
+      }
+    },
+    {
+      "alias": "T10-S1",
+      "parentAlias": "T10",
+      "type": "Subtask",
+      "releaseClassification": "Mandatory general public-release gate; Android and iOS decisions separate",
+      "dependsOn": [
+        "T10 prerequisites"
+      ],
+      "payload": {
+        "summary": "Prepare Android beta artifact and distribution prerequisites",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T10-S1\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory general public-release gate; Android and iOS decisions separate\n\nObjective: Prepare Android beta artifact and distribution prerequisites.\nParent scope: Prepare platform beta distribution and enforce the public-release gate.\nTechnical context: Current app.json uses com.pantryflow.app/pantryflow while test harness uses com.pantryflow.test and local test configuration; maintain this separation. Use T7 for iOS/TestFlight and T8 for required public URLs, not parallel implementations.\n\nObservable acceptance criteria:\n- Verify approved production/test identity, version/build numbers, signing ownership and endpoint/public-key configuration.\n- Inspect permissions and ensure no test fixtures, management secrets or loopback endpoints enter the release artifact.\n- Prepare current Android-store beta prerequisites and rollback instructions; submission/upload remains separately authorized.\n\nValidation: Fresh signed-artifact inspection and Android install smoke; review current official store requirements during execution.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T10; PF-IOS-001/PF-AUTH-001/PF-I18N-001/PF-DATA-001; T7/T8/T9; app.json and environment separation",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t10-s1"
+        ]
+      }
+    },
+    {
+      "alias": "T10-S2",
+      "parentAlias": "T10",
+      "type": "Subtask",
+      "releaseClassification": "Mandatory general public-release gate; Android and iOS decisions separate",
+      "dependsOn": [
+        "T10 prerequisites"
+      ],
+      "payload": {
+        "summary": "Verify public privacy, support, deletion and operational readiness",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T10-S2\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory general public-release gate; Android and iOS decisions separate\n\nObjective: Verify public privacy, support, deletion and operational readiness.\nParent scope: Prepare platform beta distribution and enforce the public-release gate.\nTechnical context: Current app.json uses com.pantryflow.app/pantryflow while test harness uses com.pantryflow.test and local test configuration; maintain this separation. Use T7 for iOS/TestFlight and T8 for required public URLs, not parallel implementations.\n\nObservable acceptance criteria:\n- Public documents and disclosures match actual collection/retention and approved lifecycle behavior.\n- Verify required external deletion route, support ownership, incident response and backup/recovery evidence.\n- Confirm proposed website extras are not confused with mandatory release information or undisclosed telemetry.\n\nValidation: Cross-check T3/T6/T8 outputs and actual URLs/request round-trips; document applicable policy review and any blocker.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T10; PF-IOS-001/PF-AUTH-001/PF-I18N-001/PF-DATA-001; T7/T8/T9; app.json and environment separation",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t10-s2"
+        ]
+      }
+    },
+    {
+      "alias": "T10-S3",
+      "parentAlias": "T10",
+      "type": "Subtask",
+      "releaseClassification": "Mandatory general public-release gate; Android and iOS decisions separate",
+      "dependsOn": [
+        "T10 prerequisites"
+      ],
+      "payload": {
+        "summary": "Obtain separate Android, iOS and public-release decisions",
+        "issueTypeId": "10007",
+        "description": "Backlog ID: PF-S3-T10-S3\nPlanning status: DRAFT — creation requires owner approval of the dry-run report.\nRelease classification: Mandatory general public-release gate; Android and iOS decisions separate\n\nObjective: Obtain separate Android, iOS and public-release decisions.\nParent scope: Prepare platform beta distribution and enforce the public-release gate.\nTechnical context: Current app.json uses com.pantryflow.app/pantryflow while test harness uses com.pantryflow.test and local test configuration; maintain this separation. Use T7 for iOS/TestFlight and T8 for required public URLs, not parallel implementations.\n\nObservable acceptance criteria:\n- Provide exact artifacts/build IDs, beta plan, test evidence and unresolved decisions to the owner.\n- Record distinct GO/NO-GO for Android, iOS and public publication; unavailable Apple/iPhone prerequisites keep iOS NO-GO.\n- No uploads, tester invitations, DNS/SMTP changes or public launch without explicit execution authorization.\n\nValidation: Owner review of concrete readiness dossier; ticket completion does not execute distribution.\nDependencies: parent prerequisites and any approval identified above; execute in the parent's documented order.\nSecurity/exclusions: No premium/payment/gating, invitations or household-management UI, quantity/expiry/barcode/recipes, analytics expansion, offline queue, other suite apps, custom application server, generic framework, architectural rewrite or whole-app redesign. No publication, hosted mutation, DNS/SMTP change or paid purchase is authorized by this issue.\nDefinition of done: independently reviewed output/evidence, exact commit or dated decision recorded; cleanup verified where fixtures are used.\nReferences: parent PF-S3-T10; PF-IOS-001/PF-AUTH-001/PF-I18N-001/PF-DATA-001; T7/T8/T9; app.json and environment separation",
+        "labels": [
+          "pantryflow",
+          "slice-3",
+          "pf-s3-t10-s3"
+        ]
+      }
+    }
+  ]
+}

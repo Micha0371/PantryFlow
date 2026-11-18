@@ -1,0 +1,177 @@
+{
+  "operationId": "PF-S3-CODEX-INTEGRATION-20261118",
+  "plan": "docs/planning/2026-11-18-slice-3-codex-integration-dry-run.md",
+  "sources": [
+    "docs/quality/2026-11-18-codex-quality-assessment.md",
+    "docs/quality/2026-11-18-quality-assessment-baseline.md"
+  ],
+  "mainAtPlanning": "ec0dbddc2b4e6ca08f19605cde6e2e7892b7aba1",
+  "dependsOn": "PF-S3-QA-INTEGRATION-20261118",
+  "status": "DRY RUN - not applied; requires owner approval",
+  "creates": [
+    {
+      "id": "PF-S3-T14",
+      "kind": "Task",
+      "issueTypeId": "10008",
+      "parent": "KAN-40",
+      "summary": "[Slice 3] Recover from externally deleted pantry records",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t14",
+        "qa-codex-2026-11-18",
+        "p1",
+        "beta-gate",
+        "defect"
+      ],
+      "description": "Backlog ID: PF-S3-T14 (CR-01)\nSource: Codex QA-01 (Medium functional defect), reproduced by Codex with a provider probe (pantry-flow/.verification/quality-20261118/pantry-missing-probe.cjs, local and ignored). Re-checked in source on ec0dbdd: usePantryItems updateItem uses .update().eq(id).eq(household).select().single(), so a row deleted by another client fails with PGRST116, the error is rethrown, the stale row stays in the list and no re-read starts; deleteItem throws \"Item was not deleted\" on zero rows with the same effect. ShoppingProvider already drops a missing row (dropIfMissing) and re-reads.\nPriority: P1 (High). Release classification: external-beta gate (fix preferred before beta; otherwise disclose and mitigate in BETA-01); public-release gate; must be fixed before household sharing (Slice 4) makes concurrent edits common. Risk tier: medium.\nNot a reopening of KAN-32 (a different first-load recovery defect, Fertig).\n\nProblem: after another device deletes a pantry item, editing or deleting it shows a generic error repeatedly; the item stays in the list and the edit screen until a refresh or restart.\nImpact: a dead-end form and a stale list; no cross-household exposure or server-side corruption is demonstrated.\nScope: a targeted fix in hooks/usePantryItems.tsx, lib/pantry-data.ts and app/edit-item/[id].tsx: an explicit missing-record error contract for pantry update and delete, removal of the stale row, an authoritative household-scoped re-read, and an actionable message on the edit screen (reuse the existing missing-item state).\nExclusions: no generic CRUD framework or shared provider abstraction; no change to strict pantry uniqueness, D1-D4 or shopping links; do not reopen KAN-32.\nDependencies: none; schedule before UX-01B, which changes the same update path.\n\nAcceptance criteria:\n- The defect is reproduced independently (Codex probe or an equivalent test) and a failing-before regression test exists.\n- The missing-record contract is explicit: which responses count as \"not found for this household\" (zero rows from an id-and-household-filtered write) and which do not (transport, permission, server errors).\n- On a missing record during update or delete, the provider removes the stale row and starts a household-scoped re-read; the edit screen shows the existing missing-item message with a way back, and further edits of the nonexistent item are prevented.\n- Transport or permission failures keep valid cached rows and show the existing retry or error behavior.\n- The user is never told whether an inaccessible record exists in another household.\n- Identity, household-scope and stale-response guards stay intact: a late recovery read cannot overwrite a newer successful mutation or write into a new household scope.\n\nVerification: provider tests (missing update, missing delete, failed recovery read, transport failure keeps rows, household change during recovery, mutation and recovery-read ordering); screen test of the edit-screen missing path; an API-level or Maestro check where practical; test:fast and test:local green.\nSecurity/privacy: no item names or ids of other households in messages or logs.\nDefinition of done: acceptance criteria met with evidence on an exact commit; required checks green; every test named under Verification ran and its output was read; coverage matrix updated where behavior changed; deviations recorded with a disposition. Done does not authorize a release.\nOperation ID: PF-S3-CODEX-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-codex-integration-dry-run.md\nSources: independent Codex assessment docs/quality/2026-11-18-codex-quality-assessment.md (B, 85.7) and Claude Code assessment docs/quality/2026-11-18-quality-assessment-baseline.md (B, 84.5), both of main ec0dbdd. Findings are evidence to verify, not accepted facts.\nDependencies are description references, not native Jira links: the approved CLI has no link operation.",
+      "priorityId": "2"
+    },
+    {
+      "id": "PF-S3-T10-S5",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "KAN-50",
+      "summary": "DIST-01: Investigate the APK antivirus warning and qualify the distribution artifact",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t10-s5",
+        "qa-codex-2026-11-18",
+        "p1",
+        "beta-gate",
+        "security"
+      ],
+      "description": "Backlog ID: PF-S3-T10-S5 (DIST-01, CR-02)\nSource: Codex QA-11. docs/testing/coverage-matrix.md records that AVG on the owner's phone flagged the sideloaded test APK (com.pantryflow.test, KAN-39/84 runs) as suspicious and that the warning was dismissed; no detection name, hash or analysis exists. docs/testing/README.md tells operators to dismiss such warnings.\nPriority: P1 before any external distribution. Release classification: external-beta gate; public-release gate.\n\nScope:\n1. Recover what exists about the original warning: detection name, warning details, screenshots in ignored .verification evidence, and the flagged APK if it still exists; record its SHA-256, signing certificate and build provenance (commit, dependencies, build environment).\n2. Investigate the detection with appropriate independent analysis; private artifacts go to public scanning services only with explicit owner authorization.\n3. Qualify the intended external distribution artifact separately: release signing configuration, SHA-256, reproducible source-to-build relationship, and a scan of that exact artifact.\n4. Replace the \"dismiss it\" guidance with an instruction to record the detection details first.\nExclusions: do not disable antivirus protection; do not assume a false positive; do not claim malware without evidence; do not distribute an unresolved artifact.\nDependencies: KAN-77 (beta artifact); BETA-01 checklist.\n\nAcceptance criteria:\n- A dated record lists the original warning's details or states that they are unrecoverable, and keeps the old test APK and the new distribution artifact clearly separate.\n- The distribution artifact's hash, signer and source commit are recorded and the analysis result is documented with remaining uncertainties.\n- An explicit owner distribution-trust decision exists before external testers receive an APK; qualifying a new artifact is not presented as proof that the original warning was harmless.\nDefinition of done: findings, options and a recommendation are documented in the repository, and the owner's decision is recorded. No implementation is part of this item unless the decision approves it.\nOperation ID: PF-S3-CODEX-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-codex-integration-dry-run.md\nSources: independent Codex assessment docs/quality/2026-11-18-codex-quality-assessment.md (B, 85.7) and Claude Code assessment docs/quality/2026-11-18-quality-assessment-baseline.md (B, 84.5), both of main ec0dbdd. Findings are evidence to verify, not accepted facts.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T6-S7",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "KAN-46",
+      "summary": "SEC-06: Review the mobile session-storage threat model",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t6-s7",
+        "qa-codex-2026-11-18",
+        "p2",
+        "public-release-gate",
+        "security"
+      ],
+      "description": "Backlog ID: PF-S3-T6-S7 (SEC-06, CR-06)\nSource: Codex security assessment (category 7). lib/supabase.ts persists the Supabase session in AsyncStorage (autoRefreshToken, persistSession, PKCE). This is not evidence of a token disclosure.\nPriority: P2 investigation. Release classification: decision required before public release.\n\nScope: identify the session data stored on the device; assess device-at-rest exposure on Android and iOS; review Expo SecureStore, Keychain/Keystore-backed options and Supabase storage adapters, including size limits; consider token refresh, session restoration, account switching and migration of existing persisted sessions.\nExclusions: no storage change in this item; implement a change only after an approved decision where the security benefit justifies the complexity and compatibility risk.\nDependencies: none; coordinate with KAN-43 (session clearing after deletion) and KAN-42 (sessions after password reset).\n\nAcceptance criteria:\n- A short threat model and architecture decision record states what is stored, the realistic threats, the options with constraints, and the decision (keep, change, or change later), approved by the owner.\n- If a change is approved, a separate implementation item with migration and regression criteria is proposed.\nDefinition of done: findings, options and a recommendation are documented in the repository, and the owner's decision is recorded. No implementation is part of this item unless the decision approves it.\nOperation ID: PF-S3-CODEX-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-codex-integration-dry-run.md\nSources: independent Codex assessment docs/quality/2026-11-18-codex-quality-assessment.md (B, 85.7) and Claude Code assessment docs/quality/2026-11-18-quality-assessment-baseline.md (B, 84.5), both of main ec0dbdd. Findings are evidence to verify, not accepted facts.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T9-S5",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "KAN-49",
+      "summary": "NATIVE-01: Close native lifecycle verification gaps",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t9-s5",
+        "qa-codex-2026-11-18",
+        "p2",
+        "slice3-acceptance",
+        "testing"
+      ],
+      "description": "Backlog ID: PF-S3-T9-S5 (NATIVE-01, CR-08)\nSource: Codex behavioral-coverage and robustness assessment (categories 6 and 10); Claude assessment category 10 (session expiry only via restore). Priority: P2. Release classification: Slice 3 acceptance evidence; iOS parts gate iOS release.\n\nScope: on a physical Android device (and on iOS once KAN-68 exists): session expiry during active use; extended backgrounding and foreground restoration; real network interruption and reconnection; network transitions where reproducible; app restart after a failed mutation; the complete physical-device email-confirmation journey (the latest phone run completed its last steps only on the CI emulator); password-recovery deep links once KAN-42 exists.\nExclusions: no offline synchronization; proxy faults remain the deterministic layer but are not reported as real network evidence.\n\nAcceptance criteria:\n- Each scenario has a recorded result with device, OS, build and configuration; controlled proxy faults and real native network conditions are distinguished.\n- Household isolation holds across session and identity changes; failed operations never show a success state; the app recovers into a consistent usable state, or a defect is filed.\n- Incomplete device journeys are reported as incomplete, not passed; the coverage matrix is updated.\nDefinition of done: findings, options and a recommendation are documented in the repository, and the owner's decision is recorded. No implementation is part of this item unless the decision approves it.\nOperation ID: PF-S3-CODEX-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-codex-integration-dry-run.md\nSources: independent Codex assessment docs/quality/2026-11-18-codex-quality-assessment.md (B, 85.7) and Claude Code assessment docs/quality/2026-11-18-quality-assessment-baseline.md (B, 84.5), both of main ec0dbdd. Findings are evidence to verify, not accepted facts.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    }
+  ],
+  "updates": [
+    {
+      "key": "KAN-40",
+      "addLabels": [
+        "qa-codex-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - independent Codex assessment integration (PF-S3-CODEX-INTEGRATION-20261118); the text above is unchanged.\nSecond source: the independent Codex assessment (docs/quality/2026-11-18-codex-quality-assessment.md, B 85.7) is retained as a separate Slice 2 benchmark next to the Claude Code assessment (B 84.5); the scores are not averaged.\nAdditional work: {PF-S3-T14} (CR-01, externally deleted pantry records, P1 defect), {PF-S3-T10-S5} (DIST-01 APK warning and artifact trust), {PF-S3-T6-S7} (SEC-06 session-storage threat model), {PF-S3-T9-S5} (NATIVE-01 native lifecycle gaps).\nGate criteria for implementation authorization, Slice 3 completion, supervised and broader Android beta, Android and iOS public release: section G of the plan named below.\nUsability remains the primary objective; the added engineering findings do not displace it."
+    },
+    {
+      "key": "{PF-S3-T6-S4}",
+      "addLabels": [
+        "qa-codex-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - independent Codex assessment integration (PF-S3-CODEX-INTEGRATION-20261118); the text above is unchanged.\nSource added: Codex QA-02 (High triage requirement). Codex counted 67 high and 6 moderate affected entries from three root advisory objects (picomatch 4.0.7 and 2.3.2 locked; GHSA-fc5q-39xc-vjpf listed no patched version at assessment time); Claude counted 66 high. These are propagated entries, not independent vulnerabilities.\nAdditional criteria: record the audit date, environment (Node version, npm, CA settings) and commit; list every root advisory with paths and versions; separate runtime, development, build and CI exposure; check whether attacker-controlled input can reach glob evaluation; review current upstream remediation; document any time-bounded risk acceptance with owner and expiry; define reassessment triggers (lockfile change, new advisory, exposure change, monthly date). A reviewed disposition is required before any external beta or distribution."
+    },
+    {
+      "key": "KAN-80",
+      "addLabels": [
+        "qa-codex-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - independent Codex assessment integration (PF-S3-CODEX-INTEGRATION-20261118); the text above is unchanged.\nSource added: Codex QA-03 (and Claude F-01). Additional criteria: verify the current hosted Auth password policy through authorized read-only inspection before changing anything; signup, reset and update error messages must not reveal whether an account exists or more than the policy requires; existing accounts below the new policy follow the KAN-81 rollout decision. Requirements are not invented without a documented security and usability decision."
+    },
+    {
+      "key": "KAN-67",
+      "addLabels": [
+        "qa-codex-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - independent Codex assessment integration (PF-S3-CODEX-INTEGRATION-20261118); the text above is unchanged.\nSource added: Codex QA-08 (CR-07). Additional criteria: establish a backup strategy that matches the actual Supabase plan (for example what daily backups or point-in-time recovery the plan provides) and document its limits; after the isolated restore rehearsal, verify restored data, schema, constraints and authorization behavior (RLS and grants, household isolation) by re-running the pgTAP and integration checks against the restored database; define forward-fix procedures for a failed migration; record operational responsibilities. No destructive test against hosted data; keep the operating model proportionate to the MVP."
+    },
+    {
+      "key": "KAN-77",
+      "addLabels": [
+        "qa-codex-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - independent Codex assessment integration (PF-S3-CODEX-INTEGRATION-20261118); the text above is unchanged.\nAdded: the intended Android distribution artifact is qualified in {PF-S3-T10-S5} (DIST-01): signer, SHA-256, source commit and an analysis of that exact artifact, separate from the old test APK that AVG flagged (Codex QA-11). No tester receives an APK before the owner's distribution-trust decision."
+    },
+    {
+      "key": "{PF-S3-T10-S4}",
+      "addLabels": [
+        "qa-codex-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - independent Codex assessment integration (PF-S3-CODEX-INTEGRATION-20261118); the text above is unchanged.\nAdditional checklist lines (Codex assessment):\n8. Artifact trust: DIST-01 ({PF-S3-T10-S5}) completed with an owner distribution-trust decision.\n9. Externally deleted pantry records: {PF-S3-T14} fixed, or the known limitation disclosed to testers with a workaround (pull to refresh or restart).\nSupervised versus broader beta: this checklist admits a supervised Android beta (invited testers, direct support contact). A broader, unassisted beta additionally needs KAN-42 and KAN-43 delivered (not only interim support paths), KAN-72 published, OPS-01 monitoring reviewed after the supervised phase, and the UX-08B findings triaged."
+    },
+    {
+      "key": "{PF-S3-T13-S1}",
+      "addLabels": [
+        "qa-codex-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - independent Codex assessment integration (PF-S3-CODEX-INTEGRATION-20261118); the text above is unchanged.\nScope extended with Codex QA-09 (CR-04), combined here rather than in a new issue:\n- A concise mandatory PR description: objective and Jira references (key and subject); summary of actual changes; relevant specification decisions; verification performed with results; checks not run and known limitations; material review findings with dispositions; remaining risks.\n- Review requirements per risk tier; independent review (a separate reviewer or a fresh model instance that did not implement the change) is distinguished from self-review by the implementing agent, and the PR states which happened.\n- Material review evidence is durable and linked from the PR (in the PR body or a committed file), not only in ignored local folders.\n- Unverified claims are not presented as completed verification.\n- Existing CI checks, branch protection and write-safety mechanisms stay unchanged. Mandatory GitHub human approvals are not enabled automatically; that is a separate owner decision for a solo-developer project.\n- Keep it short: one PR template and a few lines in AGENTS.md, no new framework.",
+      "summary": "GOV-01: Define risk tiers, PR evidence format and review requirements"
+    },
+    {
+      "key": "{PF-S3-T9-S4}",
+      "addLabels": [
+        "qa-codex-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - independent Codex assessment integration (PF-S3-CODEX-INTEGRATION-20261118); the text above is unchanged.\nRenamed from \"QA-01\" to avoid confusion with Codex finding QA-01.\nMethodology (both Slice 2 reports are kept as separate benchmarks; scores are not averaged):\n- Keep the categories, weights and grading scale.\n- Mark unmeasured categories (for example performance without measurements) as NOT VERIFIED and mechanically normalize the remaining weights; record completeness.\n- Measure representative performance (PERF-01) before assigning a confident performance grade.\n- Separate external-user evidence (UX-08B) from expert usability inspection.\n- State whether the assessor is independent or the implementing agent.\n- Grade AI engineering efficiency only with adequate evidence (for example delivery and rework records); otherwise NOT VERIFIED.\n- Release-blocking findings override the aggregate grade.",
+      "summary": "ASSESS-01: Run an independent Slice 3 quality assessment against both Slice 2 benchmarks"
+    },
+    {
+      "key": "{PF-S3-T5-S3}",
+      "addLabels": [
+        "qa-codex-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - independent Codex assessment integration (PF-S3-CODEX-INTEGRATION-20261118); the text above is unchanged.\nScope correction (Codex QA-07): the edit screen's status selector (app/edit-item/[id].tsx, three Pressable status pills, not OptionChips) also lacks role and selected state; it is in scope. The new direct status control (UX-01B) follows the same contract."
+    },
+    {
+      "key": "{PF-S3-T11}",
+      "addLabels": [
+        "qa-codex-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - independent Codex assessment integration (PF-S3-CODEX-INTEGRATION-20261118); the text above is unchanged.\nSource added: Codex QA-04 (initial inventory and finding items have unvalidated everyday effort). Both assessments rate usability well below engineering; this workstream is not downgraded.\nPrinciples added: source-derived tap counts are not proof of better usability; observed user behavior (UX-08B) decides. Fix the externally deleted record defect ({PF-S3-T14}) before UX-01B. Extract the D3 prompt orchestration only when the direct status control is a real second consumer; no generic provider abstraction because Pantry and Shopping providers look alike."
+    },
+    {
+      "key": "{PF-S3-T11-S2}",
+      "addLabels": [
+        "qa-codex-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - independent Codex assessment integration (PF-S3-CODEX-INTEGRATION-20261118); the text above is unchanged.\nAdditional criteria: the interaction targets count both answers to the shopping prompt, accepting and declining (at most 3 interactions either way). Depends on {PF-S3-T14}, which changes the same update path and must land first."
+    },
+    {
+      "key": "{PF-S3-T11-S5}",
+      "addLabels": [
+        "qa-codex-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - independent Codex assessment integration (PF-S3-CODEX-INTEGRATION-20261118); the text above is unchanged.\nAdditional criteria (Codex QA-04): reduce repeated modal navigation during initial entry where practical (for example staying on the add form after a save); entered information is preserved on every error."
+    },
+    {
+      "key": "{PF-S3-T11-S10}",
+      "addLabels": [
+        "qa-codex-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - independent Codex assessment integration (PF-S3-CODEX-INTEGRATION-20261118); the text above is unchanged.\nAdditional measures (Codex QA-04 and the owner brief): perceived administrative effort, repeated usage over the study period and willingness to continue. Report source-derived interaction counts separately from observed behavior; fewer taps alone is not reported as a usability improvement."
+    }
+  ]
+}

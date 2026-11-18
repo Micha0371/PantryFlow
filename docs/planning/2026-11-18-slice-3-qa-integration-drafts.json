@@ -1,0 +1,609 @@
+{
+  "operationId": "PF-S3-QA-INTEGRATION-20261118",
+  "plan": "docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md",
+  "sourceAssessment": "docs/quality/2026-11-18-quality-assessment-baseline.md",
+  "mainAtPlanning": "ec0dbddc2b4e6ca08f19605cde6e2e7892b7aba1",
+  "status": "DRY RUN - not applied; requires owner approval",
+  "creates": [
+    {
+      "id": "PF-S3-T11",
+      "kind": "Task",
+      "issueTypeId": "10008",
+      "parent": "KAN-40",
+      "summary": "[Slice 3] Simplify everyday household workflows",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t11",
+        "qa-2026-11-18",
+        "p1",
+        "slice3-acceptance",
+        "usability"
+      ],
+      "description": "Backlog ID: PF-S3-T11\nSource findings: F-05, F-06, F-14, F-16 (via UX-01A), usability category C (75) of the 2026-11-18 assessment.\nPriority: P1 (High). Release classification: Slice 3 acceptance blocker for UX-01, UX-02, UX-04 and UX-07; UX-03 and UX-05 are discovery; UX-08A/B gate public release.\n\nProblem: the technical foundation is stronger than everyday usability. Changing a status takes 3 taps (4 with the shopping prompt; PRD Flow 3 targets 2-3), the pantry list has no search, the Return key does not save a new item, and nothing has been validated with ordinary household users.\nImpact: frequent small actions cost more effort than the product promises; PantryFlow risks becoming another administrative obligation.\nPrinciple: reduce household administration. Prefer fewer interactions, understandable behavior, reliable data, predictable navigation and low cognitive load. Do not add features to match competitor lists. This is not a visual redesign.\n\nScope: the subtasks UX-01A to UX-08B. Accessibility (roles, labels, selected states, announcements) and EN/DE strings are part of each subtask's acceptance, not deferred to KAN-45/KAN-44; new strings are listed for KAN-60.\nExclusions: no visual redesign, no new backend or search service, no state library, no change to D1-D4, strict pantry uniqueness or RLS, no sharing or premium behavior.\nReferences: PRD section 2 and Flow 3; Slice 2 plan D3 and D5 (docs/planning/slice-2-implementation-plan.md); assessment section C1 interaction table.\nDependencies: KAN-41 readiness (Slice 2 acceptance KAN-52, scope decisions KAN-51 including the D5 revision for search). Coordinate with KAN-44 (German), KAN-45 (accessibility audit), KAN-49 (regression).\n\nAcceptance criteria:\n- Each subtask meets its own criteria; interaction counts before and after are recorded for status change, add-to-list and initial item entry.\n- No regression in D1-D4, strict pantry uniqueness, duplicate messages, double-tap and lost-dialog guards (existing Node, Jest, pgTAP, integration and Maestro suites green).\n- New interactions are reachable and understandable with TalkBack; VoiceOver evidence follows KAN-47.\nDefinition of done: acceptance criteria met with evidence on an exact commit; required checks green; every test named under Verification ran and its output was read; coverage matrix updated where behavior changed; deviations recorded with a disposition. Done does not authorize a release.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation.",
+      "priorityId": "2"
+    },
+    {
+      "id": "PF-S3-T11-S1",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "PF-S3-T11",
+      "summary": "UX-01A: Design the direct pantry status change",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t11-s1",
+        "qa-2026-11-18",
+        "p1",
+        "slice3-acceptance",
+        "usability",
+        "discovery"
+      ],
+      "description": "Backlog ID: PF-S3-T11-S1 (UX-01A)\nSource findings: F-05 (status change takes 3-4 taps), F-16 (prompt orchestration in app/edit-item/[id].tsx). Priority: P1. Release classification: gates UX-01B; design only.\n\nProblem: status is changed only through the edit screen (row, chip, Save; plus Add in the shopping prompt).\nScope: compare at most three explicit-selection designs, for example a status badge that opens a three-option inline selector, a long-press action menu, or a compact segmented control in an expanded row. Count taps for: normal change, change plus accepting the prompt, and correcting a mistaken change. Describe TalkBack semantics for each (role, label, selected state or accessibility actions). Recommend one with a low-fidelity mock in the repository.\nDecide whether the D3 orchestration (save, prompt, add, notice, focus guards) moves into a focused hook shared by the edit screen and the new control (F-16 / ARCH-01). Extract only if the new control reuses it; do not refactor for line count alone.\nExclusions: no blind status cycling only to reduce taps; no implementation.\nDependencies: KAN-41 readiness.\n\nAcceptance criteria:\n- The recommended design reaches a normal change in at most 2 intentional interactions and change plus prompt acceptance in at most 3; all three statuses (In stock, Low, Out) stay explicitly selectable.\n- The D3 rules are restated against the design: prompt only on a change to Low or Out, never on unchanged or In stock; a failed shopping add never rolls back the pantry change.\n- Discoverability for first-time users and the screen-reader interaction are described.\n- The owner approves the design, or chooses another, before UX-01B starts.\nDefinition of done: findings, options and a recommendation are documented in the repository, and the owner's decision is recorded. No implementation is part of this item.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T11-S2",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "PF-S3-T11",
+      "summary": "UX-01B: Implement the approved direct status change on the pantry list",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t11-s2",
+        "qa-2026-11-18",
+        "p1",
+        "slice3-acceptance",
+        "usability"
+      ],
+      "description": "Backlog ID: PF-S3-T11-S2 (UX-01B)\nSource finding: F-05. Priority: P1. Release classification: Slice 3 acceptance blocker. Risk tier: medium (UI workflow, state, business rule reuse).\n\nProblem: see UX-01A. Impact: the most frequent pantry action costs 3-4 taps.\nScope: implement the design approved in UX-01A, reusing the existing pantry update operation, offersShoppingAdd, the shopping add operation and the existing mutation guards (useItemMutation/current(), useSingleOpen). Apply the F-16 extraction decision from UX-01A.\nExclusions: no visual redesign, no new backend or search service, no state library, no change to D1-D4, strict pantry uniqueness or RLS, no sharing or premium behavior.\nDependencies: UX-01A approved; KAN-41 readiness.\n\nAcceptance criteria:\n- Users change status without opening the edit screen; In stock, Low and Out remain explicitly selectable; the edit screen keeps all its functions.\n- A normal change takes at most 2 intentional interactions; change plus accepting the shopping prompt at most 3.\n- The prompt appears only for the D3 transitions (to Low or Out from a different status); a failed shopping add does not roll back the pantry change and shows an understandable, recoverable error; an open duplicate shows the existing translated duplicate message.\n- Repeated or fast taps cause no duplicate mutation, prompt or navigation; a change pending while the household or user changes cannot write into the new scope.\n- The control is accessible: role, label with item name and current status, selected state, and the result announced to TalkBack.\n- Strings exist in en.ts and are listed for German (KAN-60).\n\nVerification: failing-before Node/Jest screen and provider tests (transition matrix, prompt suppression, failed add, double tap, scope change); extended Maestro journey with database read-back; TalkBack check on the phone; full test:fast and test:local.\nSecurity/privacy: no pantry or shopping contents, account identifiers, tokens or recovery links in logs or committed evidence; household authorization stays database-enforced (RLS); fixtures only in screenshots.\nDefinition of done: acceptance criteria met with evidence on an exact commit; required checks green; every test named under Verification ran and its output was read; coverage matrix updated where behavior changed; deviations recorded with a disposition. Done does not authorize a release.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T11-S3",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "PF-S3-T11",
+      "summary": "UX-02: Search the pantry list by name",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t11-s3",
+        "qa-2026-11-18",
+        "p1",
+        "slice3-acceptance",
+        "usability"
+      ],
+      "description": "Backlog ID: PF-S3-T11-S3 (UX-02)\nSource finding: F-06. Priority: P1. Release classification: Slice 3 acceptance blocker. Risk tier: medium (new UI workflow).\n\nProblem: the pantry list is a flat list, newest first (app/(tabs)/index.tsx, lib/pantry-data.ts); beyond about 30 items users must scroll to find an item.\nScope: a name search field on the Pantry tab that filters the already loaded household inventory locally. The provider already loads the full household list, so no query or index change is needed.\nExclusions: no search service, database search, fuzzy matching or saved searches; sort and filters are UX-03; no visual redesign, new backend, state library, or change to D1-D4, strict pantry uniqueness or RLS.\nDependencies: KAN-51 records the D5 revision (search moves into Slice 3; filters stay with UX-03). KAN-41 readiness.\n\nAcceptance criteria:\n- Search matches item names case-insensitively, consistent with the pantry name normalization (trim, lower-case); leading and trailing whitespace in the query is ignored.\n- Results update predictably while typing; clearing the query restores the complete inventory.\n- A no-match state (\"No items match ...\") is visibly different from the empty-pantry state and offers clearing the search.\n- Search never changes stored data and shows only the current household's items (filtering happens on the provider's household-scoped list).\n- Results stay correct after adding, editing, deleting and status-changing items, and after a household or user change.\n- The keyboard does not cover the field, results or the add action; the field has an accessible label and the result count is announced.\n- Works in English and German (strings listed for KAN-60).\n\nVerification: failing-before screen tests for normal, empty-pantry, no-match, clear and post-mutation states; Maestro search step with a fixture inventory; TalkBack check.\nSecurity/privacy: no pantry or shopping contents, account identifiers, tokens or recovery links in logs or committed evidence; household authorization stays database-enforced (RLS); fixtures only in screenshots.\nDefinition of done: acceptance criteria met with evidence on an exact commit; required checks green; every test named under Verification ran and its output was read; coverage matrix updated where behavior changed; deviations recorded with a disposition. Done does not authorize a release.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T11-S4",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "PF-S3-T11",
+      "summary": "UX-03: Evaluate simple pantry ordering and status filtering",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t11-s4",
+        "qa-2026-11-18",
+        "p2",
+        "discovery",
+        "usability"
+      ],
+      "description": "Backlog ID: PF-S3-T11-S4 (UX-03)\nSource finding: F-06 (sort and filter part). Priority: P2. Release classification: discovery; implementation needs a separate owner decision.\n\nProblem: the list is ordered newest first only. D5 deferred pantry filters to the localization slice.\nScope: evaluate whether alphabetical ordering, Low/Out items first, or a single status filter reduces effort beyond what UX-02 search achieves. Define one sensible default. Reconcile with D5 and record the outcome in KAN-51.\nExclusions: no filter panel, no multiple configuration options, no implementation in this item.\nDependencies: UX-02 delivered or at least designed, so the evaluation measures the remaining gap.\n\nAcceptance criteria:\n- The most useful one or two options and a default order are proposed with the reasoning (frequency of the \"what do I need to buy\" question versus \"where is X\").\n- The evaluation states whether search alone solves the main problem.\n- The proposed behavior is documented and approved or rejected by the owner; D5's status is updated in KAN-51.\nDefinition of done: findings, options and a recommendation are documented in the repository, and the owner's decision is recorded. No implementation is part of this item.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T11-S5",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "PF-S3-T11",
+      "summary": "UX-04: Faster pantry item creation (Return to save, continuous entry)",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t11-s5",
+        "qa-2026-11-18",
+        "p1",
+        "slice3-acceptance",
+        "usability"
+      ],
+      "description": "Backlog ID: PF-S3-T11-S5 (UX-04)\nSource finding: F-14 (Return does not save in app/add-item.tsx). Priority: P1 for the workflow, P2 for individual small changes. Release classification: Slice 3 acceptance (Return-to-save); continuous entry only if shown easier. Risk tier: medium.\n\nProblem: each new item costs 2-4 taps plus typing; 20 items take about 40-80 taps.\nScope: Return-to-save on the name field; evaluate a simple continuous-entry option (for example \"Save and add another\" or staying on the form after save). Measure taps before and after.\nExclusions: no extra buttons unless the measured workflow is easier; bulk entry is UX-05.\nDependencies: KAN-41 readiness.\n\nAcceptance criteria:\n- Return saves when the input is valid; invalid input shows the existing translated error without navigation or data loss.\n- Strict duplicate prevention is unchanged (client check and database index).\n- A failed save keeps the entered name and selected category, location and status.\n- Double submission (Return plus Save, or repeated Return) creates at most one item.\n- Optional category and location never block a quick name-only add.\n- The single-item add stays straightforward; tap counts before and after are recorded.\n\nVerification: failing-before screen tests (Return valid/invalid/duplicate, double submit, failed save keeps values); Maestro add step via Return; phone keyboard check.\nSecurity/privacy: no pantry or shopping contents, account identifiers, tokens or recovery links in logs or committed evidence; household authorization stays database-enforced (RLS); fixtures only in screenshots.\nDefinition of done: acceptance criteria met with evidence on an exact commit; required checks green; every test named under Verification ran and its output was read; coverage matrix updated where behavior changed; deviations recorded with a disposition. Done does not authorize a release.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T11-S6",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "PF-S3-T11",
+      "summary": "UX-05: Discover whether bulk inventory entry is worth building",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t11-s6",
+        "qa-2026-11-18",
+        "p2",
+        "discovery",
+        "usability"
+      ],
+      "description": "Backlog ID: PF-S3-T11-S6 (UX-05)\nSource: assessment weakness \"no bulk entry\"; owner usability brief. Priority: P2. Release classification: discovery; full implementation needs a separate owner decision.\n\nProblem: initial inventory setup may be an abandonment risk.\nScope: evaluate a lightweight one-item-per-line entry against continuous single-item entry (UX-04). A prototype is allowed. Cover duplicate detection against existing items and within the batch, whitespace normalization, invalid entries, partial failures, per-item feedback (added or rejected and why) and safe retry.\nExclusions: no silent merging, automatic renaming or duplicate insertion; uniqueness stays database-enforced; no implementation in the app without approval.\nDependencies: UX-04 measurements; UX-08A/B observations if available.\n\nAcceptance criteria:\n- Evidence or a reasoned estimate shows whether setup effort is a meaningful abandonment risk.\n- A recommendation states whether continuous entry suffices or bulk entry adds substantial value, with draft acceptance criteria for a possible implementation.\n- The owner decision is recorded.\nDefinition of done: findings, options and a recommendation are documented in the repository, and the owner's decision is recorded. No implementation is part of this item.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T11-S7",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "PF-S3-T11",
+      "summary": "UX-06: Review interaction consistency across Pantry and Shopping",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t11-s7",
+        "qa-2026-11-18",
+        "p2",
+        "slice3-acceptance",
+        "usability"
+      ],
+      "description": "Backlog ID: PF-S3-T11-S7 (UX-06)\nSource: assessment section C1; owner usability brief. Priority: P1 or P2 per confirmed finding. Release classification: review is Slice 3 acceptance; each fix is scoped separately.\n\nScope: review Pantry and Shopping together for add/edit form consistency; Save, Cancel and Remove behavior; keyboard handling; back and navigation behavior; duplicate navigation prevention; error presentation; preservation of input after failures; loading and retry states; unnecessary dialogs; accidental destructive actions. Investigate whether undo would help.\nExclusions: do not reopen resolved findings (KAN-32 to KAN-39, KAN-84 to KAN-86) without new evidence of a regression; keep confirmation for destructive actions; no soft delete or extra database complexity without a separate decision.\nDependencies: UX-01B and UX-02 designs, so the review covers the new interactions.\n\nAcceptance criteria:\n- A findings list with reproduction, severity and proposed fix is recorded in the repository.\n- Confirmed P1 inconsistencies are fixed with failing-before tests or receive an owner disposition; others are dispositioned.\n- The undo investigation ends in a recorded recommendation, not an implementation.\n\nVerification: walkthrough on the phone and in tests; fixes follow the normal test-first rule.\nSecurity/privacy: no pantry or shopping contents, account identifiers, tokens or recovery links in logs or committed evidence; household authorization stays database-enforced (RLS); fixtures only in screenshots.\nDefinition of done: acceptance criteria met with evidence on an exact commit; required checks green; every test named under Verification ran and its output was read; coverage matrix updated where behavior changed; deviations recorded with a disposition. Done does not authorize a release.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T11-S8",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "PF-S3-T11",
+      "summary": "UX-07: Simplify the first-use experience and Settings",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t11-s8",
+        "qa-2026-11-18",
+        "p1",
+        "slice3-acceptance",
+        "usability"
+      ],
+      "description": "Backlog ID: PF-S3-T11-S8 (UX-07)\nSource: assessment section C1 (registration about 7 taps plus email round-trip; Settings has only Sign out). Priority: P1. Release classification: Slice 3 acceptance blocker.\n\nScope: review registration, email confirmation, first login, empty pantry, initial inventory and the first shopping-list interaction. Place account recovery (KAN-42), language (KAN-61), account deletion (KAN-58), support and feedback (KAN-72/KAN-73) in Settings as they are delivered, without accumulating options.\nExclusions: no lengthy tutorial; no mandatory exhaustive inventory entry; no marketing screens.\nDependencies: KAN-42, KAN-43, KAN-44 and KAN-48 deliver the Settings entries; this item owns their placement and wording.\n\nAcceptance criteria:\n- A first-time user understands what PantryFlow does without external instructions (checked in UX-08B).\n- The empty pantry offers one clear next action; registration and confirmation states say what happens next, including a resend path.\n- Users can find recovery, language, deletion, support and feedback once implemented; Settings stays short and grouped.\n- Initial inventory setup is presented as optional and incremental.\n\nVerification: screen tests for empty and confirmation states; phone walkthrough of the full first-use path in EN and DE; TalkBack check of Settings.\nSecurity/privacy: no pantry or shopping contents, account identifiers, tokens or recovery links in logs or committed evidence; household authorization stays database-enforced (RLS); fixtures only in screenshots.\nDefinition of done: acceptance criteria met with evidence on an exact commit; required checks green; every test named under Verification ran and its output was read; coverage matrix updated where behavior changed; deviations recorded with a disposition. Done does not authorize a release.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T11-S9",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "PF-S3-T11",
+      "summary": "UX-08A: Prepare the external usability study",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t11-s9",
+        "qa-2026-11-18",
+        "p1",
+        "public-release-gate",
+        "usability"
+      ],
+      "description": "Backlog ID: PF-S3-T11-S9 (UX-08A)\nSource: assessment confidence note (no external-user validation). Priority: P1 before public release. Release classification: public-release gate (preparation).\n\nScope: a study plan for about five to eight ordinary household users (not developers or the owner), subject to availability. Tasks: register and begin; enter an initial inventory; find an item; mark an item Low or Out; add it to the shopping list; complete an item while shopping; reopen a wrongly completed item; edit or remove an item; recover from a failed operation. Measures: completion, interaction count, time, requests for help, navigation errors, misunderstood terms, accidental operations, self-reported effort, willingness to continue. Separate observed behavior from opinion.\nPrivacy: written consent; no recordings of real household data or account credentials; participants use fixture or beta accounts; results stored without personal identifiers.\nDependencies: none for preparation; running the study needs a build with UX-01B, UX-02 and UX-04 (UX-08B).\n\nAcceptance criteria:\n- Protocol, task script, observation sheet, consent text and analysis template are in the repository.\n- Recruitment approach and the build/account setup are agreed with the owner.\nDefinition of done: findings, options and a recommendation are documented in the repository, and the owner's decision is recorded. No implementation is part of this item.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T11-S10",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "PF-S3-T11",
+      "summary": "UX-08B: Run the usability study and triage findings",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t11-s10",
+        "qa-2026-11-18",
+        "p1",
+        "public-release-gate",
+        "usability"
+      ],
+      "description": "Backlog ID: PF-S3-T11-S10 (UX-08B)\nPriority: P1 before public release. Release classification: public-release gate; may run during the closed beta.\n\nScope: run the UX-08A protocol with real participants, analyze results and record an opportunity backlog.\nExclusions: no claim of external usability validation before participants have completed the study; no implementation issues before triage.\nDependencies: UX-08A; a build containing UX-01B, UX-02 and UX-04; BETA-01 if run with beta testers.\n\nAcceptance criteria:\n- Per-task results (completion, interactions, time, assistance, errors, terminology, accidental operations, effort, continuation) are reported with the number of participants and limits.\n- Observations and opinions are separated; findings are triaged with the owner; implementation issues are created only after that triage and with approval.\n- Results feed the Slice 3 assessment (QA-01) as external-user evidence, kept distinct from expert inspection.\nDefinition of done: findings, options and a recommendation are documented in the repository, and the owner's decision is recorded. No implementation is part of this item.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T5-S3",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "KAN-45",
+      "summary": "A11Y-01: Expose selection chips and pantry rows to screen readers",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t5-s3",
+        "qa-2026-11-18",
+        "p1",
+        "public-release-gate",
+        "slice3-acceptance",
+        "accessibility"
+      ],
+      "description": "Backlog ID: PF-S3-T5-S3 (A11Y-01)\nSource findings: F-04 (components/OptionChips.tsx renders Pressable chips without role or selected state), F-13 (components/PantryItem.tsx row without role or label). Re-verified on main ec0dbdd. Priority: P1. Release classification: public-release accessibility gate; Slice 3 acceptance.\n\nProblem: TalkBack users cannot tell which status, category or location is selected, and pantry rows are read as loose text without \"button\".\nImpact: blind users cannot reliably set or read an item's status.\nScope: chips get a radio or button role, accessibilityState.selected and a group label; rows get a button role and a combined label (name, status, category, location) with a hint to open. Reuse the KAN-63 audit rules.\nExclusions: no visual change beyond what touch-target criteria require; no web-only roles.\nDependencies: none; independent of other Slice 3 work. Coordinate with UX-01B so the new status control follows the same contract.\n\nAcceptance criteria:\n- Every chip exposes role, label and selected state; the group has a label (Status, Category, Location).\n- Every pantry row exposes a button role and one combined label; Shopping rows keep their existing checkbox and button roles.\n- TalkBack reads \"Low, selected\" (or equivalent) and the row summary on the phone.\n\nVerification: failing-before Jest/Node prop tests for chips and rows; TalkBack walkthrough of add, edit and list screens.\nSecurity/privacy: no pantry or shopping contents, account identifiers, tokens or recovery links in logs or committed evidence; household authorization stays database-enforced (RLS); fixtures only in screenshots.\nDefinition of done: acceptance criteria met with evidence on an exact commit; required checks green; every test named under Verification ran and its output was read; coverage matrix updated where behavior changed; deviations recorded with a disposition. Done does not authorize a release.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T7-S4",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "KAN-47",
+      "summary": "A11Y-02: Announce form and screen errors to VoiceOver on iOS",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t7-s4",
+        "qa-2026-11-18",
+        "p1",
+        "ios-gate",
+        "accessibility"
+      ],
+      "description": "Backlog ID: PF-S3-T7-S4 (A11Y-02)\nSource: F-03; PF-IOS-001 (docs/testing/production-follow-ups.md) notes that KAN-34 covers Android only. On main ec0dbdd, lib/accessibility.ts announceError runs only when Platform.OS is android, and InlineError relies on an Android live region. Priority: P1 for iOS. Release classification: iOS release gate only.\n\nProblem: on iOS, field and screen-level errors are not announced to VoiceOver.\nScope: make announceError and the focused-announcement hook work on iOS (AccessibilityInfo.announceForAccessibility is available there), and verify timing against VoiceOver focus changes.\nDependencies: KAN-68 iOS build; KAN-64 VoiceOver acceptance records the device evidence.\n\nAcceptance criteria:\n- Form errors, repeated identical form errors and screen-level load errors are announced by VoiceOver on a physical iPhone.\n- Android behavior and its tests are unchanged.\n\nVerification: unit tests per platform; VoiceOver walkthrough on a physical iPhone with build and iOS versions recorded.\nDefinition of done: acceptance criteria met with evidence on an exact commit; required checks green; every test named under Verification ran and its output was read; coverage matrix updated where behavior changed; deviations recorded with a disposition. Done does not authorize a release.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T6-S4",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "KAN-46",
+      "summary": "SEC-01: Reassess the picomatch advisory and refresh the advisory register",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t6-s4",
+        "qa-2026-11-18",
+        "p1",
+        "beta-gate",
+        "security"
+      ],
+      "description": "Backlog ID: PF-S3-T6-S4 (SEC-01)\nSource finding: F-07. On ec0dbdd npm audit reported 66 high and 6 moderate, from one new high root advisory (picomatch ReDoS, GHSA-fc5q-39xc-vjpf, <= 4.0.7) reached through Expo CLI, Metro and Jest. docs/security/tooling-advisories.md (last assessed 2026-11-09) still says zero high and requires escalation when severity turns high. Priority: P1 investigation. Release classification: external-beta gate (assessment section H condition 5).\n\nScope: re-run npm ci, npm audit --json and npm ls --all against the current lockfile; separate root advisories from propagated counts; trace dependency paths; assess runtime, build-time and CI exposure and whether vulnerable code processes untrusted input; evaluate compatible remediation (SDK-matched updates, overrides) with compatibility analysis; update the register with evidence, residual-risk owner and review date; apply its escalation rule.\nExclusions: no broad dependency upgrade without compatibility analysis; no npm audit fix --force; do not assume harmlessness because a package is tooling.\nDependencies: none.\n\nAcceptance criteria:\n- The register shows current counts, each root advisory with path, exposure and decision, and the next review date.\n- Any remediation runs the full fast, local and Android suites; any accepted risk has an owner and date.\n- KAN-27 (Sonar cleanup, Fertig) is noted as unrelated to advisories.\n\nVerification: committed register diff; audit artifacts kept as ignored evidence.\nSecurity/privacy: no tokens or registry credentials in artifacts.\nDefinition of done: acceptance criteria met with evidence on an exact commit; required checks green; every test named under Verification ran and its output was read; coverage matrix updated where behavior changed; deviations recorded with a disposition. Done does not authorize a release.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T6-S5",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "KAN-46",
+      "summary": "SEC-02: Re-verify the hosted database baseline read-only before beta",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t6-s5",
+        "qa-2026-11-18",
+        "p1",
+        "beta-gate",
+        "security"
+      ],
+      "description": "Backlog ID: PF-S3-T6-S5 (SEC-02)\nSource finding: F-17 (hosted Slice 2 schema not verified by the assessor). Recorded evidence exists: 00004 was applied and verified on 2026-11-11 (docs/testing/hosted-shopping-migration.md execution record) after the profile baseline reconciliation. Priority: P1 before external beta. Release classification: external-beta gate (assessment section H condition 1).\n\nScope: an authorized, read-only drift check of the hosted project: migration history exactly 00001-00004, PostgreSQL major 17, tables, columns, grants, policies, constraints, indexes and functions against a local 00004 reference, and the documented hosted-only exceptions (for example the RLS auto-enable event trigger).\nExclusions: no hosted migration, repair or data change; any drift found is reported and dispositioned, not fixed in this item.\nDependencies: owner authorization for the hosted read at execution time; reuse the existing catalog comparison procedure.\n\nAcceptance criteria:\n- A dated record states match or each drift item with disposition; existing data is unchanged (read-only access only).\n- Credentials are never printed; the record contains no user data.\n\nVerification: catalog comparison output kept as ignored evidence; summary committed.\nDefinition of done: acceptance criteria met with evidence on an exact commit; required checks green; every test named under Verification ran and its output was read; coverage matrix updated where behavior changed; deviations recorded with a disposition. Done does not authorize a release.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T6-S6",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "KAN-46",
+      "summary": "OPS-01: Select and add privacy-conscious crash and error reporting",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t6-s6",
+        "qa-2026-11-18",
+        "p1",
+        "beta-gate",
+        "operations"
+      ],
+      "description": "Backlog ID: PF-S3-T6-S6 (OPS-01)\nSource finding: F-11 (no crash or error monitoring SDK in pantry-flow/package.json, re-verified). Priority: P1 before external beta. Release classification: external-beta gate (assessment section H condition 2). Risk tier: high (new data flow to a third party).\n\nProblem: defects on beta devices would be invisible.\nScope: 1) a decision note comparing at most three services on privacy, data residency, cost, maintenance, Expo compatibility and source-map handling; owner selects. 2) Integrate the selected SDK with crash and unhandled-error capture only.\nExclusions: no analytics, behavioral tracking, session replay or performance tracing without a separate product and privacy decision.\nDependencies: owner selection (decision S3-Q6); KAN-72 privacy notice must disclose it before beta.\n\nAcceptance criteria:\n- Events contain no pantry or shopping contents, item names, emails, tokens, recovery URLs or credentials; scrubbing is configured and tested.\n- Test builds (com.pantryflow.test) and release builds report to separate environments or reporting is off in tests.\n- A forced test crash reaches the service from a release-configured build; the DSN or key handling follows the repository's secret rules.\n\nVerification: payload inspection of a test event; unit test of the scrubbing hook; phone smoke.\nDefinition of done: acceptance criteria met with evidence on an exact commit; required checks green; every test named under Verification ran and its output was read; coverage matrix updated where behavior changed; deviations recorded with a disposition. Done does not authorize a release.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T9-S4",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "KAN-49",
+      "summary": "QA-01: Run an independent Slice 3 quality assessment against the 2026-11-18 baseline",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t9-s4",
+        "qa-2026-11-18",
+        "p2",
+        "slice3-acceptance",
+        "quality"
+      ],
+      "description": "Backlog ID: PF-S3-T9-S4 (QA-01)\nSource: assessment section G (first graded baseline). Priority: P2. Release classification: Slice 3 acceptance input; grades never replace release criteria.\n\nScope: repeat the A+ to F rubric (12 weighted categories, AI subcategories) on the final Slice 3 head, compared with docs/quality/2026-11-18-quality-assessment-baseline.md. Use an assessor who did not implement the evaluated changes where practical.\nImprovement targets (indicators, not gates): usability C toward B+; functional correctness B+ toward A-; accessibility demonstrably improved per platform; test effectiveness kept (mutation sensitivity); security/privacy public blockers closed; operational readiness C+ toward B+; AI engineering efficiency with less ceremony; performance from measurements (PERF-01) instead of static assumptions.\nDependencies: Slice 3 mandatory work done; UX-08B results; PERF-01 measurements.\n\nAcceptance criteria:\n- The report states assessor independence, evidence types (executed, recorded, static, inferred) and the comparison per category.\n- External-user evidence (UX-08B) is kept distinct from expert inspection.\n- The report is committed under docs/quality/ and referenced from KAN-76.\nDefinition of done: findings, options and a recommendation are documented in the repository, and the owner's decision is recorded. No implementation is part of this item.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T10-S4",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "KAN-50",
+      "summary": "BETA-01: Define and verify the external beta entry checklist",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t10-s4",
+        "qa-2026-11-18",
+        "p1",
+        "beta-gate",
+        "operations"
+      ],
+      "description": "Backlog ID: PF-S3-T10-S4 (BETA-01)\nSource: assessment section H (closed Android beta: CONDITIONAL GO). Priority: P1. Release classification: external-beta gate.\n\nScope: one checklist the owner signs before inviting testers, each line pointing at its evidence:\n1. Hosted baseline re-verified (SEC-02).\n2. Crash and error reporting active and disclosed (OPS-01).\n3. Password reset and account deletion: KAN-42 and KAN-43 delivered, or an interim support path (support contact handles reset and deletion requests within a stated time) documented and tested.\n4. Minimum privacy notice and support contact published (KAN-72 beta subset).\n5. Advisory register current (SEC-01).\n6. Testers told the language scope (English only unless KAN-44 is done) and how to give feedback (KAN-73 or the support contact).\n7. Tester instructions, eligibility, stop criteria and data handling written; Android beta artifact prepared (KAN-77).\nExclusions: no invitations, uploads or distribution without separate owner authorization.\nDependencies: SEC-01, SEC-02, OPS-01, KAN-72, KAN-77; Slice 3 acceptance is not required for a closed beta unless the owner decides so (decision S3-Q7).\n\nAcceptance criteria:\n- Every line has evidence or an explicit owner waiver with reason; missing lines keep the beta NO-GO.\n- The checklist is committed and referenced from KAN-79.\nDefinition of done: findings, options and a recommendation are documented in the repository, and the owner's decision is recorded. No implementation is part of this item.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T12",
+      "kind": "Task",
+      "issueTypeId": "10008",
+      "parent": "KAN-40",
+      "summary": "[Slice 3] Strengthen test infrastructure, CI and engineering hygiene",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t12",
+        "qa-2026-11-18",
+        "p2",
+        "engineering"
+      ],
+      "description": "Backlog ID: PF-S3-T12\nSource findings: F-08, F-12, F-15, F-18, assessment category 5 weakness (repeated stub maps) and category 9 (performance not measured). Priority: P2 (Medium). Release classification: not a release gate, except PERF-01 which feeds Slice 3 acceptance evidence.\n\nProblem: a regression can hang the Node suite; Android E2E can be skipped for app changes; one Gradle download flake; legacy Emergent scaffolding distorts SonarCloud; performance grade rests on static inspection.\nScope: subtasks TEST-01, TEST-02, CI-01, TEST-03, PERF-01, ARCH-02.\nExclusions: no comprehensive mutation-testing infrastructure; no custom backend, repository or service layer, global state library, HouseholdKit framework or shared provider abstraction without demonstrated need (ARCH-03); no weakening of required checks or write guards.\nDependencies: none for TEST-01, CI-01 and ARCH-02; PERF-01 measures before and after T11 changes.\n\nAcceptance criteria:\n- Each subtask meets its criteria; required checks (fast, database, SonarCloud) stay intact; branch-protection changes only with separate approval.\nDefinition of done: acceptance criteria met with evidence on an exact commit; required checks green; every test named under Verification ran and its output was read; coverage matrix updated where behavior changed; deviations recorded with a disposition. Done does not authorize a release.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation.",
+      "priorityId": "3"
+    },
+    {
+      "id": "PF-S3-T12-S1",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "PF-S3-T12",
+      "summary": "TEST-01: Add timeouts so hanging regression tests fail fast",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t12-s1",
+        "qa-2026-11-18",
+        "p2",
+        "engineering"
+      ],
+      "description": "Backlog ID: PF-S3-T12-S1 (TEST-01)\nSource finding: F-12 (assessment mutation M4 hung the Node suite until killed; package.json test scripts have no timeout). Priority: P2. Release classification: development quality. Risk tier: low.\n\nScope: a per-test timeout for the Node suites (node --test --test-timeout) and suitable separate limits for the integration suite.\nAcceptance criteria:\n- A deliberately broken asynchronous test fails within the limit with the test name in the output.\n- Legitimately slow integration tests keep a sufficient, separate limit; existing suites stay deterministic.\n- The M4 scenario (an unchanged status also prompts) is re-run as verification and fails instead of hanging.\n\nVerification: test:fast and test:local green; M4 mutation in a throwaway worktree, reverted.\nDefinition of done: acceptance criteria met with evidence on an exact commit; required checks green; every test named under Verification ran and its output was read; coverage matrix updated where behavior changed; deviations recorded with a disposition. Done does not authorize a release.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T12-S2",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "PF-S3-T12",
+      "summary": "TEST-02: Make Android E2E a risk-based gate for app changes",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t12-s2",
+        "qa-2026-11-18",
+        "p2",
+        "engineering"
+      ],
+      "description": "Backlog ID: PF-S3-T12-S2 (TEST-02)\nSource finding: F-08 (.github/workflows/pantryflow-tests.yml runs android only on workflow_dispatch, schedule or a [full-e2e] push; it is not a required check). Priority: P2. Release classification: recommended before Android production. Risk tier: medium (CI policy).\n\nScope: define which changes need Android E2E (for example app/, components/, hooks/, lib/, native config, package files) and propose how to enforce it without path filters silently skipping a required check (for example an always-running gate job that decides internally), plus how a nightly failure becomes visible.\nExclusions: documentation-only changes must not need native builds; macOS/iOS runners are out of scope; branch-protection changes need separate owner approval.\nDependencies: CI-01 findings on flakiness; Actions minutes budget.\n\nAcceptance criteria:\n- The rule set and enforcement design are documented and approved; once implemented, an app-code PR cannot merge without a passing or explicitly dispositioned Android run.\n- Failed or flaky runs are visible and dispositioned; cost per PR is estimated.\n\nVerification: test PRs (docs-only and app-code) show the intended behavior.\nDefinition of done: acceptance criteria met with evidence on an exact commit; required checks green; every test named under Verification ran and its output was read; coverage matrix updated where behavior changed; deviations recorded with a disposition. Done does not authorize a release.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T12-S3",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "PF-S3-T12",
+      "summary": "CI-01: Investigate the Gradle plugin download flake",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t12-s3",
+        "qa-2026-11-18",
+        "p3",
+        "engineering"
+      ],
+      "description": "Backlog ID: PF-S3-T12-S3 (CI-01)\nSource finding: F-15 (run 44225392722 attempt 1 failed resolving foojay-resolver-convention 1.0.0; the re-run passed). Priority: P3. Release classification: development quality.\n\nScope: check recent android runs for recurrence and identify the actual cause before changing Gradle, caching or repositories.\nExclusions: one historical failure is not a persistent defect; no speculative Gradle changes.\nAcceptance criteria:\n- Recurrence data and the likely cause are recorded; a targeted fix is proposed only with supporting evidence, otherwise the item closes as monitored with a recorded reason.\nDefinition of done: findings, options and a recommendation are documented in the repository, and the owner's decision is recorded. No implementation is part of this item.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T12-S4",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "PF-S3-T12",
+      "summary": "TEST-03: Reduce repeated React Native stub maps in tests where it helps",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t12-s4",
+        "qa-2026-11-18",
+        "p3",
+        "engineering"
+      ],
+      "description": "Backlog ID: PF-S3-T12-S4 (TEST-03)\nSource: assessment category 5 (large inline stub maps repeated across files); PR #40 deferred minor (announcement-recording stub repeated six times in four files). Priority: P3. Release classification: optional.\n\nScope: introduce shared test helpers only where they reduce meaningful duplication, keep behavioral assertions, improve readability and do not hide scenario differences.\nAcceptance criteria:\n- Helpers replace the repeated stubs without changing what the tests assert; targeted mutations on two or three key tests still fail after the change.\n- Suites stay green and deterministic.\nDefinition of done: acceptance criteria met with evidence on an exact commit; required checks green; every test named under Verification ran and its output was read; coverage matrix updated where behavior changed; deviations recorded with a disposition. Done does not authorize a release.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T12-S5",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "PF-S3-T12",
+      "summary": "PERF-01: Measure a performance baseline on a real device",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t12-s5",
+        "qa-2026-11-18",
+        "p2",
+        "slice3-acceptance",
+        "performance"
+      ],
+      "description": "Backlog ID: PF-S3-T12-S5 (PERF-01)\nSource: assessment category 9 (B-, low confidence, static inspection only). Priority: P2. Release classification: Slice 3 acceptance evidence.\n\nScope: measure cold start, time to usable pantry screen, inventory load, search responsiveness (after UX-02), direct status mutation (after UX-01B), shopping completion, and network requests per common workflow, for a small and a larger household inventory (for example 20 and 150 items). Record device, build type, network conditions and fixture data. Measure once before and once after the T11 changes.\nExclusions: no speculative optimizations and no arbitrary thresholds without evidence.\nAcceptance criteria:\n- A dated measurement record with method and raw numbers is committed; any real problem gets a scoped follow-up proposal.\nDefinition of done: findings, options and a recommendation are documented in the repository, and the owner's decision is recorded. No implementation is part of this item.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T12-S6",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "PF-S3-T12",
+      "summary": "ARCH-02: Remove the obsolete Emergent frontend and backend scaffolding",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t12-s6",
+        "qa-2026-11-18",
+        "p2",
+        "engineering"
+      ],
+      "description": "Backlog ID: PF-S3-T12-S6 (ARCH-02)\nSource findings: F-18; PF-LEGACY-001. The repository root still holds frontend/, backend/ and Emergent test artifacts (tests/, test_reports/, test_result.md); SonarCloud's three bugs and reliability D come from frontend/. Priority: P2. Release classification: optional cleanup.\n\nScope: verify the folders are not used by the Expo app, CI workflows, documentation, deployment, development tooling or any retained experiment; then remove them in one separately reviewable change (git history keeps them) and update references such as PF-LEGACY-001.\nExclusions: no change to pantry-flow/, tools/ or docs content beyond references.\nAcceptance criteria:\n- A reference search shows no remaining dependency; CI and SonarCloud pass afterwards and the Sonar metrics cover the actual product.\nDefinition of done: acceptance criteria met with evidence on an exact commit; required checks green; every test named under Verification ran and its output was read; coverage matrix updated where behavior changed; deviations recorded with a disposition. Done does not authorize a release.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T13",
+      "kind": "Task",
+      "issueTypeId": "10008",
+      "parent": "KAN-40",
+      "summary": "[Slice 3] Introduce risk-based engineering governance",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t13",
+        "qa-2026-11-18",
+        "p2",
+        "process"
+      ],
+      "description": "Backlog ID: PF-S3-T13\nSource: assessment subcategory 12.7 (C+, 78: heavy ceremony for small packages) and category 8 (process and documentation overhead). Priority: P2 (Medium). Release classification: process; not a release gate.\n\nProblem: every package, including 11 minor fixes, got a full plan, ledger, Opus review and several CI runs.\nScope: subtasks GOV-01 and GOV-02. Risk tiers:\n- Low (styling, minor layout, translation corrections, documentation): concise task description, targeted verification, normal CI.\n- Medium (new UI workflows, state management, navigation, business-rule adjustments): implementation plan, behavioral tests, appropriate independent review.\n- High (authentication, account deletion, RLS, database constraints, hosted migrations, credential handling): detailed plan, security analysis, independent review, explicit authorization, complete relevant regression verification.\nExclusions: no weakening of security, write guards, branch protection or regression requirements in the name of efficiency.\n\nAcceptance criteria:\n- Process requirements are proportionate to risk; verification claims stay traceable to executed commands; failed checks cannot be reported as passed; material deviations get an explicit disposition; validated baselines stay preserved; unnecessary plan documents, review loops and ledgers are reduced.\nDefinition of done: acceptance criteria met with evidence on an exact commit; required checks green; every test named under Verification ran and its output was read; coverage matrix updated where behavior changed; deviations recorded with a disposition. Done does not authorize a release.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation.",
+      "priorityId": "3"
+    },
+    {
+      "id": "PF-S3-T13-S1",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "PF-S3-T13",
+      "summary": "GOV-01: Document the risk tiers and verification-claim rules",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t13-s1",
+        "qa-2026-11-18",
+        "p2",
+        "process"
+      ],
+      "description": "Backlog ID: PF-S3-T13-S1 (GOV-01)\nPriority: P2. Release classification: process.\nScope: a short repository document (for example in AGENTS.md or docs/) defining the three tiers, what each requires, who decides the tier, and the rules that never relax (required checks, write guards, no red-suite commits, evidence for every claim).\nAcceptance criteria:\n- The owner approves the document; each Slice 3 issue's tier can be stated in one line when work starts.\nDefinition of done: findings, options and a recommendation are documented in the repository, and the owner's decision is recorded. No implementation is part of this item.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    },
+    {
+      "id": "PF-S3-T13-S2",
+      "kind": "Subtask",
+      "issueTypeId": "10007",
+      "parent": "PF-S3-T13",
+      "summary": "GOV-02: Review the tiered process after the first Slice 3 packages",
+      "labels": [
+        "pantryflow",
+        "slice-3",
+        "pf-s3-t13-s2",
+        "qa-2026-11-18",
+        "p3",
+        "process"
+      ],
+      "description": "Backlog ID: PF-S3-T13-S2 (GOV-02)\nPriority: P3. Release classification: process.\nScope: after about three Slice 3 packages, compare effort (documents, review rounds, CI runs) and escaped defects with Slice 2 packages of similar size.\nAcceptance criteria:\n- A short retrospective records what changed, any defect that the lighter process let through, and adjustments approved by the owner.\nDefinition of done: findings, options and a recommendation are documented in the repository, and the owner's decision is recorded. No implementation is part of this item.\nOperation ID: PF-S3-QA-INTEGRATION-20261118\nPlan: docs/planning/2026-11-18-slice-3-qa-integration-dry-run.md\nSource assessment: docs/quality/2026-11-18-quality-assessment-baseline.md (assessed main ec0dbdd, 2026-11-18). Assessment findings are evidence, not verified fact; the assessor also implemented Slice 2 follow-ups.\nDependencies are description references, not native Jira links: the approved CLI has no link operation."
+    }
+  ],
+  "updates": [
+    {
+      "key": "KAN-40",
+      "addLabels": [
+        "qa-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.\nRevised objective (owner, 2026-11-18): PantryFlow - Slice 3: Usability, Product Refinement and Launch Readiness. The title was already changed by the owner; this replaces the earlier \"hardening, not a feature-expansion slice\" objective.\nSlice 3 shall: resolve relevant findings of the 2026-11-18 quality assessment; reduce the effort of everyday household use; complete missing user-facing workflows; resolve accessibility, security and privacy requirements; prepare a meaningful external beta; improve release and operational readiness; preserve the Slice 1.1 and Slice 2 foundation.\nProduct principle: PantryFlow must reduce household administration, not become another administrative obligation. Usability simplification is an explicit objective; it is not a visual redesign, and features are not added to match competitor lists. Sharing and premium remain excluded (see KAN-51 for the proposed roadmap).\nBaseline correction: the owner accepted Slice 2 on 2026-11-18. Annotated tag pantryflow/slice-2-baseline -> ec0dbdd (merge of PR #40) is the current baseline for regression testing; KAN-6 is Fertig. Slice 2 follow-ups KAN-27, KAN-32 to KAN-39 and KAN-84 to KAN-86 are Fertig.\nFinding traceability F-01 to F-19: see the plan named below.\nAdditional workstreams:\nT11 = {PF-S3-T11} - [Slice 3] Simplify everyday household workflows\nT12 = {PF-S3-T12} - [Slice 3] Strengthen test infrastructure, CI and engineering hygiene\nT13 = {PF-S3-T13} - [Slice 3] Introduce risk-based engineering governance\nNew subtasks under existing Tasks: {PF-S3-T5-S3} (A11Y-01, KAN-45), {PF-S3-T7-S4} (A11Y-02, KAN-47), {PF-S3-T6-S4} (SEC-01), {PF-S3-T6-S5} (SEC-02), {PF-S3-T6-S6} (OPS-01, all KAN-46), {PF-S3-T9-S4} (QA-01, KAN-49), {PF-S3-T10-S4} (BETA-01, KAN-50)."
+    },
+    {
+      "key": "KAN-41",
+      "addLabels": [
+        "qa-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.\nCorrections: current reference is tag pantryflow/slice-2-baseline (main ec0dbdd), not 2186d50; the owner accepted Slice 2 on 2026-11-18 and KAN-6 is Fertig. KAN-34 was merged (PR #36) and is Fertig, as are KAN-27, KAN-32 to KAN-39 and KAN-84 to KAN-86; the carried-finding dispositions can cite their merged evidence.\nAdded input: the finding dispositions F-01 to F-19 in the plan below. The owner decisions now also include the F-10 roadmap (KAN-51), the D5 revision for pantry search (UX-02) and the UX-01A interaction design."
+    },
+    {
+      "key": "KAN-51",
+      "addLabels": [
+        "qa-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.\nSource finding: F-10 (PRD section 2 lists shared households, the free/premium split and a 75-item free limit as MVP; no slice schedules them).\nAdditional acceptance criteria:\n- A product decision record is prepared for the proposed roadmap: Slice 3 usability, refinement, hardening and beta readiness; Slice 4 basic household sharing; PantryFlow 1.0 free public application; premium as a separate later milestone based on validated demand. The owner approves, changes or rejects it.\n- The authoritative PRD is not silently modified; the decision is recorded in a decision log and the PRD gets an explicit, approved amendment note if needed.\n- Any operational inventory safety limit is distinguished from a monetization limit.\n- D5 is revised explicitly: pantry name search moves into Slice 3 ({PF-S3-T11-S3}, UX-02); sort and status filters follow the UX-03 evaluation ({PF-S3-T11-S4}); German and the language switcher stay in KAN-44.\n- Sharing and premium are not introduced into Slice 3."
+    },
+    {
+      "key": "KAN-52",
+      "addLabels": [
+        "qa-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.\nCurrent evidence (verified 2026-11-18): main is ec0dbdd (PR #40). All Slice 2 follow-ups (KAN-27, KAN-32 to KAN-39, KAN-84 to KAN-86) are Fertig with PRs #36 to #40; CI runs 44211292067, 44216675581 and 44225392722 (manual, including android) passed, the last on attempt 2 after a Gradle download flake; phone, TalkBack and Maestro evidence is recorded in those PRs. No open PRs. Push CI on ec0dbdd (run 44230970219) and the SonarCloud main gate are green; ec0dbdd's tree is identical to 505ab2b, which passed the full android run.\nAcceptance: the owner accepted Slice 2 on 2026-11-18. Annotated tag pantryflow/slice-2-baseline -> ec0dbdd was created and pushed on the owner's instruction; it is the current baseline for regression testing. KAN-6 was moved to Fertig with the owner's approval.\nThe 2026-11-18 quality assessment (docs/quality/2026-11-18-quality-assessment-baseline.md) was an input to the acceptance, not a substitute for it."
+    },
+    {
+      "key": "KAN-49",
+      "addLabels": [
+        "qa-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.\nRegression baseline (owner decision 2026-11-18): tag pantryflow/slice-2-baseline -> ec0dbdd replaces main 2186d50 and the KAN-23 to KAN-26 evidence as the reference for Slice 3 regression comparisons. Its full android evidence is run 44225392722 on the tree-identical 505ab2b.\nAdded subtask: {PF-S3-T9-S4} (QA-01) runs an independent assessment against docs/quality/2026-11-18-quality-assessment-baseline.md."
+    },
+    {
+      "key": "KAN-53",
+      "addLabels": [
+        "qa-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.\nCorrections: KAN-34 is merged and Fertig (not in CI). Candidate scope update: quick-add is now UX-04 ({PF-S3-T11-S5}); bulk entry is discovery UX-05 ({PF-S3-T11-S6}); undo is an investigation inside UX-06 ({PF-S3-T11-S7}); export remains a proposal. Implementation of bulk entry and undo still needs separate owner decisions."
+    },
+    {
+      "key": "KAN-42",
+      "addLabels": [
+        "qa-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.\nSource finding: F-01 (High). Additional acceptance criteria:\n- Recovery requests are protected against account enumeration (identical response for known and unknown emails) and abuse (rely on and document Supabase Auth rate limits; verify the user-visible behavior when a limit is hit).\n- Session handling after a password change is decided and tested (current session continues; whether other sessions are revoked follows the KAN-81 decision).\n- The new password must satisfy the KAN-80 policy; reset and signup share the rules.\n- Until this ships, the external beta uses the interim support path defined in BETA-01 ({PF-S3-T10-S4})."
+    },
+    {
+      "key": "KAN-43",
+      "addLabels": [
+        "qa-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.\nSource finding: F-02 (High). Additional acceptance criteria:\n- The deletion contract (KAN-57) is approved before implementation and is written for today's single-household model; it must not presume Slice 4 sharing semantics, and it names what has to be revisited when sharing arrives.\n- Creator attribution (created_by ON DELETE SET NULL) and household cleanup outcomes are listed per table.\n- Until this ships, the external beta uses the interim deletion-request path defined in BETA-01 ({PF-S3-T10-S4}), disclosed in the beta privacy notice."
+    },
+    {
+      "key": "KAN-45",
+      "addLabels": [
+        "qa-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.\nCorrections: KAN-34 (form errors, PR #36), KAN-39 (screen-level errors, PR #39) and KAN-84 (repeated errors) are merged and Fertig; components/Input.tsx now renders InlineError with a polite live region, and announcements were confirmed with TalkBack on the phone.\nAdded scope: confirmed gaps F-04 (selection chips) and F-13 (pantry rows) are fixed in {PF-S3-T5-S3} (A11Y-01); VoiceOver error announcements in {PF-S3-T7-S4} (A11Y-02). The audit includes the new usability controls (UX-01B direct status change, UX-02 search, UX-04 Return-to-save) and Settings entries (UX-07)."
+    },
+    {
+      "key": "KAN-63",
+      "addLabels": [
+        "qa-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.\nCorrection: the technical context above is outdated. Input.tsx renders InlineError (live region) and announceError lives in lib/accessibility.ts (Android only); KAN-34, KAN-39 and KAN-84 are Fertig. The confirmed chip and row gaps are scoped in {PF-S3-T5-S3} (A11Y-01); the audit covers the new UX controls."
+    },
+    {
+      "key": "KAN-64",
+      "addLabels": [
+        "qa-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.\nCorrection: KAN-34, KAN-39 and KAN-84 are Fertig, and their phone evidence (TalkBack 17.1, Android 16) already covers a shopping load error, a pantry load error, an Input error and a repeated error. Reuse it and add the new controls (A11Y-01, UX-01B, UX-02) and German. VoiceOver needs A11Y-02 ({PF-S3-T7-S4}) first."
+    },
+    {
+      "key": "KAN-46",
+      "addLabels": [
+        "qa-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.\nSource findings: F-07, F-11, F-17, F-19, plus PF-DATA-001 and PF-PREMIUM-001. Three new subtasks are external-beta gates, earlier than this Task's public-release classification: {PF-S3-T6-S4} (SEC-01 advisory reassessment), {PF-S3-T6-S5} (SEC-02 hosted baseline re-verification) and {PF-S3-T6-S6} (OPS-01 crash and error reporting)."
+    },
+    {
+      "key": "KAN-65",
+      "addLabels": [
+        "qa-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.\nSource: SEC-04 / PF-PREMIUM-001. Additional acceptance criterion: document whether the unused profiles.is_premium field should remain, be isolated or be removed, as a recommendation for a separately approved change. The free application must stay secure without premium functionality; no payment handling, subscriptions, item-count limits or premium gating."
+    },
+    {
+      "key": "KAN-66",
+      "addLabels": [
+        "qa-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.\nChange of scope: the advisory reassessment (F-07, new high picomatch advisory) moved to {PF-S3-T6-S4} (SEC-01) because it gates the external beta. This subtask keeps log and artifact redaction and the sender review.\nSource finding for the sender part: F-19 / PF-EMAIL-002 (DMARC p=none without aggregate reporting). Additional criteria: review reporting evidence and legitimate sender alignment, propose a staged enforcement plan (reporting, then quarantine, then reject) that protects confirmation and recovery mail delivery; no policy change without separate authorization. Release classification for this part: before public production.\nCorrection: KAN-27 is Fertig and concerned Sonar findings, not advisories."
+    },
+    {
+      "key": "KAN-67",
+      "addLabels": [
+        "qa-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.\nSource: SEC-03 / PF-DATA-001. Additional acceptance criteria: the populated rehearsal covers existing users and memberships, pantry and shopping rows with links, normalized-duplicate conflicts, foreign-key relationships, legacy or invalid values where they can exist, migration failure behavior (stop and roll back), data preservation and the recovery procedure. The pre-beta hosted drift check is {PF-S3-T6-S5} (SEC-02)."
+    },
+    {
+      "key": "KAN-50",
+      "addLabels": [
+        "qa-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.\nAdded: the external beta has its own entry checklist, {PF-S3-T10-S4} (BETA-01), derived from the assessment's CONDITIONAL GO (hosted baseline, crash reporting, reset and deletion path, privacy notice, advisory register, language scope and tester instructions). A closed beta does not require Slice 3 GO unless the owner decides so; public release still does."
+    },
+    {
+      "key": "KAN-72",
+      "addLabels": [
+        "qa-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.\nAdded: a beta subset is needed before the external beta (BETA-01, {PF-S3-T10-S4}): a minimum privacy notice that matches actual collection (including OPS-01 crash reporting) and the interim deletion-request path, plus a support contact. The full public content stays a public-release gate."
+    },
+    {
+      "key": "KAN-74",
+      "addLabels": [
+        "qa-2026-11-18"
+      ],
+      "append": "\nRefinement 2026-11-18 - quality assessment integration (PF-S3-QA-INTEGRATION-20261118); the text above is unchanged.\nAdded coverage gaps to prioritize (TEST-04): session expiry during active use; native backgrounding and foregrounding; lost dialogs; accessibility (A11Y-01/02); localization; iOS; the new usability interactions (UX-01B, UX-02, UX-04); account recovery and deletion; performance-sensitive workflows (PERF-01). Keep automated, manual, deferred and unverified scenarios distinct in the matrix."
+    }
+  ]
+}

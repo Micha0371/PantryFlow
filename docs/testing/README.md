@@ -16,7 +16,9 @@ the same pull request. SDK/native dependency upgrades stay on a separate branch
 and require the entire harness, a fresh Android build and a physical-device
 smoke test. Production follow-ups remain in `production-follow-ups.md`.
 
-Reference baseline: `e6dbcf8`. PF-TEST-001 was implemented on `pantryflow/pf-test-001`; use a new branch for subsequent tasks and never rewrite or retag the validated baseline. No application source, business rules, migrations or production configuration are changed for tests.
+Current regression baseline: annotated tag `pantryflow/slice-2-baseline` (`ec0dbdd`, merge of PR #40), set by the owner on 2026-11-18 when Slice 2 was accepted. Its full Android run is 44225392722 on the tree-identical `505ab2b`; its quality assessment is [the 2026-11-18 QA baseline](../quality/2026-11-18-quality-assessment-baseline.md). Compare Slice 3 regressions against this tag.
+
+Historical reference baseline: `e6dbcf8`. PF-TEST-001 was implemented on `pantryflow/pf-test-001`; use a new branch for subsequent tasks and never rewrite or retag the validated baseline. No application source, business rules, migrations or production configuration are changed for tests.
 
 Read [the existing inventory](existing-inventory.md), [behavior matrix](coverage-matrix.md), and [independent production tasks](production-follow-ups.md).
 
