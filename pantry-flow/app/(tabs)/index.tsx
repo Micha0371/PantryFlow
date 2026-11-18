@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -38,8 +38,17 @@ export default function PantryScreen() {
   const openItem = open ? items.find((it) => it.id === open.id) ?? null : null;
   const { invalidate } = prompt;
 
-  // An unanswered prompt belongs to the focused list; leaving it ends the prompt.
-  useFocusEffect(useCallback(() => () => invalidate(), [invalidate]));
+  // The selector, its writes and an unanswered prompt belong to the focused list;
+  // leaving it closes the selector and ends the prompt.
+  const focused = useRef(false);
+  useFocusEffect(useCallback(() => {
+    focused.current = true;
+    return () => {
+      focused.current = false;
+      setOpen(null);
+      invalidate();
+    };
+  }, [invalidate]));
 
   // The selector never outlives its item (deleted elsewhere, household change).
   useEffect(() => {
@@ -48,6 +57,7 @@ export default function PantryScreen() {
 
   const changeStatus = (id: string, next: StatusKey) => {
     setOpen(null);
+    if (!focused.current) return;
     invalidate();
     // The offer is requested inside the locked operation (not awaited), so the
     // native dialog exists before the write lock is released.
@@ -114,7 +124,8 @@ export default function PantryScreen() {
                 item={item}
                 onPress={() => openScreen(`/edit-item/${item.id}`)}
                 onStatusPress={(anchor, ref) => {
-                  if (!busy) setOpen({ id: item.id, anchor, ref });
+                  // Ignored while unfocused or while a row/add navigation is pending.
+                  if (!busy && focused.current && !openScreen.isLocked()) setOpen({ id: item.id, anchor, ref });
                 }}
                 editDisabled={pendingId === item.id || isUnconfirmed(item.id)}
                 statusDisabled={busy}

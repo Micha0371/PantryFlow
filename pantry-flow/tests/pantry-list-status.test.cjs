@@ -56,7 +56,11 @@ function render({ items: initial = [mk('1', 'Milk', 'in_stock')], addItem } = {}
     '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/Button': { Button: 'Button' },
     '@/components/PantryItem': row, '@/components/StatusSelector': selector,
     '@/hooks/useItemMutation': mutation, '@/hooks/useShoppingPrompt': prompt,
-    '@/hooks/useSingleOpen': { useSingleOpen: () => path => log.nav.push(path) },
+    '@/hooks/useSingleOpen': { useSingleOpen: () => {
+      const go = path => { log.nav.push(path); log.navLocked = true; };
+      go.isLocked = () => Boolean(log.navLocked);
+      return go;
+    } },
     '@/hooks/useErrorAnnouncement': { useFocusedErrorAnnouncement: () => {} },
     '@/lib/accessibility': { announce: m => log.announced.push(m) },
     '@/lib/pantry-data': pantryData, '@/lib/pantry-shopping': pantryShopping,
@@ -80,7 +84,7 @@ function render({ items: initial = [mk('1', 'Milk', 'in_stock')], addItem } = {}
   const press = text => log.alerts.at(-1)[2].find(b => b.text === text).onPress();
   const titles = () => log.alerts.map(a => a[0]);
   return { renderer, log, store, set, by, has, label, open, choose, flush, press, titles,
-    blur: () => cleanups.forEach(c => c?.()), unmount: () => act(() => renderer.unmount()) };
+    blur: () => act(() => { cleanups.forEach(c => c?.()); }), unmount: () => act(() => renderer.unmount()) };
 }
 const changed = (id, name, from, to) => async () => ({ kind: 'changed', item: mk(id, name, to), previous: from });
 async function change(h, id, status) { h.open(id); h.choose(status); await h.flush(); }
@@ -240,6 +244,51 @@ test('a newer change invalidates an unanswered prompt', async () => {
     await change(h, '1', 'low');
     const firstAdd = h.log.alerts[0][2].find(b => b.text === 'shopping_prompt_add');
     await change(h, '2', 'out');
+    await act(async () => { firstAdd.onPress(); await h.flush(); });
+    assert.deepEqual(h.log.adds, []);
+  } finally { h.unmount(); }
+});
+
+test('the selector closes on blur and a later choice writes nothing', async () => {
+  const h = render();
+  h.store.impl = changed('1', 'Milk', 'in_stock', 'low');
+  try {
+    h.open('1');
+    const stale = h.by('status-option-low').props.onPress;
+    h.blur();
+    assert.equal(h.has('status-modal'), false);
+    act(() => { stale(); });
+    await h.flush();
+    assert.equal(h.log.writes.length, 0);
+    assert.equal(h.log.alerts.length, 0);
+    h.open('1');
+    assert.equal(h.has('status-modal'), false, 'no selector opens while unfocused');
+  } finally { h.unmount(); }
+});
+
+test('the status control is ignored while a navigation is pending', () => {
+  for (const start of [
+    h => act(() => h.by('pantry-item-1').props.onPress()),
+    h => act(() => h.by('pantry-fab-add').props.onPress())]) {
+    const h = render();
+    try {
+      start(h);
+      assert.equal(h.log.nav.length, 1);
+      h.open('1');
+      assert.equal(h.has('status-modal'), false);
+    } finally { h.unmount(); }
+  }
+});
+
+test('a newer non-prompting change invalidates an unanswered prompt', async () => {
+  const h = render({ items: [mk('1', 'Milk', 'in_stock'), mk('2', 'Eggs', 'low')] });
+  h.store.impl = async (id, next) => ({ kind: 'changed', item: mk(id, id === '1' ? 'Milk' : 'Eggs', next),
+    previous: id === '1' ? 'in_stock' : 'low' });
+  try {
+    await change(h, '1', 'low');
+    const firstAdd = h.log.alerts[0][2].find(b => b.text === 'shopping_prompt_add');
+    await change(h, '2', 'in_stock');
+    assert.equal(h.log.alerts.length, 1, 'the second change does not prompt');
     await act(async () => { firstAdd.onPress(); await h.flush(); });
     assert.deepEqual(h.log.adds, []);
   } finally { h.unmount(); }
