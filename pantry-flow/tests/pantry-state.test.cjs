@@ -197,19 +197,20 @@ test('a refresh that sees an added pantry row before the insert returns leaves o
 
 // KAN-85 item 2: the re-read after a write on an unloaded list belongs to the
 // household that made the write; after a household change it must not run.
-test('a write that settles after a household change does not re-read for the new household (KAN-85)', async () => {
+test('a write that settles after the same user changes household does not re-read for the new household (KAN-85)', async () => {
   const f = fixture();
   await act(async () => f.reads[0].reject(new Error('offline')));
   const pending = deferred();
   f.mutation(pending.promise);
   let adding;
   act(() => { adding = f.first.addItem(named('new', 'New')); });
-  f.change({ id: 'other-user' }, 'other-household');
+  // Same user, so the provider stays mounted and only the household scope changes.
+  f.change({ id: 'u' }, 'other-household');
   await act(async () => f.reads[1].resolve([row('other-item', 'other-household')]));
   await act(async () => { pending.resolve({ data: named('new', 'New'), error: null }); await adding; });
-  assert.equal(f.reads.length, 2, 'no re-read after the household changed');
-  assert.equal(f.first.loading, false);
+  assert.equal(f.first.loading, false, 'the new household list is not stranded loading');
   assert.deepEqual(f.first.items.map(item => item.id), ['other-item']);
+  assert.equal(f.reads.length, 2, 'no re-read after the household changed');
   f.dispose();
 });
 
