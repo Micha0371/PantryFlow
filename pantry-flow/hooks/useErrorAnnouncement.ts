@@ -5,9 +5,10 @@ import { useFocusEffect } from 'expo-router';
 // Android does not speak the alert role by itself, so an error that appears in
 // place of a screen is announced explicitly (KAN-39). iOS keeps its behavior
 // until VoiceOver is checked (PF-IOS-001).
-function announce(message: string) {
+export function announceError(message: string) {
   if (Platform.OS === 'android') AccessibilityInfo.announceForAccessibility(message);
 }
+const announce = announceError;
 
 // Speaks a message once when it appears or its text changes; a cleared and
 // re-shown message (a failed retry) is spoken again.

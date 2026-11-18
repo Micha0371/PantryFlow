@@ -67,7 +67,13 @@ function EditItemModalContent() {
   const [status, setStatus] = useState<StatusKey>('in_stock');
   const [hydrated, setHydrated] = useState(false);
   const { busy, run } = useItemMutation();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setErrorText] = useState<string | null>(null);
+  // Counts failed submits so a repeated identical error is announced again (KAN-84).
+  const [failures, setFailures] = useState(0);
+  const setError = (message: string | null) => {
+    setErrorText(message);
+    if (message) setFailures(n => n + 1);
+  };
   // True while the low/out prompt or its failure notice is pending. The pantry
   // save has committed by then, so Cancel stays usable: a native alert that
   // never answers cannot lock the form (KAN-36).
@@ -187,6 +193,7 @@ function EditItemModalContent() {
           onChangeText={setName}
           testID="edit-item-name"
           error={error}
+          announceKey={failures}
         />
 
         <Text style={styles.sectionLabel}>{t('item_status')}</Text>

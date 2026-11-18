@@ -38,7 +38,13 @@ function AddItemModalContent() {
   const [category, setCategory] = useState<string>(DEFAULT_CATEGORY);
   const [location, setLocation] = useState<string>(DEFAULT_LOCATION);
   const { busy, run } = useItemMutation();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setErrorText] = useState<string | null>(null);
+  // Counts failed submits so a repeated identical error is announced again (KAN-84).
+  const [failures, setFailures] = useState(0);
+  const setError = (message: string | null) => {
+    setErrorText(message);
+    if (message) setFailures(n => n + 1);
+  };
 
   const onSave = async () => {
     if (busy) return;
@@ -85,6 +91,7 @@ function AddItemModalContent() {
           autoFocus
           testID="add-item-name"
           error={error}
+          announceKey={failures}
         />
 
         <Text style={styles.sectionLabel}>{t('item_category')}</Text>

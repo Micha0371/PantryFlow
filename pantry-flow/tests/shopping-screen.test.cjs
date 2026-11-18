@@ -565,3 +565,17 @@ test('a failed toggle error appears inside a live region that was already mounte
     assert.equal(alerts()[0].parent, before[0]);
   } finally { act(() => renderer.unmount()); }
 });
+
+test('each failed add gives the field a new announceKey, so a repeated error is spoken (KAN-84)', async () => {
+  const { renderer, input, submit } = renderAdd({ addItem: async () => { throw duplicate(); } });
+  try {
+    act(() => input().props.onChangeText('Milk'));
+    const before = input().props.announceKey;
+    await act(async () => { submit().props.onPress(); });
+    const first = input().props.announceKey;
+    await act(async () => { submit().props.onPress(); });
+    assert.equal(input().props.error, 'err_duplicate_shopping_item');
+    assert.notEqual(first, before);
+    assert.notEqual(input().props.announceKey, first);
+  } finally { act(() => renderer.unmount()); }
+});

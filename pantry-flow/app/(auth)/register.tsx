@@ -26,7 +26,13 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setErrorText] = useState<string | null>(null);
+  // Counts failed submits so a repeated identical error is announced again (KAN-84).
+  const [failures, setFailures] = useState(0);
+  const setError = (message: string | null) => {
+    setErrorText(message);
+    if (message) setFailures(n => n + 1);
+  };
   const submitLock = useRef(false);
 
   const onSubmit = async () => {
@@ -94,6 +100,7 @@ export default function RegisterScreen() {
             onChangeText={setPassword}
             testID="register-password"
             error={error}
+            announceKey={failures}
           />
 
           <Button

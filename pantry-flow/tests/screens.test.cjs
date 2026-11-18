@@ -307,3 +307,71 @@ test('an Add Item load error appears inside a live region that was already mount
     assert.ok(renderer.root.findAllByType('Button').some(b => b.props.label === 'common_retry'));
   } finally { act(() => renderer.unmount()); }
 });
+
+for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit-item/[id].tsx', 'item_save_button']]) {
+  test(`${file}: Save twice with the same validation error announces it the second time (KAN-84)`, async () => {
+    const constants = load('lib/constants.ts');
+    const data = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
+    const { en } = load('lib/i18n/en.ts');
+    const input = load('components/Input.tsx', {
+      'react-native': { Text: 'Text', TextInput: 'TextInput', View: 'View', StyleSheet: { create: s => s } },
+      '@/lib/theme': theme, '@/hooks/useErrorAnnouncement': announcement, './InlineError': inlineError });
+    const existing = { id: '1', name: 'Oat milk', category: 'dairy', location: 'fridge', status: 'in_stock' };
+    const { default: Screen } = load(file, { ...shared,
+      'expo-router': { useRouter: () => ({ back: () => {} }), useLocalSearchParams: () => ({ id: '1' }),
+        useFocusEffect: callback => React.useEffect(callback, [callback]) },
+      '@/lib/i18n': { useTranslation: () => ({ t: key => en[key] ?? key }) },
+      '@/components/AuthGate': { AuthGate: ({ children }) => children },
+      '@/components/Input': input, '@/components/OptionChips': { OptionChips: 'OptionChips' },
+      '@/hooks/useItemMutation': load('hooks/useItemMutation.ts', { 'expo-router': {
+        useFocusEffect: callback => React.useEffect(callback, [callback]) } }),
+      '@/lib/pantry-data': data, '@/lib/constants': constants,
+      '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
+      '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
+      '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'),
+      '@/hooks/usePantryItems': { usePantryItems: () => ({ householdId: 'h', loading: false, error: null,
+        addItem: async () => ({}), updateItem: async () => ({}), getItem: () => existing }) },
+    });
+    let renderer;
+    act(() => { renderer = create(React.createElement(Screen)); });
+    try {
+      act(() => renderer.root.findByType('TextInput').props.onChangeText('   '));
+      const save = () => renderer.root.findAllByType('Button').find(button => button.props.label === en[label]).props.onPress();
+      announced.length = 0;
+      await act(async () => save());
+      assert.equal(renderer.root.findByType(input.Input).props.error, en.err_required_name);
+      assert.deepEqual(announced, [], 'the first error is spoken by the live region');
+      await act(async () => save());
+      assert.deepEqual(announced, [en.err_required_name]);
+    } finally { act(() => renderer.unmount()); }
+  });
+}
+
+for (const [file, fill, failing] of [
+  ['app/(auth)/login.tsx', inputs => { inputs[0].props.onChangeText('a@example.com'); inputs[1].props.onChangeText('wrong'); },
+    { signIn: async () => { throw new Error('denied'); } }],
+  ['app/(auth)/register.tsx', inputs => { inputs[0].props.onChangeText('Alice'); inputs[1].props.onChangeText('a@example.com'); inputs[2].props.onChangeText('password'); },
+    { signUp: async () => { throw new Error('denied'); } }],
+]) {
+  test(`${file}: each failed submit gives the error field a new announceKey (KAN-84)`, async () => {
+    const { default: Screen } = load(file, { ...shared,
+      'expo-router': { Link: 'Link', useRouter: () => ({ replace: () => {} }) },
+      'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView' },
+      '@/components/Input': { Input: 'Input' },
+      '@/lib/auth': { useAuth: () => failing },
+    });
+    let renderer;
+    act(() => { renderer = create(React.createElement(Screen)); });
+    try {
+      act(() => fill(renderer.root.findAllByType('Input')));
+      const field = () => renderer.root.findAllByType('Input').find(i => 'error' in i.props);
+      const before = field().props.announceKey;
+      await act(async () => renderer.root.findByType('Button').props.onPress());
+      const first = field().props.announceKey;
+      await act(async () => renderer.root.findByType('Button').props.onPress());
+      assert.ok(field().props.error);
+      assert.notEqual(first, before);
+      assert.notEqual(field().props.announceKey, first);
+    } finally { act(() => renderer.unmount()); }
+  });
+}
