@@ -348,3 +348,73 @@ The five failure modes most likely to bite a user that the design implies but do
 - the A11Y-01 status-pill semantics on the edit screen (KAN-100);
 - German translations (KAN-60);
 - iOS VoiceOver (KAN-47).
+
+## Amendments: owner clarifications (2026-11-18, during execution)
+
+The owner approved the plan and added three clarifications. They amend the tasks below; where they conflict with the text above, they win.
+
+**Baseline check (clarification 3).** The CR-01 missing-record contract (QA-01) is in the baseline: `PANTRY_MISSING`, `isMissingPantryItem`, `dropIfMissing` and the re-read merged in #43 and are on `main`. Task 1 reuses them, and no second recovery path exists for status changes.
+
+### A1. Uncertain outcomes and reconciliation (amends Task 1; strongest scrutiny)
+
+- **Confirmed vs uncertain.** An error from an `update` step that carries a non-empty string `code` (a Postgres or PostgREST code) is a **confirmed rejection**: the statement did not commit. Any other failure of an `update` step is **uncertain**: the server may have committed. That covers a thrown exception, or an error with `code: ''`, which is how supabase-js reports a lost connection (`status: 0`) or a non-JSON gateway response.
+- `writeItemStatus` throws `PANTRY_STATUS_UNKNOWN = 'PF_PANTRY_STATUS_UNKNOWN'`, with the original error as `cause`, when the first or the retry `update` fails uncertainly. A failure of a `read` step is rethrown unchanged. A read only runs after an `update` matched nothing, so the change is confirmed as not applied.
+- **Retry exhaustion stays at one retry.** A second mismatch throws `PANTRY_STATUS_CONFLICT` with the fresh row. The provider adopts that row, so the list reconciles to the authoritative state.
+- **Provider on an uncertain outcome:**
+  - It keeps the cached row and marks the item **unconfirmed**.
+  - It starts a full re-read through the existing `fetchItems`.
+  - It exposes `isUnconfirmed(id: string): boolean`.
+- **When the mark clears:**
+  - Every accepted full list read clears all marks. `useHouseholdList` returns a `loadCount` that increments on each accepted read, and an effect clears the marks.
+  - An authoritative row returned for that item also clears its mark: `changed`, `already` from the database, or the conflict's `current`.
+  - While any item is unconfirmed, every pantry mutation's `finally` starts a re-read. A later write must not discard the reconciling read and leave the mark set.
+- **Unconfirmed items skip the shortcut.** For an unconfirmed item, `setItemStatus` skips the "cached status equals next" shortcut and always asks the database.
+- **Tests:**
+  - **Unit:** update-step transport failures (thrown, and `code: ''`) reject with `PF_PANTRY_STATUS_UNKNOWN`, keep the row, mark it unconfirmed and start one re-read. A coded `42501` on any step is rethrown as the same object, with no re-read and no mark. A read-step transport failure is rethrown unchanged. The mark clears after an accepted list read. It also survives a later write that discards the reconciling read: that write starts a new re-read. An unconfirmed item selecting its cached status still calls the database.
+  - **Integration:** a lost response after a committed write. A client whose `global.fetch` performs the request and then throws reports `PF_PANTRY_STATUS_UNKNOWN`, and the database holds the new status.
+- The existing Task 1 unit test "an error at any step is rethrown…" is a new Task 1 test, not a protected regression test. It is narrowed to the confirmed and read-step cases.
+
+### A2. Prompt lifecycle (amends Task 2)
+
+- `useShoppingPrompt` invalidates the token whenever `householdId` changes. This covers household and identity changes; unmount already invalidates.
+- `prompting` is cleared in `finally` only if the token is still the offer's own. An obsolete offer answering late must not clear a newer prompt's state.
+- `offer` requests the native dialog synchronously, before its first `await`. A test pins this.
+
+### A3. List lifecycle and feedback (amends Task 5)
+
+- **Lock gap.** The list calls `offer` synchronously inside the locked operation. The native dialog is therefore requested before the write lock is released. Test: inside the `Alert.alert` stub, a second status selection makes no `setItemStatus` call.
+- **Failure notices:**
+
+  | Error | Title | Message |
+  | --- | --- | --- |
+  | `PF_PANTRY_STATUS_UNKNOWN` | `status_unconfirmed_title` "Status change not confirmed" | `err_status_unconfirmed` "Check your connection. The list shows the saved status once it reloads." |
+  | `PF_PANTRY_STATUS_CONFLICT` | `status_not_changed_title` "Status not changed" | `err_status_conflict` "This item was just changed on another device. Its current status is shown." |
+  | anything else | "Status not changed" | `itemSaveErrorKey(e)`; missing gives `err_item_missing` |
+
+  An uncertain outcome never shows "Status not changed" and never prompts.
+- **Edit action.** The item's content control is disabled while its write is pending **or** while `isUnconfirmed(id)`. The edit screen therefore only opens on a confirmed record.
+- **Added tests:**
+  - "an uncertain outcome shows Status change not confirmed, never prompts, and keeps edit disabled until confirmed";
+  - "a conflict shows the conflict message and the reconciled status";
+  - "a household change while the prompt is open makes a later Add do nothing".
+
+### A4. Android journey (amends Task 6)
+
+The journey verifies both a successful linked add and the duplicate failure, and both accepting and declining at three taps.
+
+1. Out → Add → duplicate notice, Milk shows Out.
+2. In Stock, with no prompt.
+3. On the Shopping tab, complete the open Milk item. The open-name unique index only covers open items, and no trigger touches the pantry.
+4. Back on Pantry: Low → **Add** → no notice. A new open linked Milk exists.
+5. Out → **Not now**.
+6. Selecting Out again (the current status) makes no change.
+7. Tap the name; the edit screen opens.
+
+`status-verify` asserts:
+- pantry Milk is `out`;
+- shopping has Milk completed (linked), Milk open (linked, new) and Rye bread completed;
+- Bob sees nothing.
+
+### Process
+
+Tasks 3 and 4 are closely related, low-risk UI work. They run as one implementer dispatch and one review. The database contract (A1) and lifecycle (A2, A3) get the strongest review focus. The final whole-branch review runs on Opus.
