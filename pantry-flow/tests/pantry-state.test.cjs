@@ -229,3 +229,118 @@ test('a successful write on a loaded list clears an earlier refresh error (KAN-8
   assert.deepEqual(ids(f.first.items), ['a', 'new']);
   f.dispose();
 });
+
+// CR-01 (KAN-115): an item deleted on another device. A write filtered by id and
+// household returns zero rows; the provider drops the stale row at once (it must
+// not depend on the re-read) and re-reads the household list.
+const gone = () => ({ data: null, error: Object.assign(new Error('0 rows'), { code: 'PGRST116' }) });
+
+test('a missing-record update or delete drops the stale row and re-reads (CR-01)', async () => {
+  const f = fixture();
+  await act(async () => f.reads[0].resolve([named('1', 'Milk'), named('2', 'Eggs')]));
+  f.mutation(gone());
+  await act(async () => { await assert.rejects(f.first.updateItem('1', named('1', 'Oat milk')), e => e.code === 'PGRST116'); });
+  assert.deepEqual(f.first.items.map(i => i.id), ['2'], 'the stale row is dropped before the re-read settles');
+  assert.equal(f.reads.length, 2, 'a household re-read started');
+  await act(async () => f.reads[1].resolve([named('2', 'Eggs')]));
+  assert.deepEqual(f.second.items.map(i => i.id), ['2']);
+  assert.equal(f.first.loading, false);
+  assert.equal(f.first.error, null);
+  f.mutation({ data: [], error: null });
+  await act(async () => { await assert.rejects(f.second.deleteItem('2'), e => e.code === data.PANTRY_MISSING); });
+  assert.deepEqual(f.first.items, []);
+  assert.equal(f.reads.length, 3);
+  await act(async () => f.reads[2].resolve([]));
+  assert.deepEqual(f.first.items, []);
+  assert.equal(f.first.loading, false);
+  f.dispose();
+});
+
+test('a failed recovery read keeps the missing row out and shows the load error with retry (CR-01)', async () => {
+  const f = fixture();
+  await act(async () => f.reads[0].resolve([named('1', 'Milk'), named('2', 'Eggs')]));
+  f.mutation(gone());
+  await act(async () => { await assert.rejects(f.first.updateItem('1', named('1', 'Oat milk')), e => e.code === 'PGRST116'); });
+  await act(async () => f.reads[1].reject(new Error('offline')));
+  assert.deepEqual(f.first.items.map(i => i.id), ['2']);
+  assert.equal(f.first.error, 'err_load_items');
+  assert.equal(f.first.loading, false);
+  let retry;
+  act(() => { retry = f.first.retry(); });
+  await act(async () => { f.reads[2].resolve([named('2', 'Eggs')]); await retry; });
+  assert.equal(f.first.error, null);
+  assert.deepEqual(f.first.items.map(i => i.id), ['2']);
+  f.dispose();
+});
+
+test('transport and permission failures keep cached rows and issue no re-read (CR-01)', async () => {
+  const f = fixture();
+  await act(async () => f.reads[0].resolve([named('1', 'Milk')]));
+  for (const error of [new Error('offline'), Object.assign(new Error('denied'), { code: '42501' })]) {
+    f.mutation({ data: null, error });
+    await act(async () => {
+      await assert.rejects(f.first.updateItem('1', { ...named('1', 'Milk'), status: 'low' }), e => e === error);
+      await assert.rejects(f.first.deleteItem('1'), e => e === error);
+    });
+  }
+  assert.equal(f.reads.length, 1);
+  assert.deepEqual(f.first.items.map(i => [i.id, i.status]), [['1', 'in_stock']]);
+  assert.equal(f.first.error, null);
+  assert.equal(f.first.loading, false);
+  f.dispose();
+});
+
+test('a missing-record re-read loses to a newer read and to a household change (CR-01)', async () => {
+  const f = fixture();
+  await act(async () => f.reads[0].resolve([named('1', 'Milk')]));
+  f.mutation({ data: [], error: null });
+  await act(async () => { await assert.rejects(f.first.deleteItem('1'), e => e.code === data.PANTRY_MISSING); });
+  assert.equal(f.reads.length, 2);
+  let newer;
+  act(() => { newer = f.first.fetchItems(); });
+  await act(async () => { f.reads[2].resolve([named('1', 'Milk'), named('3', 'Tea')]); await newer; });
+  await act(async () => f.reads[1].resolve([]));
+  assert.deepEqual(ids(f.first.items), ['1', '3'], 'the older recovery read cannot overwrite the newer one');
+  await act(async () => { await assert.rejects(f.first.deleteItem('1'), e => e.code === data.PANTRY_MISSING); });
+  assert.equal(f.reads.length, 4);
+  f.change({ id: 'u' }, 'h2');
+  await act(async () => f.reads[3].resolve([row('old', 'h')]));
+  assert.deepEqual(f.first.items, [], 'a recovery read of the old household cannot fill the new one');
+  await act(async () => f.reads[4].resolve([row('x', 'h2')]));
+  assert.deepEqual(f.first.items.map(i => i.id), ['x']);
+  f.dispose();
+});
+
+test('a later successful write wins over a pending recovery read, and the missing row stays out (CR-01)', async () => {
+  const f = fixture();
+  await act(async () => f.reads[0].resolve([named('1', 'Milk'), named('2', 'Eggs')]));
+  f.mutation({ data: [], error: null });
+  await act(async () => { await assert.rejects(f.first.deleteItem('1'), e => e.code === data.PANTRY_MISSING); });
+  assert.deepEqual(f.first.items.map(i => i.id), ['2']);
+  f.mutation({ data: { ...named('2', 'Eggs'), status: 'low' }, error: null });
+  await act(async () => { await f.second.updateItem('2', { ...named('2', 'Eggs'), status: 'low' }); });
+  await act(async () => f.reads[1].resolve([named('2', 'Eggs')]));
+  assert.deepEqual(f.first.items.map(i => [i.id, i.status]), [['2', 'low']]);
+  assert.equal(f.first.loading, false);
+  f.dispose();
+});
+
+test('a missing result that arrives after a household change neither re-reads nor touches the new list (CR-01)', async () => {
+  const f = fixture();
+  await act(async () => f.reads[0].resolve([named('1', 'Milk')]));
+  const pending = deferred();
+  f.mutation(pending.promise);
+  let updating;
+  act(() => { updating = f.first.updateItem('1', named('1', 'Oat milk')); });
+  f.change({ id: 'u' }, 'h2');
+  await act(async () => f.reads[1].resolve([row('x', 'h2')]));
+  await act(async () => {
+    pending.resolve(gone());
+    await assert.rejects(updating, e => e.code === 'PGRST116');
+  });
+  assert.equal(f.reads.length, 2, 'no recovery read for the new household');
+  assert.deepEqual(f.first.items.map(i => i.id), ['x']);
+  assert.equal(f.first.loading, false);
+  assert.equal(f.first.error, null);
+  f.dispose();
+});

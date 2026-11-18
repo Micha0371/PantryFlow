@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { load } = require('./helpers.cjs');
 const constants = load('lib/constants.ts');
-const { validateItem, parseItem, fetchAllItems, PAGE_SIZE, assertUniqueItemName, itemSaveErrorKey } = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
+const { validateItem, parseItem, fetchAllItems, PAGE_SIZE, assertUniqueItemName, itemSaveErrorKey, isMissingPantryItem, PANTRY_MISSING } = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
 const row = (id = '1') => ({ id, household_id: 'h', name: 'Milk', status: 'in_stock',
   category: 'dairy', location: 'fridge', created_by: 'u', created_at: '2026-01-01', updated_at: '2026-01-01' });
 
@@ -30,6 +30,19 @@ test('client duplicate validation excludes self and leaves interior whitespace u
   assert.doesNotThrow(() => assertUniqueItemName(items, 'Milk  Fridge'));
   assert.equal(itemSaveErrorKey({ code: '23505' }), 'err_duplicate_item');
   assert.equal(itemSaveErrorKey(new Error('offline')), 'err_save_item');
+});
+
+// CR-01: zero rows from a write filtered by id and household means the item is
+// gone for this household; transport, permission and server errors do not.
+test('only a zero-row write counts as a missing pantry item', () => {
+  assert.equal(isMissingPantryItem({ code: 'PGRST116' }), true);
+  assert.equal(isMissingPantryItem({ code: PANTRY_MISSING }), true);
+  for (const other of [new Error('offline'), { code: '42501' }, { code: '23505' }, { code: '500' }, null, undefined, 'PGRST116']) {
+    assert.equal(isMissingPantryItem(other), false, JSON.stringify(other));
+  }
+  assert.equal(itemSaveErrorKey({ code: 'PGRST116' }), 'err_item_missing');
+  assert.equal(itemSaveErrorKey({ code: PANTRY_MISSING }), 'err_item_missing');
+  assert.equal(itemSaveErrorKey({ code: '42501' }), 'err_save_item');
 });
 
 test('fetches every page beyond the default 1000-row server cap', async () => {

@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { localStack, fixtures, cleanup, emails, password } from './local-stack';
+import { isMissingPantryItem } from '../../lib/pantry-data';
 
 test('real local Auth/PostgREST behavior from migrations 00001–00003', async t => {
   const stack = localStack();
@@ -57,6 +58,28 @@ test('real local Auth/PostgREST behavior from migrations 00001–00003', async t
       const read = await anon.from('pantry_items').select('*');
       assert.ok(read.error || read.data?.length === 0);
       assert.ok((await anon.from('pantry_items').insert({ name: 'Anon', household_id: a.household, created_by: a.id })).error);
+    });
+
+    // CR-01 (KAN-115): the provider's exact write shapes against a row deleted
+    // elsewhere and a row of another household. Both look the same, so the
+    // client can recover without learning whether a foreign row exists.
+    await t.test('writes to a deleted or foreign pantry row are classified as missing', async () => {
+      const update = (user: typeof a, id: string) => user.client.from('pantry_items')
+        .update({ name: 'Renamed', category: 'other', location: 'pantry', status: 'low' })
+        .eq('id', id).eq('household_id', user.household).select().single();
+      const remove = (user: typeof a, id: string) => user.client.from('pantry_items')
+        .delete().eq('id', id).eq('household_id', user.household).select('id');
+      const gone = ok(await insert(a, 'Deleted elsewhere'));
+      assert.deepEqual(ok(await remove(a, gone.id)), [{ id: gone.id }]);
+      const foreign = ok(await insert(b, 'Foreign item'));
+      for (const id of [gone.id, foreign.id]) {
+        const updated = await update(a, id);
+        assert.equal(updated.error?.code, 'PGRST116');
+        assert.equal(isMissingPantryItem(updated.error), true);
+        assert.deepEqual(ok(await remove(a, id)), []);
+      }
+      const still = await b.client.from('pantry_items').select('name').eq('id', foreign.id).single();
+      assert.equal(ok(still)?.name, 'Foreign item');
     });
 
     await t.test('profile privileges and immutable creator/household/timestamps are enforced', async () => {
