@@ -15,7 +15,7 @@ const mutation = load('hooks/useItemMutation.ts', { 'expo-router': { useFocusEff
 const t = key => key;
 const item = { id: '1', name: 'Milk', category: 'dairy', location: 'fridge', status: 'in_stock' };
 
-function render({ present = true, deleteResult = deferred(), drops = true } = {}) {
+function render({ present = true, deleteResult = deferred(), drops = true, update = async () => item } = {}) {
   const state = { present, deleted: [], back: 0, alerts: [] };
   const native = { Text: 'Text', View: 'View', ActivityIndicator: 'Spinner', Pressable: 'Pressable',
     ScrollView: 'ScrollView', KeyboardAvoidingView: 'KeyboardAvoidingView', Platform: { OS: 'android' },
@@ -33,7 +33,8 @@ function render({ present = true, deleteResult = deferred(), drops = true } = {}
     '@/hooks/useItemMutation': mutation, '@/lib/pantry-data': pantryData,
     '@/lib/shopping-data': shoppingData, '@/lib/pantry-shopping': pantryShopping,
     '@/hooks/usePantryItems': { usePantryItems: () => ({ loading: false, error: null, retry: () => {},
-      getItem: () => (state.present ? item : null), updateItem: async () => item,
+      getItem: () => (state.present ? item : null),
+      updateItem: (...args) => update({ state, rerender: () => renderer.update(React.createElement(Screen)) }, ...args),
       deleteItem: id => {
         state.deleted.push(id);
         if (drops) {
@@ -100,5 +101,23 @@ test('an item already missing when the screen opens shows the missing state', ()
   const { renderer, missingShown } = render({ present: false });
   try {
     assert.equal(missingShown(), true);
+  } finally { act(() => renderer.unmount()); }
+});
+
+// CR-01 (KAN-115): saving an item deleted on another device. The provider drops
+// the row and rejects; the screen must show the missing state with a way back
+// instead of a form that fails on every further save.
+test('a save that finds the item deleted elsewhere shows the missing state, not the form', async () => {
+  const gone = Object.assign(new Error('0 rows'), { code: 'PGRST116' });
+  const { renderer, state, missingShown } = render({ update: async ({ state: s, rerender }) => {
+    s.present = false; rerender(); throw gone;
+  } });
+  try {
+    act(() => renderer.root.findByType('Input').props.onChangeText('Oat milk'));
+    await act(async () => { await renderer.root.findByProps({ testID: 'edit-item-save' }).props.onPress(); });
+    assert.equal(state.back, 0, 'the screen does not close as if the save had worked');
+    assert.equal(missingShown(), true);
+    assert.equal(renderer.root.findAll(n => n.props.testID === 'edit-item-save').length, 0, 'no further edits of a missing item');
+    assert.ok(renderer.root.findAll(n => n.type === 'Button' && n.props.label === 'common_back').length > 0);
   } finally { act(() => renderer.unmount()); }
 });
