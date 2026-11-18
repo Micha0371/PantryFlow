@@ -25,6 +25,7 @@ export const en = {
   status_in_stock: 'In Stock',
   status_low: 'Low',
   status_out: 'Out',
+  status_group_label: 'Status',
 
   // Categories
   cat_dairy: 'Dairy',
