@@ -22,6 +22,8 @@ function render({ present = true, deleteResult = deferred(), drops = true } = {}
     Alert: { alert: (...args) => state.alerts.push(args) }, StyleSheet: { create: s => s } };
   let renderer;
   const { default: Screen } = load('app/edit-item/[id].tsx', {
+    // Announcements are covered in screens.test.cjs (KAN-39); inert here.
+    '@/hooks/useErrorAnnouncement': { useFocusedErrorAnnouncement: () => {} },
     'react-native': native, '@/lib/theme': theme, '@/lib/constants': constants,
     '@/lib/i18n': { useTranslation: () => ({ t }) },
     'expo-router': { useRouter: () => ({ back: () => { state.back++; } }), useLocalSearchParams: () => ({ id: '1' }) },
