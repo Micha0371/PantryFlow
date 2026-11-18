@@ -1,10 +1,11 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
-import { assertUniqueItemName, fetchAllItems, isMissingPantryItem, PANTRY_MISSING, parseItem, validateItem, PantryItem, NewItemInput, UpdateItemInput } from '@/lib/pantry-data';
+import { assertUniqueItemName, fetchAllItems, isMissingPantryItem, PANTRY_MISSING, PANTRY_STATUS_CONFLICT, parseItem, validateItem, writeItemStatus, PantryItem, NewItemInput, UpdateItemInput, StatusWriteResult } from '@/lib/pantry-data';
+import type { StatusKey } from '@/lib/theme';
 import { useHouseholdList } from './household-list';
 
-export type { PantryItem, NewItemInput, UpdateItemInput } from '@/lib/pantry-data';
+export type { PantryItem, NewItemInput, UpdateItemInput, StatusWriteResult } from '@/lib/pantry-data';
 
 function usePantryState() {
   const { user, householdId, scope, isCurrent, loadedScope, generation, pendingItems, setItems, setLoading, setError,
@@ -93,7 +94,30 @@ function usePantryState() {
       rereadIfUnloaded(reread);
     }
   };
-  return { ...view, addItem, updateItem, deleteItem };
+  // Status-only compare-and-set write. The cached status is the expected
+  // previous one; a no-op selection makes no call (UX-01B).
+  const setItemStatus = async (id: string, next: StatusKey): Promise<StatusWriteResult> => {
+    const cached = visibleItems.find(it => it.id === id);
+    if (!cached) throw new Error('Invalid pantry item');
+    if (cached.status === next) return { kind: 'already', item: cached };
+    let reread = beginItemMutation(id);
+    try {
+      const result = await writeItemStatus(supabase, householdId!, id, cached.status, next);
+      if (isCurrent(scope)) { generation.current++; setLoading(false); setItems(prev => prev.map(it => it.id === id ? result.item : it)); }
+      return result;
+    } catch (error) {
+      if (dropIfMissing(id, error)) reread = true;
+      else if (error !== null && typeof error === 'object' && 'code' in error && error.code === PANTRY_STATUS_CONFLICT) {
+        const current = (error as unknown as { current: PantryItem }).current;
+        if (isCurrent(scope)) { generation.current++; setLoading(false); setItems(prev => prev.map(it => it.id === id ? current : it)); }
+      }
+      throw error;
+    } finally {
+      pendingItems.current.delete(id);
+      rereadIfUnloaded(reread);
+    }
+  };
+  return { ...view, addItem, updateItem, deleteItem, setItemStatus };
 }
 
 const PantryContext = createContext<ReturnType<typeof usePantryState> | undefined>(undefined);
