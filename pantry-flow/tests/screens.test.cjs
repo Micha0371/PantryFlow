@@ -16,7 +16,8 @@ const announcement = load('hooks/useErrorAnnouncement.ts', {
 const inlineError = load('components/InlineError.tsx', { 'react-native': { Text: 'Text', View: 'View' } });
 const shared = { 'react-native': native, '@/lib/theme': theme,
   '@/lib/i18n': { useTranslation: () => ({ t }) }, '@/components/Button': { Button: 'Button' },
-  '@/hooks/useErrorAnnouncement': announcement, '@/components/InlineError': inlineError };
+  '@/hooks/useErrorAnnouncement': announcement, '@/components/InlineError': inlineError,
+  '@/hooks/useFormError': load('hooks/useFormError.ts'), };
 const politeRegions = renderer => renderer.root.findAll(n => n.type === 'View' && n.props.accessibilityLiveRegion === 'polite');
 // The real single-open hook runs with the same router stub; the list stays focused.
 const routerStubs = push => {

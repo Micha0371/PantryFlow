@@ -11,6 +11,7 @@ import { useFocusedErrorAnnouncement } from '@/hooks/useErrorAnnouncement';
 import { useTranslation } from '@/lib/i18n';
 import { SHOPPING_NAME_MAX, shoppingErrorKey, splitShoppingItems, type ShoppingItem as ShoppingItemData } from '@/lib/shopping-data';
 import { colors, spacing, typography } from '@/lib/theme';
+import { useFormError } from '@/hooks/useFormError';
 
 type ToggleFailure = { itemId: string; name: string; updatedAt: string; key: string };
 
@@ -30,13 +31,7 @@ function HouseholdShoppingScreen() {
   // The field's latest text, readable when a pending add settles (KAN-37).
   const fieldText = useRef('');
   const [busy, setBusy] = useState(false);
-  const [addError, setAddErrorText] = useState<string | null>(null);
-  // Counts failed adds so a repeated identical error is announced again (KAN-84).
-  const [addFailures, setAddFailures] = useState(0);
-  const setAddError = useCallback((message: string | null) => {
-    setAddErrorText(message);
-    if (message) setAddFailures(n => n + 1);
-  }, []);
+  const { error: addError, failures: addFailures, setError: setAddError } = useFormError();
   // A toggle failure belongs to one item: it names the item and is hidden once that item
   // is removed or changed by a later successful write (updated_at is server-set). A
   // missing-item failure stays until the next action, because the row is already gone.

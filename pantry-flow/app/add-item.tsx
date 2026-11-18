@@ -24,6 +24,7 @@ import {
 } from '@/lib/constants';
 import { colors, spacing, typography } from '@/lib/theme';
 import { InlineError } from '@/components/InlineError';
+import { useFormError } from '@/hooks/useFormError';
 
 export default function AddItemModal() {
   return <AuthGate requireSession><AddItemModalContent /></AuthGate>;
@@ -38,13 +39,7 @@ function AddItemModalContent() {
   const [category, setCategory] = useState<string>(DEFAULT_CATEGORY);
   const [location, setLocation] = useState<string>(DEFAULT_LOCATION);
   const { busy, run } = useItemMutation();
-  const [error, setErrorText] = useState<string | null>(null);
-  // Counts failed submits so a repeated identical error is announced again (KAN-84).
-  const [failures, setFailures] = useState(0);
-  const setError = (message: string | null) => {
-    setErrorText(message);
-    if (message) setFailures(n => n + 1);
-  };
+  const { error, failures, setError } = useFormError();
 
   const onSave = async () => {
     if (busy) return;

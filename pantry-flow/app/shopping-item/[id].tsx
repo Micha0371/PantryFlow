@@ -19,6 +19,7 @@ import { useShoppingItems } from '@/hooks/useShoppingItems';
 import { SHOPPING_NAME_MAX, shoppingErrorKey } from '@/lib/shopping-data';
 import { useTranslation } from '@/lib/i18n';
 import { colors, spacing, typography } from '@/lib/theme';
+import { useFormError } from '@/hooks/useFormError';
 
 export default function EditShoppingItemModal() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -36,13 +37,7 @@ function EditShoppingItemContent() {
   const [name, setName] = useState('');
   const [hydrated, setHydrated] = useState(false);
   const { busy, run } = useItemMutation();
-  const [error, setErrorText] = useState<string | null>(null);
-  // Counts failed saves so a repeated identical error is announced again (KAN-84).
-  const [failures, setFailures] = useState(0);
-  const setError = (message: string | null) => {
-    setErrorText(message);
-    if (message) setFailures(n => n + 1);
-  };
+  const { error, failures, setError } = useFormError();
   // The provider drops a removed row before the delete resolves; until the screen
   // has closed, that is this screen's own remove, not a missing item (KAN-35).
   const removing = useRef(false);

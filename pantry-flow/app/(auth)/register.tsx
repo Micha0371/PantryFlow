@@ -15,6 +15,7 @@ import { Input } from '@/components/Input';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { colors, spacing, typography } from '@/lib/theme';
+import { useFormError } from '@/hooks/useFormError';
 
 export default function RegisterScreen() {
   const { t } = useTranslation();
@@ -26,13 +27,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [error, setErrorText] = useState<string | null>(null);
-  // Counts failed submits so a repeated identical error is announced again (KAN-84).
-  const [failures, setFailures] = useState(0);
-  const setError = (message: string | null) => {
-    setErrorText(message);
-    if (message) setFailures(n => n + 1);
-  };
+  const { error, failures, setError } = useFormError();
   const submitLock = useRef(false);
 
   const onSubmit = async () => {

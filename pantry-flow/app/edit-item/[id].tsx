@@ -25,6 +25,7 @@ import { useTranslation } from '@/lib/i18n';
 import { CATEGORIES, LOCATIONS, STATUSES } from '@/lib/constants';
 import { colors, radii, spacing, typography, StatusKey } from '@/lib/theme';
 import { useFocusedErrorAnnouncement } from '@/hooks/useErrorAnnouncement';
+import { useFormError } from '@/hooks/useFormError';
 
 // Resolves true on the affirmative button, false on the other button or dismissal.
 function ask(title: string, message: string, addLabel: string, skipLabel: string): Promise<boolean> {
@@ -68,13 +69,7 @@ function EditItemModalContent() {
   const [status, setStatus] = useState<StatusKey>('in_stock');
   const [hydrated, setHydrated] = useState(false);
   const { busy, run } = useItemMutation();
-  const [error, setErrorText] = useState<string | null>(null);
-  // Counts failed submits so a repeated identical error is announced again (KAN-84).
-  const [failures, setFailures] = useState(0);
-  const setError = (message: string | null) => {
-    setErrorText(message);
-    if (message) setFailures(n => n + 1);
-  };
+  const { error, failures, setError } = useFormError();
   // True while the low/out prompt or its failure notice is pending. The pantry
   // save has committed by then, so Cancel stays usable: a native alert that
   // never answers cannot lock the form (KAN-36).

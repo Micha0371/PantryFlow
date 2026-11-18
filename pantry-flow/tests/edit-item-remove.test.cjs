@@ -23,7 +23,7 @@ function render({ present = true, deleteResult = deferred(), drops = true } = {}
   let renderer;
   const { default: Screen } = load('app/edit-item/[id].tsx', {
     // Announcements are covered in screens.test.cjs (KAN-39); inert here.
-    '@/hooks/useErrorAnnouncement': { useFocusedErrorAnnouncement: () => {} },
+    '@/hooks/useErrorAnnouncement': { useFocusedErrorAnnouncement: () => {} }, '@/hooks/useFormError': load('hooks/useFormError.ts'),
     'react-native': native, '@/lib/theme': theme, '@/lib/constants': constants,
     '@/lib/i18n': { useTranslation: () => ({ t }) },
     'expo-router': { useRouter: () => ({ back: () => { state.back++; } }), useLocalSearchParams: () => ({ id: '1' }) },

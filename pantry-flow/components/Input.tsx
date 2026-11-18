@@ -18,7 +18,7 @@ interface Props extends TextInputProps {
   announceKey?: number;
 }
 
-export function Input({ label, error, announceKey, style, ...rest }: Props) {
+export function Input({ label, error, announceKey, style, ...rest }: Readonly<Props>) {
   const seen = useRef({ key: announceKey, error });
   useEffect(() => {
     const previous = seen.current;

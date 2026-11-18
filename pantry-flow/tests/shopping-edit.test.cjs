@@ -25,7 +25,7 @@ function render({ state = {} } = {}) {
     'expo-router': { useRouter: () => ({ back: () => { log.back++; } }), useLocalSearchParams: () => ({ id: '1' }) },
     '@/components/Button': { Button: 'Button' }, '@/components/Input': { Input: 'Input' },
     '@/components/AuthGate': { AuthGate: ({ children }) => children },
-    '@/hooks/useItemMutation': mutation, '@/lib/shopping-data': data, '@/hooks/useErrorAnnouncement': announcement,
+    '@/hooks/useItemMutation': mutation, '@/lib/shopping-data': data, '@/hooks/useErrorAnnouncement': announcement, '@/hooks/useFormError': load('hooks/useFormError.ts'),
     '@/hooks/useShoppingItems': { useShoppingItems: () => ({ loading: false, error: null, retry: () => {},
       getItem: () => existing, renameItem: async () => {}, deleteItem: async () => {}, ...state }) },
   });

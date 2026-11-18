@@ -11,7 +11,7 @@ interface Props {
 // (KAN-34, KAN-39). The alert role only names it ("alert"). iOS has no live
 // region and RN maps this role to no VoiceOver trait, so iOS still needs an
 // explicit announcement (PF-IOS-001).
-export function InlineError({ message, style, testID }: Props) {
+export function InlineError({ message, style, testID }: Readonly<Props>) {
   return (
     <View accessibilityLiveRegion="polite" collapsable={false}>
       {message ? <Text style={style} accessibilityRole="alert" testID={testID}>{message}</Text> : null}

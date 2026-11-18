@@ -18,7 +18,8 @@ const announcing = { Platform: { OS: 'android' }, AccessibilityInfo: { announceF
 const shared = { ...routerStubs(route => pushes.push(route)), 'react-native': native,
   '@/hooks/useErrorAnnouncement': load('hooks/useErrorAnnouncement.ts', { 'react-native': announcing,
     'expo-router': { useFocusEffect: callback => React.useEffect(callback, [callback]) } }),
-  '@/components/InlineError': load('components/InlineError.tsx', { 'react-native': { Text: 'Text', View: 'View' } }), '@/lib/theme': theme, '@expo/vector-icons': { Ionicons: 'Icon' },
+  '@/components/InlineError': load('components/InlineError.tsx', { 'react-native': { Text: 'Text', View: 'View' } }),
+  '@/hooks/useFormError': load('hooks/useFormError.ts'), '@/lib/theme': theme, '@expo/vector-icons': { Ionicons: 'Icon' },
   '@/lib/i18n': { useTranslation: () => ({ t }) }, '@/components/Button': { Button: 'Button' }, '@/components/Input': { Input: 'Input' },
   '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/ShoppingItem': { ShoppingItem: 'Row' },
   '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }) };
