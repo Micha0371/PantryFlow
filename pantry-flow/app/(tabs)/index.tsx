@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -7,10 +7,19 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { EmptyState } from '@/components/EmptyState';
 import { PantryItem } from '@/components/PantryItem';
 import { Button } from '@/components/Button';
+import { StatusSelector, type ViewRef } from '@/components/StatusSelector';
+import { useItemMutation } from '@/hooks/useItemMutation';
+import { useShoppingPrompt, notice } from '@/hooks/useShoppingPrompt';
+import { announce } from '@/lib/accessibility';
+import { PANTRY_STATUS_CONFLICT, PANTRY_STATUS_UNKNOWN, itemSaveErrorKey } from '@/lib/pantry-data';
+import { offersShoppingAdd } from '@/lib/pantry-shopping';
+import type { Frame } from '@/lib/status-menu';
+import type { StatusKey } from '@/lib/theme';
 import { usePantryItems } from '@/hooks/usePantryItems';
 import { useSingleOpen } from '@/hooks/useSingleOpen';
 import { useTranslation } from '@/lib/i18n';
@@ -21,7 +30,49 @@ export default function PantryScreen() {
   // One lock for rows and add actions: a tap burst opens one screen (KAN-33, KAN-38).
   const openScreen = useSingleOpen();
   const { t } = useTranslation();
-  const { items, loading, error, retry } = usePantryItems();
+  const { items, loading, error, retry, setItemStatus, isUnconfirmed } = usePantryItems();
+  const { busy, run } = useItemMutation();
+  const prompt = useShoppingPrompt();
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [open, setOpen] = useState<{ id: string; anchor: Frame; ref: React.RefObject<ViewRef | null> } | null>(null);
+  const openItem = open ? items.find((it) => it.id === open.id) ?? null : null;
+  const { invalidate } = prompt;
+
+  // An unanswered prompt belongs to the focused list; leaving it ends the prompt.
+  useFocusEffect(useCallback(() => () => invalidate(), [invalidate]));
+
+  // The selector never outlives its item (deleted elsewhere, household change).
+  useEffect(() => {
+    if (open && !openItem) setOpen(null);
+  }, [open, openItem]);
+
+  const changeStatus = (id: string, next: StatusKey) => {
+    setOpen(null);
+    invalidate();
+    // The offer is requested inside the locked operation (not awaited), so the
+    // native dialog exists before the write lock is released.
+    void run(async (current) => {
+      setPendingId(id);
+      let result;
+      try {
+        result = await setItemStatus(id, next);
+      } finally {
+        setPendingId(null);
+      }
+      if (!current()) return;
+      if (result.kind === 'changed' && offersShoppingAdd(result.previous, result.item.status)) {
+        void prompt.offer({ saved: result.item, previous: result.previous, current });
+      } else {
+        announce(`${result.item.name}, ${t(`status_${result.item.status}`)}`);
+      }
+    }, () => {}, (e) => {
+      const code = typeof e === 'object' && e !== null && 'code' in e ? e.code : undefined;
+      const unknown = code === PANTRY_STATUS_UNKNOWN;
+      const message = unknown ? 'err_status_unconfirmed'
+        : code === PANTRY_STATUS_CONFLICT ? 'err_status_conflict' : itemSaveErrorKey(e);
+      void notice(t(unknown ? 'status_unconfirmed_title' : 'status_not_changed_title'), t(message), t('common_ok'));
+    });
+  };
 
   const showLoading = loading && items.length === 0;
   useFocusedErrorAnnouncement(error ? t(error) : null);
@@ -57,17 +108,35 @@ export default function PantryScreen() {
           <FlatList
             data={items}
             keyExtractor={(it) => it.id}
+            extraData={[pendingId, busy, open?.id, isUnconfirmed]}
             renderItem={({ item }) => (
               <PantryItem
                 item={item}
                 onPress={() => openScreen(`/edit-item/${item.id}`)}
-                onStatusPress={() => {} /* wired in UX-01B Task 5 */}
+                onStatusPress={(anchor, ref) => {
+                  if (!busy) setOpen({ id: item.id, anchor, ref });
+                }}
+                editDisabled={pendingId === item.id || isUnconfirmed(item.id)}
+                statusDisabled={busy}
+                statusBusy={pendingId === item.id}
+                statusExpanded={open?.id === item.id}
               />
             )}
             contentContainerStyle={styles.list}
           />
         </>
       )}
+
+      {open && openItem ? (
+        <StatusSelector
+          anchor={open.anchor}
+          itemName={openItem.name}
+          current={openItem.status}
+          onSelect={(next) => (next === openItem.status ? setOpen(null) : changeStatus(openItem.id, next))}
+          onDismiss={() => setOpen(null)}
+          returnFocusTo={open.ref}
+        />
+      ) : null}
 
       <Pressable
         onPress={() => openScreen('/add-item')}
