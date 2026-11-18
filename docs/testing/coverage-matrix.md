@@ -273,7 +273,22 @@ loopback proxy and `adb reverse`. The owner operated TalkBack.
 - **Fix, APK from ed07f54 (SHA-256 starting `edd34a47`):** the announcement
   waits one second after focus. Opening the Shopping tab gave "Shopping
   ausgewählt", then the error; Pantry and back to Shopping announced it again.
-- **Final build:** _pending (Task 7)._
+- **Final build, APK from 78a409c (SHA-256 starting `71a1c9c6`):**
+  - with pantry reads failing from app start, the error appeared on the
+    Pantry tab after the client's retries and TalkBack read it without a tap;
+  - with shopping reads failing from app start, opening Shopping, and Pantry
+    then Shopping again, read the error both times;
+  - Add Item with an empty name, Add Item pressed twice: "Name is required."
+    was read both times (KAN-84 item 3).
+- **Maestro on the phone (same APK, TalkBack off):** all six flows passed,
+  including the shopping journey with both cold-restart waits (KAN-84 item 5),
+  with the Slice 1.1 and shopping database checks. The run then stopped at the
+  check after the resend flow: Maestro hung 135 seconds inside its own
+  `launchApp` step (the app itself started in 0.6 s), so the 60-second
+  disposable link had expired when the check opened it. The two remaining
+  confirmation steps ran on the CI emulator, not on the phone. An earlier
+  attempt does not count: the phone canceled the unattended install of
+  Maestro's driver app.
 
 An antivirus app on the phone (AVG) flagged the sideloaded test APK as
 suspicious and offered to uninstall it; it was dismissed. Screenshots stay in
