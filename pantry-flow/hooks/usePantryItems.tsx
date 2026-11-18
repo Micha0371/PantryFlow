@@ -1,7 +1,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
-import { assertUniqueItemName, fetchAllItems, parseItem, validateItem, PantryItem, NewItemInput, UpdateItemInput } from '@/lib/pantry-data';
+import { assertUniqueItemName, fetchAllItems, isMissingPantryItem, PANTRY_MISSING, parseItem, validateItem, PantryItem, NewItemInput, UpdateItemInput } from '@/lib/pantry-data';
 import { useHouseholdList } from './household-list';
 
 export type { PantryItem, NewItemInput, UpdateItemInput } from '@/lib/pantry-data';
@@ -23,8 +23,17 @@ function usePantryState() {
     if (!unloaded) setError(null);
     return unloaded;
   };
+  // Also re-read when a write failed because the record is missing, so other
+  // changes are picked up. The caller still gets the original error.
   const rereadIfUnloaded = (unloaded: boolean) => {
     if (unloaded && isCurrent(scope)) void fetchItems();
+  };
+  // A missing record is gone for this household, so drop it at once. A later
+  // write may discard the re-read; the row must not depend on it to disappear (CR-01).
+  const dropIfMissing = (id: string, error: unknown) => {
+    if (!isMissingPantryItem(error)) return false;
+    if (isCurrent(scope)) setItems(prev => prev.filter(it => it.id !== id));
+    return true;
   };
   const beginItemMutation = (id: string) => {
     if (pendingItems.current.has(id)) throw new Error('Item change is already pending');
@@ -52,7 +61,7 @@ function usePantryState() {
   const updateItem = async (id: string, input: UpdateItemInput) => {
     const validated = validateItem(input);
     assertUniqueItemName(visibleItems, validated.name, id);
-    const unloaded = beginItemMutation(id);
+    let reread = beginItemMutation(id);
     try {
       const { data, error: err } = await supabase.from('pantry_items')
         .update(validated).eq('id', id).eq('household_id', householdId).select().single();
@@ -60,22 +69,28 @@ function usePantryState() {
       const item = parseItem(data);
       if (isCurrent(scope)) { generation.current++; setLoading(false); setItems(prev => prev.map(it => it.id === id ? item : it)); }
       return item;
+    } catch (error) {
+      if (dropIfMissing(id, error)) reread = true;
+      throw error;
     } finally {
       pendingItems.current.delete(id);
-      rereadIfUnloaded(unloaded);
+      rereadIfUnloaded(reread);
     }
   };
   const deleteItem = async (id: string) => {
-    const unloaded = beginItemMutation(id);
+    let reread = beginItemMutation(id);
     try {
       const { data, error: err } = await supabase.from('pantry_items')
         .delete().eq('id', id).eq('household_id', householdId).select('id');
       if (err) throw err;
-      if (!data?.length) throw new Error('Item was not deleted');
+      if (!data?.length) throw Object.assign(new Error('Item was not deleted'), { code: PANTRY_MISSING });
       if (isCurrent(scope)) { generation.current++; setLoading(false); setItems(prev => prev.filter(it => it.id !== id)); }
+    } catch (error) {
+      if (dropIfMissing(id, error)) reread = true;
+      throw error;
     } finally {
       pendingItems.current.delete(id);
-      rereadIfUnloaded(unloaded);
+      rereadIfUnloaded(reread);
     }
   };
   return { ...view, addItem, updateItem, deleteItem };

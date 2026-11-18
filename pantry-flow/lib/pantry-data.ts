@@ -32,7 +32,20 @@ export function assertUniqueItemName(items: PantryItem[], name: string, excludeI
   }
 }
 
+// A delete filtered by id and household that removed no row (CR-01).
+export const PANTRY_MISSING = 'PF_PANTRY_MISSING';
+
+// Zero rows from a write filtered by id and household: the item is gone for this
+// household, whether deleted elsewhere or never visible here, so nothing reveals
+// another household's rows. Transport, permission and server errors are not
+// "missing"; the cached row stays (CR-01).
+export function isMissingPantryItem(error: unknown) {
+  const code = error !== null && typeof error === 'object' && 'code' in error ? error.code : undefined;
+  return code === 'PGRST116' || code === PANTRY_MISSING;
+}
+
 export function itemSaveErrorKey(error: unknown) {
+  if (isMissingPantryItem(error)) return 'err_item_missing';
   return error !== null && typeof error === 'object' && 'code' in error && error.code === '23505'
     ? 'err_duplicate_item' : 'err_save_item';
 }

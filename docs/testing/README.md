@@ -18,6 +18,8 @@ smoke test. Production follow-ups remain in `production-follow-ups.md`.
 
 Current regression baseline: annotated tag `pantryflow/slice-2-baseline` (`ec0dbdd`, merge of PR #40), set by the owner on 2026-11-18 when Slice 2 was accepted. Its full Android run is 44225392722 on the tree-identical `505ab2b`; its quality assessment is [the 2026-11-18 QA baseline](../quality/2026-11-18-quality-assessment-baseline.md). Compare Slice 3 regressions against this tag.
 
+Repository: `Micha0371/PantryFlow`, renamed from `Micha0371/VSCode-Environment` on 2026-11-18. GitHub redirects the old URLs, so links in dated records keep working; never create a new repository under the old name, or the redirect stops. The SonarCloud project key stays `Micha0371_VSCode-Environment`.
+
 Historical reference baseline: `e6dbcf8`. PF-TEST-001 was implemented on `pantryflow/pf-test-001`; use a new branch for subsequent tasks and never rewrite or retag the validated baseline. No application source, business rules, migrations or production configuration are changed for tests.
 
 Read [the existing inventory](existing-inventory.md), [behavior matrix](coverage-matrix.md), and [independent production tasks](production-follow-ups.md).
@@ -123,20 +125,20 @@ A harness change is accepted only after fast, database and Android jobs pass for
 
 The counts below describe that dated harness run, not today's suite. Subsequent
 SDK/email work added confirmation coverage and raised the Node count to 50.
-Full [run 42717033012](https://github.com/Micha0371/VSCode-Environment/actions/runs/42717033012)
+Full [run 42717033012](https://github.com/Micha0371/PantryFlow/actions/runs/42717033012)
 passed fast, database, Windows and Android at `76c944d`. Consult the dated release
 records and current CI for later changes; do not treat these historical counts
 as a current coverage assertion.
 
 - Fast: TypeScript and 35 Node checks passed; Jest/RNTL and local-target guard also passed.
 - Disposable Supabase: unchanged migrations reset successfully; all 21 pgTAP assertions and all six HTTP behavior groups passed, including independent concurrent writes and foreign profile/household/membership mutations. Reserved accounts cleaned automatically.
-- Android Maestro: full Windows/API 35 release-APK journey passed in 6m 6s, including direct database postconditions, native asset log gate and automatic cleanup. Screenshot review confirms plus/tab icons render. The full [CI run for harness commit 4f90b85](https://github.com/Micha0371/VSCode-Environment/actions/runs/42512140002) also passed all three jobs, including cleanup and diagnostic upload. No new validated tag was created.
+- Android Maestro: full Windows/API 35 release-APK journey passed in 6m 6s, including direct database postconditions, native asset log gate and automatic cleanup. Screenshot review confirms plus/tab icons render. The full [CI run for harness commit 4f90b85](https://github.com/Micha0371/PantryFlow/actions/runs/42512140002) also passed all three jobs, including cleanup and diagnostic upload. No new validated tag was created.
 - The first CI Android setup requested a removed legacy SDK tools package; explicit platform-tools fixes it. The first executable flow left a trailing email character because a centered tap placed the cursor mid-field. TestID-relative end-of-field taps plus an exact email assertion fixed the harness; application code was unchanged.
 - Windows Gradle initially could not rename completed dependency-accessor caches. Copying the completed generated cache directories to their matching immutable names allowed the local build; no antivirus settings were changed. Linux CI did not require that local workaround.
 
 Official references: [Expo unit testing](https://docs.expo.dev/develop/unit-testing/), [Supabase database testing](https://supabase.com/docs/guides/database/testing), [Maestro Android](https://docs.maestro.dev/get-started/supported-platform/android), [Maestro HTTP scripts](https://docs.maestro.dev/maestro-flows/javascript/make-http-requests).
 
-The database-only follow-up `98a823b` adds foreign mutation assertions for profiles, households and memberships; all six integration groups and TypeScript pass locally. It changes neither the APK inputs nor Maestro flows. The branch CI repeats fast/database gates for this follow-up; see [branch workflow runs](https://github.com/Micha0371/VSCode-Environment/actions/workflows/pantryflow-tests.yml?query=branch%3Apantryflow%2Fpf-test-001). The passing Android evidence above remains applicable to the unchanged native journey.
+The database-only follow-up `98a823b` adds foreign mutation assertions for profiles, households and memberships; all six integration groups and TypeScript pass locally. It changes neither the APK inputs nor Maestro flows. The branch CI repeats fast/database gates for this follow-up; see [branch workflow runs](https://github.com/Micha0371/PantryFlow/actions/workflows/pantryflow-tests.yml?query=branch%3Apantryflow%2Fpf-test-001). The passing Android evidence above remains applicable to the unchanged native journey.
 
 Local fixture accounts and e2e-env.json were removed. The local test stack and emulator were stopped; cached SDK/tooling and ignored diagnostic evidence remain available. Historical hosted accounts remain the independent PF-CLEANUP-001 task.
 
