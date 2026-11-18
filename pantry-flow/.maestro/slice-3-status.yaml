@@ -46,7 +46,10 @@ name: Slice 3 pantry status journey
     id: android:id/button1
 - extendedWaitUntil:
     notVisible:
-      id: status-modal
+      id: status-option-out
+    timeout: 15000
+- extendedWaitUntil:
+    visible: Out
     timeout: 15000
 - assertVisible:
     id: pantry-screen
@@ -64,7 +67,7 @@ name: Slice 3 pantry status journey
     id: status-option-in_stock
 - extendedWaitUntil:
     notVisible:
-      id: status-modal
+      id: status-option-in_stock
     timeout: 15000
 - extendedWaitUntil:
     visible: In Stock
@@ -118,7 +121,11 @@ name: Slice 3 pantry status journey
     id: android:id/button1
 - extendedWaitUntil:
     notVisible:
-      id: status-modal
+      id: status-option-low
+    timeout: 15000
+- extendedWaitUntil:
+    notVisible:
+      text: Add to shopping list?
     timeout: 15000
 - extendedWaitUntil:
     visible: Low
@@ -162,7 +169,11 @@ name: Slice 3 pantry status journey
     id: android:id/button2
 - extendedWaitUntil:
     notVisible:
-      id: status-modal
+      id: status-option-out
+    timeout: 15000
+- extendedWaitUntil:
+    notVisible:
+      text: Add to shopping list?
     timeout: 15000
 - extendedWaitUntil:
     visible: Out
@@ -180,7 +191,7 @@ name: Slice 3 pantry status journey
     id: status-option-out
 - extendedWaitUntil:
     notVisible:
-      id: status-modal
+      id: status-option-out
     timeout: 15000
 - assertVisible: Out
 - assertNotVisible: Add to shopping list?

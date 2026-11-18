@@ -10,6 +10,7 @@ import { placeMenu, type Frame } from '@/lib/status-menu';
 
 export type ViewRef = React.ComponentRef<typeof View>;
 
+const MARGIN = 16; // dp kept free at both screen sides
 const OPTIONS: StatusKey[] = ['in_stock', 'low', 'out'];
 
 interface Props {
@@ -57,7 +58,9 @@ export function StatusSelector({ anchor, itemName, current, onSelect, onDismiss,
   }, []);
 
   if (!anchor) return null;
-  const pos = size ? placeMenu(anchor, size, screen, insets) : null;
+  const pos = size ? placeMenu(anchor, size, screen, insets, MARGIN) : null;
+  // The menu is invisible until measured and placed; keep it out of the accessibility tree meanwhile.
+  const hiddenProps = pos ? {} : { importantForAccessibility: 'no-hide-descendants' as const, accessibilityElementsHidden: true };
 
   return (
     <Modal transparent visible animationType="fade" statusBarTranslucent
@@ -68,8 +71,10 @@ export function StatusSelector({ anchor, itemName, current, onSelect, onDismiss,
         accessibilityRole="radiogroup"
         accessibilityLabel={`${t('status_group_label')}, ${itemName}`}
         onLayout={onLayout}
+        {...hiddenProps}
         style={[
           styles.menu,
+          { maxWidth: Math.max(0, screen.width - 2 * MARGIN) },
           pos ? { top: pos.top, left: pos.left } : styles.hidden,
         ]}
       >
