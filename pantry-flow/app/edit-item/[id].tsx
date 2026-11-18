@@ -16,38 +16,14 @@ import { Input } from '@/components/Input';
 import { OptionChips } from '@/components/OptionChips';
 import { AuthGate } from '@/components/AuthGate';
 import { useItemMutation } from '@/hooks/useItemMutation';
+import { useShoppingPrompt } from '@/hooks/useShoppingPrompt';
 import { ITEM_NAME_MAX, itemSaveErrorKey } from '@/lib/pantry-data';
 import { usePantryItems } from '@/hooks/usePantryItems';
-import { useShoppingItems } from '@/hooks/useShoppingItems';
-import { shoppingErrorKey } from '@/lib/shopping-data';
-import { offersShoppingAdd } from '@/lib/pantry-shopping';
 import { useTranslation } from '@/lib/i18n';
 import { CATEGORIES, LOCATIONS, STATUSES } from '@/lib/constants';
 import { colors, radii, spacing, typography, StatusKey } from '@/lib/theme';
 import { useFocusedErrorAnnouncement } from '@/hooks/useErrorAnnouncement';
 import { useFormError } from '@/hooks/useFormError';
-
-// Resolves true on the affirmative button, false on the other button or dismissal.
-function ask(title: string, message: string, addLabel: string, skipLabel: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    Alert.alert(
-      title,
-      message,
-      [
-        { text: skipLabel, style: 'cancel', onPress: () => resolve(false) },
-        { text: addLabel, onPress: () => resolve(true) },
-      ],
-      { cancelable: true, onDismiss: () => resolve(false) },
-    );
-  });
-}
-
-function notice(title: string, message: string, okLabel: string): Promise<void> {
-  return new Promise((resolve) => {
-    Alert.alert(title, message, [{ text: okLabel, onPress: () => resolve() }],
-      { cancelable: true, onDismiss: () => resolve() });
-  });
-}
 
 export default function EditItemModal() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -59,7 +35,7 @@ function EditItemModalContent() {
   const router = useRouter();
   const { t } = useTranslation();
   const { loading, error: loadError, retry, updateItem, deleteItem, getItem } = usePantryItems();
-  const { addItem: addShoppingItem } = useShoppingItems();
+  const { prompting, offer } = useShoppingPrompt();
 
   const item = id ? getItem(id) : null;
 
@@ -70,10 +46,6 @@ function EditItemModalContent() {
   const [hydrated, setHydrated] = useState(false);
   const { busy, run } = useItemMutation();
   const { error, failures, setError } = useFormError();
-  // True while the low/out prompt or its failure notice is pending. The pantry
-  // save has committed by then, so Cancel stays usable: a native alert that
-  // never answers cannot lock the form (KAN-36).
-  const [prompting, setPrompting] = useState(false);
   // The provider drops a deleted row before the delete resolves; until the screen
   // has closed, that is this screen's own delete, not a missing item (KAN-35).
   const removing = useRef(false);
@@ -132,20 +104,7 @@ function EditItemModalContent() {
       async (current) => {
         const saved = await updateItem(item.id, { name: trimmed, category, location, status });
         // current() is false once this screen has closed or another screen covers it.
-        if (!current() || !offersShoppingAdd(previous, saved.status)) return;
-        setPrompting(true);
-        try {
-          const wanted = await ask(t('shopping_prompt_title'), saved.name, t('shopping_prompt_add'), t('shopping_prompt_skip'));
-          if (!wanted || !current()) return;
-          try {
-            await addShoppingItem({ name: saved.name, pantryItemId: saved.id });
-          } catch (shoppingError) {
-            if (!current()) return;
-            await notice(t('shopping_prompt_failed_title'), t(shoppingErrorKey(shoppingError)), t('common_ok'));
-          }
-        } finally {
-          setPrompting(false);
-        }
+        await offer({ saved, previous, current });
       },
       () => router.back(),
       (failure) => setError(t(itemSaveErrorKey(failure))),

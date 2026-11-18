@@ -195,7 +195,7 @@ for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit
       useFocusEffect: callback => React.useEffect(callback, [callback]),
     } });
     let navigations = 0;
-    const existing = { id: '1', name: 'Oat milk', category: 'dairy', location: 'fridge', status: 'in_stock' };
+    const existing = { id: '1', household_id: 'h', name: 'Oat milk', category: 'dairy', location: 'fridge', status: 'in_stock' };
     const duplicate = async () => { throw { code: '23505' }; };
     const { default: Screen } = load(file, { ...shared,
       'expo-router': { useRouter: () => ({ back: () => navigations++ }), useLocalSearchParams: () => ({ id: '1' }) },
@@ -206,6 +206,11 @@ for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit
       '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
       '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
       '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'),
+      '@/hooks/useShoppingPrompt': load('hooks/useShoppingPrompt.ts', { 'react-native': native,
+        '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
+        '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
+        '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'), '@/lib/i18n': { useTranslation: () => ({ t }) },
+        '@/hooks/household-scope': { useHouseholdScope: () => ({ householdId: 'h' }) } }),
       '@/hooks/usePantryItems': { usePantryItems: () => ({ householdId: 'h', loading: false, error: null,
         addItem: duplicate, updateItem: duplicate, getItem: () => existing }) },
     });
@@ -319,7 +324,7 @@ for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit
       '@/lib/theme': theme, './InlineError': inlineError,
       '@/lib/accessibility': load('lib/accessibility.ts', { 'react-native': { Platform: { OS: 'android' },
         AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } } }) });
-    const existing = { id: '1', name: 'Oat milk', category: 'dairy', location: 'fridge', status: 'in_stock' };
+    const existing = { id: '1', household_id: 'h', name: 'Oat milk', category: 'dairy', location: 'fridge', status: 'in_stock' };
     const { default: Screen } = load(file, { ...shared,
       'expo-router': { useRouter: () => ({ back: () => {} }), useLocalSearchParams: () => ({ id: '1' }),
         useFocusEffect: callback => React.useEffect(callback, [callback]) },
@@ -332,6 +337,11 @@ for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit
       '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
       '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
       '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'),
+      '@/hooks/useShoppingPrompt': load('hooks/useShoppingPrompt.ts', { 'react-native': native,
+        '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
+        '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
+        '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'), '@/lib/i18n': { useTranslation: () => ({ t }) },
+        '@/hooks/household-scope': { useHouseholdScope: () => ({ householdId: 'h' }) } }),
       '@/hooks/usePantryItems': { usePantryItems: () => ({ householdId: 'h', loading: false, error: null,
         addItem: async () => ({}), updateItem: async () => ({}), getItem: () => existing }) },
     });
@@ -393,6 +403,11 @@ test('the Edit Item screen announces a missing item or failed load as an alert (
     '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
     '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
     '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'),
+    '@/hooks/useShoppingPrompt': load('hooks/useShoppingPrompt.ts', { 'react-native': native,
+      '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
+      '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
+      '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'), '@/lib/i18n': { useTranslation: () => ({ t }) },
+      '@/hooks/household-scope': { useHouseholdScope: () => ({ householdId: 'h' }) } }),
     '@/hooks/usePantryItems': { usePantryItems: () => ({ householdId: 'h', loading: false, error: 'err_load_items',
       retry: () => {}, updateItem: async () => ({}), deleteItem: async () => {}, getItem: () => undefined }) },
   });
