@@ -17,7 +17,8 @@ const announced = [];
 const announcing = { Platform: { OS: 'android' }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } };
 const shared = { ...routerStubs(route => pushes.push(route)), 'react-native': native,
   '@/hooks/useErrorAnnouncement': load('hooks/useErrorAnnouncement.ts', { 'react-native': announcing,
-    'expo-router': { useFocusEffect: callback => React.useEffect(callback, [callback]) } }), '@/lib/theme': theme, '@expo/vector-icons': { Ionicons: 'Icon' },
+    'expo-router': { useFocusEffect: callback => React.useEffect(callback, [callback]) } }),
+  '@/components/InlineError': load('components/InlineError.tsx', { 'react-native': { Text: 'Text', View: 'View' } }), '@/lib/theme': theme, '@expo/vector-icons': { Ionicons: 'Icon' },
   '@/lib/i18n': { useTranslation: () => ({ t }) }, '@/components/Button': { Button: 'Button' }, '@/components/Input': { Input: 'Input' },
   '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/ShoppingItem': { ShoppingItem: 'Row' },
   '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }) };
@@ -289,7 +290,7 @@ test('the list keeps the first tap with the keyboard open', () => {
 function renderToggle(state) {
   const r = renderAdd(state);
   const rowProps = item => r.renderer.root.findByType('SectionList').props.renderItem({ item }).props;
-  const alerts = () => r.renderer.root.findAll(n => n.props.testID === 'shopping-action-error');
+  const alerts = () => r.renderer.root.findAll(n => n.type === 'Text' && n.props.testID === 'shopping-action-error');
   return { ...r, rowProps, alerts };
 }
 
@@ -545,5 +546,22 @@ test('a missing-item error stays after the row is dropped and names the item', a
     state.items = [row('2')];
     act(() => renderer.update(React.createElement(renderer.root.type)));
     assert.equal(alertText(alerts), 'Milk: err_shopping_missing');
+  } finally { act(() => renderer.unmount()); }
+});
+
+test('a failed toggle error appears inside a live region that was already mounted (KAN-39)', async () => {
+  const items = [row('1')];
+  const { renderer, rowProps, alerts } = renderToggle({ items, completeItem: async () => {
+    throw Object.assign(new Error('gone'), { code: 'PGRST116' });
+  } });
+  const regions = () => renderer.root.findAll(n => n.type === 'View' && n.props.accessibilityLiveRegion === 'polite');
+  try {
+    const before = regions();
+    assert.equal(before.length, 1, 'one live region for the action error before it appears');
+    assert.equal(alerts().length, 0);
+    await act(async () => { rowProps(items[0]).onToggle(); });
+    assert.equal(regions()[0], before[0]);
+    assert.equal(alerts().length, 1);
+    assert.equal(alerts()[0].parent, before[0]);
   } finally { act(() => renderer.unmount()); }
 });

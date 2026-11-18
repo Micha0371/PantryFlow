@@ -1,4 +1,4 @@
-const { test } = require('node:test');
+const { test, mock } = require('node:test');
 const assert = require('node:assert/strict');
 const React = require('react');
 const { create, act } = require('react-test-renderer');
@@ -8,8 +8,16 @@ const native = { Text: 'Text', View: 'View', ActivityIndicator: 'Spinner', FlatL
   Pressable: 'Pressable', ScrollView: 'ScrollView', KeyboardAvoidingView: 'KeyboardAvoidingView',
   Platform: { OS: 'ios' }, StyleSheet: { create: styles => styles } };
 const t = key => key;
+// KAN-39: the real announcement hook and live region, with a recording AccessibilityInfo.
+const announced = [];
+const announcement = load('hooks/useErrorAnnouncement.ts', {
+  'react-native': { Platform: { OS: 'android' }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } },
+  'expo-router': { useFocusEffect: callback => React.useEffect(callback, [callback]) } });
+const inlineError = load('components/InlineError.tsx', { 'react-native': { Text: 'Text', View: 'View' } });
 const shared = { 'react-native': native, '@/lib/theme': theme,
-  '@/lib/i18n': { useTranslation: () => ({ t }) }, '@/components/Button': { Button: 'Button' } };
+  '@/lib/i18n': { useTranslation: () => ({ t }) }, '@/components/Button': { Button: 'Button' },
+  '@/hooks/useErrorAnnouncement': announcement, '@/components/InlineError': inlineError };
+const politeRegions = renderer => renderer.root.findAll(n => n.type === 'View' && n.props.accessibilityLiveRegion === 'polite');
 // The real single-open hook runs with the same router stub; the list stays focused.
 const routerStubs = push => {
   const expoRouter = { useRouter: () => ({ push }), useFocusEffect: callback => React.useEffect(callback, [callback]) };
@@ -209,3 +217,93 @@ for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit
     act(() => renderer.unmount());
   });
 }
+
+test('a failed pantry load is announced on the focused tab after the tab is spoken (KAN-39)', () => {
+  const { default: Screen } = load('app/(tabs)/index.tsx', { ...shared,
+    ...routerStubs(() => {}), '@expo/vector-icons': { Ionicons: 'Icon' },
+    '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/PantryItem': { PantryItem: 'Item' },
+    '@/hooks/usePantryItems': { usePantryItems: () => ({ items: [], loading: false, error: 'err_load_items', retry: () => {} }) },
+  });
+  mock.timers.enable({ apis: ['setTimeout'] });
+  announced.length = 0;
+  let renderer;
+  try {
+    act(() => { renderer = create(React.createElement(Screen)); });
+    act(() => mock.timers.tick(1000));
+    assert.deepEqual(announced, ['err_load_items']);
+    const alert = renderer.root.find(n => n.type === 'Text' && n.props.accessibilityRole === 'alert');
+    assert.equal(alert.props.children, 'err_load_items');
+  } finally { if (renderer) act(() => renderer.unmount()); mock.timers.reset(); }
+});
+
+test('a sign-out failure appears inside a live region that was already mounted (KAN-39)', async () => {
+  const { default: Settings } = load('app/(tabs)/settings.tsx', { ...shared,
+    'expo-router': { useRouter: () => ({ replace: () => {} }) },
+    'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView' },
+    '@/lib/auth': { useAuth: () => ({ signOut: async () => { throw new Error('offline'); } }) },
+  });
+  let renderer;
+  act(() => { renderer = create(React.createElement(Settings)); });
+  try {
+    const [region] = politeRegions(renderer);
+    assert.ok(region, 'the live region exists before any error');
+    assert.equal(region.findAllByType('Text').length, 0);
+    await act(async () => renderer.root.findByType('Button').props.onPress());
+    assert.equal(politeRegions(renderer)[0], region);
+    const alert = region.findByType('Text');
+    assert.equal(alert.props.accessibilityRole, 'alert');
+    assert.equal(alert.props.children, 'err_signout');
+  } finally { act(() => renderer.unmount()); }
+});
+
+test('a session restore failure is announced without a screen focus (KAN-39)', () => {
+  let state = { loading: true, error: null, session: null };
+  const { AuthGate } = load('components/AuthGate.tsx', { ...shared,
+    'expo-router': { Redirect: 'Redirect' }, './Button': { Button: 'Button' },
+    '@/lib/auth': { useAuth: () => ({ ...state, retrySession: async () => {} }) },
+  });
+  const tree = () => React.createElement(AuthGate, null, React.createElement('Private'));
+  announced.length = 0;
+  let renderer;
+  act(() => { renderer = create(tree()); });
+  try {
+    assert.deepEqual(announced, []);
+    state = { loading: false, error: 'err_restore_session', session: null };
+    act(() => renderer.update(tree()));
+    assert.deepEqual(announced, ['err_restore_session']);
+    assert.equal(renderer.root.find(n => n.type === 'Text' && n.props.accessibilityRole === 'alert').props.children,
+      'err_restore_session');
+  } finally { act(() => renderer.unmount()); }
+});
+
+test('an Add Item load error appears inside a live region that was already mounted (KAN-39)', () => {
+  const constants = load('lib/constants.ts');
+  const data = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
+  let pantry = { householdId: 'h', loading: false, error: null, retry: () => {}, addItem: async () => ({}) };
+  const { default: Screen } = load('app/add-item.tsx', { ...shared,
+    'expo-router': { useRouter: () => ({ back: () => {} }), useLocalSearchParams: () => ({}) },
+    '@/components/AuthGate': { AuthGate: ({ children }) => children },
+    '@/components/Input': { Input: 'Input' }, '@/components/OptionChips': { OptionChips: 'OptionChips' },
+    '@/hooks/useItemMutation': load('hooks/useItemMutation.ts', { 'expo-router': {
+      useFocusEffect: callback => React.useEffect(callback, [callback]) } }),
+    '@/lib/pantry-data': data, '@/lib/constants': constants,
+    '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
+    '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
+    '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'),
+    '@/hooks/usePantryItems': { usePantryItems: () => pantry },
+  });
+  let renderer;
+  act(() => { renderer = create(React.createElement(Screen)); });
+  try {
+    const before = politeRegions(renderer);
+    assert.equal(before.length, 1, 'one live region for the load error before it appears');
+    assert.equal(before[0].findAllByType('Text').length, 0);
+    pantry = { ...pantry, error: 'err_load_items' };
+    act(() => renderer.update(React.createElement(Screen)));
+    assert.equal(politeRegions(renderer)[0], before[0]);
+    const alert = before[0].findByType('Text');
+    assert.equal(alert.props.accessibilityRole, 'alert');
+    assert.equal(alert.props.children, 'err_load_items');
+    assert.ok(renderer.root.findAllByType('Button').some(b => b.props.label === 'common_retry'));
+  } finally { act(() => renderer.unmount()); }
+});

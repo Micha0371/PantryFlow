@@ -23,6 +23,7 @@ import {
   LOCATIONS,
 } from '@/lib/constants';
 import { colors, spacing, typography } from '@/lib/theme';
+import { InlineError } from '@/components/InlineError';
 
 export default function AddItemModal() {
   return <AuthGate requireSession><AddItemModalContent /></AuthGate>;
@@ -71,10 +72,8 @@ function AddItemModalContent() {
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.title}>{t('item_add_title')}</Text>
-        {loadError ? <View>
-          <Text accessibilityRole="alert">{t(loadError)}</Text>
-          <Button label={t('common_retry')} onPress={() => { void retry(); }} />
-        </View> : null}
+        <InlineError message={loadError ? t(loadError) : null} />
+        {loadError ? <Button label={t('common_retry')} onPress={() => { void retry(); }} /> : null}
 
         <Input
           label={t('item_name')}

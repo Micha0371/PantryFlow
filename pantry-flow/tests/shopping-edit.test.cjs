@@ -1,4 +1,4 @@
-const { test } = require('node:test');
+const { test, mock } = require('node:test');
 const assert = require('node:assert/strict');
 const React = require('react');
 const { create, act } = require('react-test-renderer');
@@ -8,6 +8,10 @@ const theme = load('lib/theme.ts');
 const data = load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') });
 const mutation = load('hooks/useItemMutation.ts', { 'expo-router': { useFocusEffect: () => {} } });
 const t = key => key;
+const announced = [];
+const announcement = load('hooks/useErrorAnnouncement.ts', {
+  'react-native': { Platform: { OS: 'android' }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } },
+  'expo-router': { useFocusEffect: callback => React.useEffect(callback, [callback]) } });
 const existing = { id: '1', household_id: 'h', pantry_item_id: null, name: 'Milk', is_checked: false,
   completed_at: null, created_by: 'u', created_at: '2026-01-01', updated_at: '2026-01-01' };
 
@@ -21,7 +25,7 @@ function render({ state = {} } = {}) {
     'expo-router': { useRouter: () => ({ back: () => { log.back++; } }), useLocalSearchParams: () => ({ id: '1' }) },
     '@/components/Button': { Button: 'Button' }, '@/components/Input': { Input: 'Input' },
     '@/components/AuthGate': { AuthGate: ({ children }) => children },
-    '@/hooks/useItemMutation': mutation, '@/lib/shopping-data': data,
+    '@/hooks/useItemMutation': mutation, '@/lib/shopping-data': data, '@/hooks/useErrorAnnouncement': announcement,
     '@/hooks/useShoppingItems': { useShoppingItems: () => ({ loading: false, error: null, retry: () => {},
       getItem: () => existing, renameItem: async () => {}, deleteItem: async () => {}, ...state }) },
   });
@@ -185,4 +189,21 @@ test('the form keeps the first tap with the keyboard open', () => {
 test('cancel closes without writing', () => {
   const { renderer, log, by } = render();
   try { act(() => by('shopping-edit-cancel').props.onPress()); assert.equal(log.back, 1); } finally { act(() => renderer.unmount()); }
+});
+
+test('a missing item or failed load is announced on the detail screen (KAN-39)', () => {
+  mock.timers.enable({ apis: ['setTimeout'] });
+  announced.length = 0;
+  const { renderer } = render({ state: { getItem: () => undefined, error: 'err_load_shopping' } });
+  try {
+    act(() => mock.timers.tick(1000));
+    assert.deepEqual(announced, ['err_load_shopping']);
+  } finally { act(() => renderer.unmount()); mock.timers.reset(); }
+  announced.length = 0;
+  mock.timers.enable({ apis: ['setTimeout'] });
+  const ok = render();
+  try {
+    act(() => mock.timers.tick(1000));
+    assert.deepEqual(announced, []);
+  } finally { act(() => ok.renderer.unmount()); mock.timers.reset(); }
 });

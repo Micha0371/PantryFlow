@@ -4,6 +4,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { ShoppingItem } from '@/components/ShoppingItem';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import { InlineError } from '@/components/InlineError';
 import { useShoppingItems } from '@/hooks/useShoppingItems';
 import { useSingleOpen } from '@/hooks/useSingleOpen';
 import { useFocusedErrorAnnouncement } from '@/hooks/useErrorAnnouncement';
@@ -147,11 +148,11 @@ function HouseholdShoppingScreen() {
   return (
     <View style={styles.container} testID="shopping-screen">
       {addBar}
-      {visibleActionError ? (
-        <Text style={styles.actionError} accessibilityRole="alert" testID="shopping-action-error">
-          {`${visibleActionError.name}: ${t(visibleActionError.key)}`}
-        </Text>
-      ) : null}
+      <InlineError
+        message={visibleActionError ? `${visibleActionError.name}: ${t(visibleActionError.key)}` : null}
+        style={styles.actionError}
+        testID="shopping-action-error"
+      />
       {items.length === 0 ? (
         <EmptyState title={t('shopping_empty_title')} subtitle={t('shopping_empty_subtitle')} />
       ) : (

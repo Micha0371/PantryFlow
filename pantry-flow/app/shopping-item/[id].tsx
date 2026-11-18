@@ -13,6 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { AuthGate } from '@/components/AuthGate';
+import { useFocusedErrorAnnouncement } from '@/hooks/useErrorAnnouncement';
 import { useItemMutation } from '@/hooks/useItemMutation';
 import { useShoppingItems } from '@/hooks/useShoppingItems';
 import { SHOPPING_NAME_MAX, shoppingErrorKey } from '@/lib/shopping-data';
@@ -46,6 +47,9 @@ function EditShoppingItemContent() {
       setHydrated(true);
     }
   }, [item, hydrated]);
+
+  const missing = !item && !removing.current && !loading;
+  useFocusedErrorAnnouncement(missing ? t(loadError ?? 'err_shopping_missing') : null);
 
   if (!item && removing.current) return <View style={styles.safe} />;
 
