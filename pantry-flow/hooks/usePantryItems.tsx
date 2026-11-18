@@ -128,7 +128,9 @@ function usePantryState() {
       else if (code === PANTRY_STATUS_UNKNOWN) {
         // Keep the cached row, mark it, and discard reads that began before this
         // outcome; the forced re-read below reconciles it.
-        markUnconfirmed(id); generation.current++; reread = true;
+        // Scope-guarded: after a household change this must not discard the new scope's read.
+        if (isCurrent(scope)) { markUnconfirmed(id); generation.current++; }
+        reread = true;
       } else if (code === PANTRY_STATUS_CONFLICT) {
         clearUnconfirmed(id);
         const current = (error as unknown as { current: PantryItem }).current;

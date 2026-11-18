@@ -246,3 +246,21 @@ test('a status write that settles after a household change writes nothing into t
   assert.deepEqual(f.api.items.map(i => [i.id, i.status]), [['9', 'in_stock']]);
   f.dispose();
 });
+
+test('an uncertain outcome after a household change leaves the new household\'s list loading normally', async () => {
+  const f = fixture(); await loaded(f);
+  const pending = deferred();
+  f.queue.push(pending.promise);
+  let writing;
+  act(() => { writing = f.api.setItemStatus('1', 'low'); });
+  f.change({ id: 'u' }, 'h2');
+  await act(async () => {
+    pending.resolve({ data: null, error: lost });
+    await assert.rejects(writing, e => e.code === 'PF_PANTRY_STATUS_UNKNOWN');
+  });
+  await act(async () => f.reads[1].resolve([row({ id: '9', household_id: 'h2' })]));
+  assert.equal(f.api.loading, false);
+  assert.deepEqual(f.api.items.map(i => i.id), ['9']);
+  assert.equal(f.api.isUnconfirmed('1'), false);
+  f.dispose();
+});
