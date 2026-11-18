@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { AccessibilityInfo, Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-
-// Android does not speak the alert role by itself, so an error that appears in
-// place of a screen is announced explicitly (KAN-39). iOS keeps its behavior
-// until VoiceOver is checked (PF-IOS-001).
-export function announceError(message: string) {
-  if (Platform.OS === 'android') AccessibilityInfo.announceForAccessibility(message);
-}
+import { announceError } from '@/lib/accessibility';
 
 // Speaks a message once when it appears or its text changes; a cleared and
 // re-shown message (a failed retry) is spoken again.

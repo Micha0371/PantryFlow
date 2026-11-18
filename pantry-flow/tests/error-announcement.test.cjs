@@ -21,7 +21,7 @@ function setup(os = 'android') {
     },
   };
   const mod = load('hooks/useErrorAnnouncement.ts', {
-    'react-native': { Platform: { OS: os }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } },
+    '@/lib/accessibility': load('lib/accessibility.ts', { 'react-native': { Platform: { OS: os }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } } }),
     'expo-router': expoRouter,
   });
   const setFocus = value => act(() => { focus.focused = value; focus.listeners.forEach(fn => fn(value)); });

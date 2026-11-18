@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { colors, radii, spacing, typography } from '@/lib/theme';
 import { InlineError } from './InlineError';
-import { announceError } from '@/hooks/useErrorAnnouncement';
+import { announceError } from '@/lib/accessibility';
 
 interface Props extends TextInputProps {
   label?: string;
