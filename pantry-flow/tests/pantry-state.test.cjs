@@ -324,3 +324,23 @@ test('a later successful write wins over a pending recovery read, and the missin
   assert.equal(f.first.loading, false);
   f.dispose();
 });
+
+test('a missing result that arrives after a household change neither re-reads nor touches the new list (CR-01)', async () => {
+  const f = fixture();
+  await act(async () => f.reads[0].resolve([named('1', 'Milk')]));
+  const pending = deferred();
+  f.mutation(pending.promise);
+  let updating;
+  act(() => { updating = f.first.updateItem('1', named('1', 'Oat milk')); });
+  f.change({ id: 'u' }, 'h2');
+  await act(async () => f.reads[1].resolve([row('x', 'h2')]));
+  await act(async () => {
+    pending.resolve(gone());
+    await assert.rejects(updating, e => e.code === 'PGRST116');
+  });
+  assert.equal(f.reads.length, 2, 'no recovery read for the new household');
+  assert.deepEqual(f.first.items.map(i => i.id), ['x']);
+  assert.equal(f.first.loading, false);
+  assert.equal(f.first.error, null);
+  f.dispose();
+});
