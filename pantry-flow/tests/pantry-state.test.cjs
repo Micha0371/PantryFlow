@@ -194,3 +194,38 @@ test('a refresh that sees an added pantry row before the insert returns leaves o
   assert.equal(f.first.loading, false);
   f.dispose();
 });
+
+// KAN-85 item 2: the re-read after a write on an unloaded list belongs to the
+// household that made the write; after a household change it must not run.
+test('a write that settles after the same user changes household does not re-read for the new household (KAN-85)', async () => {
+  const f = fixture();
+  await act(async () => f.reads[0].reject(new Error('offline')));
+  const pending = deferred();
+  f.mutation(pending.promise);
+  let adding;
+  act(() => { adding = f.first.addItem(named('new', 'New')); });
+  // Same user, so the provider stays mounted and only the household scope changes.
+  f.change({ id: 'u' }, 'other-household');
+  await act(async () => f.reads[1].resolve([row('other-item', 'other-household')]));
+  await act(async () => { pending.resolve({ data: named('new', 'New'), error: null }); await adding; });
+  assert.equal(f.first.loading, false, 'the new household list is not stranded loading');
+  assert.deepEqual(f.first.items.map(item => item.id), ['other-item']);
+  assert.equal(f.reads.length, 2, 'no re-read after the household changed');
+  f.dispose();
+});
+
+// KAN-85 item 3: a successful write on a loaded list clears an earlier error.
+test('a successful write on a loaded list clears an earlier refresh error (KAN-85)', async () => {
+  const f = fixture();
+  await act(async () => f.reads[0].resolve([named('a', 'A')]));
+  let refresh;
+  act(() => { refresh = f.first.fetchItems(); });
+  await act(async () => { f.reads[1].reject(new Error('offline')); await refresh; });
+  assert.equal(f.first.error, 'err_load_items');
+  f.mutation({ data: named('new', 'New'), error: null });
+  await act(async () => { await f.first.addItem(named('new', 'New')); });
+  assert.equal(f.first.error, null);
+  assert.equal(f.reads.length, 2, 'a loaded list needs no re-read');
+  assert.deepEqual(ids(f.first.items), ['a', 'new']);
+  f.dispose();
+});

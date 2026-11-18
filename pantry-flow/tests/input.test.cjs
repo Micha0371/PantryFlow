@@ -7,13 +7,11 @@ const { load } = require('./helpers.cjs');
 // KAN-34: an error shown under a form field must be announced by screen readers.
 const theme = load('lib/theme.ts');
 const announced = [];
-const announcement = load('hooks/useErrorAnnouncement.ts', {
-  'react-native': { Platform: { OS: 'android' }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } },
-  'expo-router': { useFocusEffect: () => {} } });
 const { Input } = load('components/Input.tsx', {
   'react-native': { Text: 'Text', TextInput: 'TextInput', View: 'View', StyleSheet: { create: s => s } },
   '@/lib/theme': theme,
-  '@/hooks/useErrorAnnouncement': announcement,
+  '@/lib/accessibility': load('lib/accessibility.ts', { 'react-native': { Platform: { OS: 'android' },
+    AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } } }),
   './InlineError': load('components/InlineError.tsx', { 'react-native': { Text: 'Text', View: 'View' } }),
 });
 

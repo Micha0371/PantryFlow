@@ -11,7 +11,7 @@ const t = key => key;
 // KAN-39: the real announcement hook and live region, with a recording AccessibilityInfo.
 const announced = [];
 const announcement = load('hooks/useErrorAnnouncement.ts', {
-  'react-native': { Platform: { OS: 'android' }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } },
+  '@/lib/accessibility': load('lib/accessibility.ts', { 'react-native': { Platform: { OS: 'android' }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } } }),
   'expo-router': { useFocusEffect: callback => React.useEffect(callback, [callback]) } });
 const inlineError = load('components/InlineError.tsx', { 'react-native': { Text: 'Text', View: 'View' } });
 const shared = { 'react-native': native, '@/lib/theme': theme,
@@ -316,7 +316,9 @@ for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit
     const { en } = load('lib/i18n/en.ts');
     const input = load('components/Input.tsx', {
       'react-native': { Text: 'Text', TextInput: 'TextInput', View: 'View', StyleSheet: { create: s => s } },
-      '@/lib/theme': theme, '@/hooks/useErrorAnnouncement': announcement, './InlineError': inlineError });
+      '@/lib/theme': theme, './InlineError': inlineError,
+      '@/lib/accessibility': load('lib/accessibility.ts', { 'react-native': { Platform: { OS: 'android' },
+        AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } } }) });
     const existing = { id: '1', name: 'Oat milk', category: 'dairy', location: 'fridge', status: 'in_stock' };
     const { default: Screen } = load(file, { ...shared,
       'expo-router': { useRouter: () => ({ back: () => {} }), useLocalSearchParams: () => ({ id: '1' }),
@@ -401,6 +403,35 @@ test('the Edit Item screen announces a missing item or failed load as an alert (
     act(() => { renderer = create(React.createElement(Screen)); });
     const alert = renderer.root.find(n => n.type === 'Text' && n.props.accessibilityRole === 'alert');
     assert.equal(alert.props.children, 'err_load_items');
+    act(() => mock.timers.tick(1000));
+    assert.deepEqual(announced, ['err_load_items']);
+  } finally { if (renderer) act(() => renderer.unmount()); mock.timers.reset(); }
+});
+
+// Package 5 review M4: a Pantry load error on an unfocused tab is not announced
+// until the user opens that tab.
+test('a pantry load error on an unfocused tab is announced only once the tab is focused', () => {
+  let setFocused;
+  const focusable = load('hooks/useErrorAnnouncement.ts', {
+    '@/lib/accessibility': load('lib/accessibility.ts', { 'react-native': { Platform: { OS: 'android' }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } } }),
+    'expo-router': { useFocusEffect: callback => {
+      const [focused, set] = React.useState(false);
+      setFocused = set;
+      React.useEffect(() => (focused ? callback() : undefined), [focused, callback]);
+    } } });
+  const { default: Screen } = load('app/(tabs)/index.tsx', { ...shared, '@/hooks/useErrorAnnouncement': focusable,
+    ...routerStubs(() => {}), '@expo/vector-icons': { Ionicons: 'Icon' },
+    '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/PantryItem': { PantryItem: 'Item' },
+    '@/hooks/usePantryItems': { usePantryItems: () => ({ items: [], loading: false, error: 'err_load_items', retry: () => {} }) },
+  });
+  mock.timers.enable({ apis: ['setTimeout'] });
+  announced.length = 0;
+  let renderer;
+  try {
+    act(() => { renderer = create(React.createElement(Screen)); });
+    act(() => mock.timers.tick(5000));
+    assert.deepEqual(announced, [], 'nothing while another tab is visible');
+    act(() => setFocused(true));
     act(() => mock.timers.tick(1000));
     assert.deepEqual(announced, ['err_load_items']);
   } finally { if (renderer) act(() => renderer.unmount()); mock.timers.reset(); }

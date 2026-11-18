@@ -324,3 +324,24 @@ for (const [label, leave] of [['closed', 'unmount'], ['lost focus', 'blur']]) {
     } finally { if (!unmounted) act(() => renderer.unmount()); }
   });
 }
+
+// KAN-85 item 5: a failure notice answered after Cancel must not navigate again,
+// alert again or add again.
+test('a failure notice answered late, after Cancel, does nothing more (KAN-85)', async () => {
+  const { renderer, log, by, press, blur } = render({ updateItem: saved('low'), addItem: async () => { throw { code: '23505' }; } });
+  try {
+    setStatus(by, 'low');
+    const pending = start(by);
+    await flush();
+    await act(async () => { press('shopping_prompt_add'); await flush(); });
+    assert.equal(log.alerts.length, 2, 'the failure notice is open');
+    act(() => { by('edit-item-cancel').props.onPress(); blur(); });
+    assert.equal(log.back, 1);
+    await act(async () => { press('common_ok'); await flush(); });
+    await pending;
+    assert.equal(log.back, 1, 'no second navigation');
+    assert.equal(log.alerts.length, 2, 'no further alert');
+    assert.equal(log.adds.length, 1, 'no second add');
+    assert.equal(log.updates, 1);
+  } finally { act(() => renderer.unmount()); }
+});

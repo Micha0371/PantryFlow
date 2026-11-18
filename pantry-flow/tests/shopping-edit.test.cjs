@@ -10,7 +10,7 @@ const mutation = load('hooks/useItemMutation.ts', { 'expo-router': { useFocusEff
 const t = key => key;
 const announced = [];
 const announcement = load('hooks/useErrorAnnouncement.ts', {
-  'react-native': { Platform: { OS: 'android' }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } },
+  '@/lib/accessibility': load('lib/accessibility.ts', { 'react-native': { Platform: { OS: 'android' }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } } }),
   'expo-router': { useFocusEffect: callback => React.useEffect(callback, [callback]) } });
 const existing = { id: '1', household_id: 'h', pantry_item_id: null, name: 'Milk', is_checked: false,
   completed_at: null, created_by: 'u', created_at: '2026-01-01', updated_at: '2026-01-01' };

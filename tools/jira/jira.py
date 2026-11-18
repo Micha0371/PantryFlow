@@ -490,7 +490,7 @@ def create_issue(args, jira, project):
     return {"created": key, "url": browse_url(jira.site, key)}
 
 
-def get_issue(args, jira, key, route):
+def get_issue(_args, jira, key, route):
     result = jira.call("GET", route + "?fields=summary,description,status,issuetype,labels,updated,parent,priority")
     if result.get("key") != key:
         raise Failure("Jira issue identity did not match request")
