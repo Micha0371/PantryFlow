@@ -61,6 +61,7 @@ export default function PantryScreen() {
               <PantryItem
                 item={item}
                 onPress={() => openScreen(`/edit-item/${item.id}`)}
+                onStatusPress={() => {} /* wired in UX-01B Task 5 */}
               />
             )}
             contentContainerStyle={styles.list}

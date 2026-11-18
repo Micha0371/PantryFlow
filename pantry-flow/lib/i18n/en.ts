@@ -26,6 +26,8 @@ export const en = {
   status_low: 'Low',
   status_out: 'Out',
   status_group_label: 'Status',
+  status_change_hint: 'Change status',
+  item_edit_hint: 'Edit item',
 
   // Categories
   cat_dairy: 'Dairy',

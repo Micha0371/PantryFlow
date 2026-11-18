@@ -3,13 +3,13 @@ import { StyleSheet, Text, View } from 'react-native';
 import { colors, radii, spacing, typography, StatusKey } from '@/lib/theme';
 import { useTranslation } from '@/lib/i18n';
 
-export function StatusBadge({ status }: { status: StatusKey }) {
+export function StatusBadge({ status, outlined = false }: { status: StatusKey; outlined?: boolean }) {
   const { t } = useTranslation();
   const fg = colors.status[status];
   const bg = colors.statusBg[status];
 
   return (
-    <View style={[styles.badge, { backgroundColor: bg }]}>
+    <View style={[styles.badge, { backgroundColor: bg }, outlined && { borderWidth: 1, borderColor: fg }]}>
       <View style={[styles.dot, { backgroundColor: fg }]} />
       <Text style={[styles.text, { color: fg }]}>{t(`status_${status}`)}</Text>
     </View>
