@@ -316,7 +316,7 @@ the evidence is equivalence, not new coverage:
 - **App code:** new tests pin Button colors and opacity, the confirmation
   screen's states, every `fetchAllPages` exit, the tab icons, and stable auth and
   i18n context values; the test proxy's control, PKCE, delayed-write and 502
-  paths; the Jira CLI suite keeps its 47 tests.
+  paths; the Jira CLI suite grew from 45 to 47 tests (the new email-shape cases).
 
 ## Slice 1.1 baseline coverage
 

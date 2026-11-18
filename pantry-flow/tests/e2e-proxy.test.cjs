@@ -15,7 +15,9 @@ async function start({ upstreamUp = true } = {}) {
   });
   await new Promise(resolve => upstream.listen(0, '127.0.0.1', resolve));
   const upstreamPort = upstream.address().port;
-  if (!upstreamUp) await new Promise(resolve => upstream.close(resolve));
+  // An upstream that drops every connection stands in for an unreachable one,
+  // without relying on a closed port staying free (KAN-86).
+  if (!upstreamUp) upstream.on('connection', socket => socket.destroy());
   const proxy = fork(path.join(__dirname, '../scripts/e2e-proxy.cjs'), [], {
     env: { ...process.env, PANTRY_PROXY_PORT: '0', PANTRY_PROXY_UPSTREAM_PORT: String(upstreamPort) },
     stdio: ['ignore', 'ignore', 'inherit', 'ipc'],
@@ -34,7 +36,7 @@ async function start({ upstreamUp = true } = {}) {
     req.end(method === 'GET' ? undefined : body ?? '{}');
   });
   const call = async (method, url) => (await send(method, url)).status;
-  const stop = () => { proxy.kill(); if (upstreamUp) upstream.close(); };
+  const stop = () => { proxy.kill(); upstream.close(); };
   return { call, send, seen, stop };
 }
 
@@ -103,7 +105,7 @@ test('a delayed pantry write is held and reported, and other writes pass', async
   } finally { stop(); }
 });
 
-test('an unreachable upstream answers 502', async () => {
+test('an upstream that drops the connection answers 502', async () => {
   const { send, stop } = await start({ upstreamUp: false });
   try {
     assert.deepEqual(await send('GET', pantry), { status: 502, body: 'Local Supabase unavailable' });
