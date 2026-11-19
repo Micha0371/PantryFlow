@@ -395,6 +395,26 @@ ran over Wi-Fi ADB, against the local stack through the loopback proxy and
   The step at the largest font was optional. Split screen was not checked. The
   owner operated TalkBack.
 
+## UX-02 coverage — KAN-92 (search the pantry)
+
+Contract: a search field above the Pantry list filters the loaded rows by name,
+locally. A query is a case-insensitive substring of the trimmed text; nothing is
+written. Files are under `pantry-flow/tests/`. The device run and the TalkBack
+check are pending an owner session, so nothing below is claimed as run on a phone.
+
+| ID | Observable outcome | Automated coverage | Limit |
+| --- | --- | --- | --- |
+| SEARCH-01 | The helper returns the same array for an empty or whitespace-only query, matches a case-insensitive substring of the trimmed query, lower-cases German characters consistently (no folding of umlauts) and keeps the list order | `pantry-search.test.cjs` | Pure function |
+| SEARCH-02 | Screen states: typing filters rows and clearing restores the list; the field is a labelled search input that keeps taps and dismisses the keyboard on drag; a whitespace-only query shows the full list; no match shows its own state with the query and a clear action and no EmptyState; an empty pantry shows EmptyState and no field | `pantry-search-screen.test.cjs` (first five cases) | Component level |
+| SEARCH-03 | Mutation consistency: results follow add, rename, delete and status change while a query is active, and search never calls a write | `pantry-search-screen.test.cjs` (results follow mutations; search never calls a write) | Component level |
+| SEARCH-04 | A household change clears the query | `pantry-search-screen.test.cjs` (household change) | Provider level; no real household switch on a device |
+| SEARCH-05 | The status selector closes when its item leaves the results | `pantry-search-screen.test.cjs` (selector closes) | Component level |
+| SEARCH-06 | The result count is announced once after typing pauses | `pantry-search-screen.test.cjs` (announcement) | Announcement call only; what TalkBack speaks is A11Y-SEARCH-01 |
+| SEARCH-07 | Keyboard: results taps are kept with the keyboard open and a drag dismisses it | `pantry-search-screen.test.cjs` (labelled search input case) | Props only; real keyboard behavior is SEARCH-E2E-01 and A11Y-SEARCH-01 |
+| SEARCH-E2E-01 | Android journey: `ri` leaves Rice only, ` RI ` the same, `zz` shows the no-match state, its clear button restores Milk, Rice and Rye flour, and tapping Rice with the keyboard open opens the edit screen on the first tap | `.maestro/slice-3-search.yaml` after `status-verify` and `search-seed` in `run-e2e.cjs` | Pending owner session: not run on a device |
+| SEARCH-E2E-02 | Search wrote nothing: the pantry rows are exactly Milk (dairy, out), Rice and Rye flour (in stock), and the other household has none | `e2e-fixtures.ts search-seed` (ordinary client insert) and `search-verify` with ordinary clients | Local stack only; runs with the device journey |
+| A11Y-SEARCH-01 | TalkBack reads the field label, the clear button and the result count; focus lands sensibly on the no-match state; the keyboard covers neither the results nor the add button | None automated | Pending owner session on the phone |
+
 ## Slice 1.1 baseline coverage
 
 | ID | Approved behavior / observable outcome | Reused automated coverage | Additional coverage | Manual / deferred limit |
