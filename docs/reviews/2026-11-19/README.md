@@ -21,3 +21,7 @@ The reports mention material "beside this report" (a source archive and Jira JSO
   - a lookup failure after a proven fence had contradictory generation outcomes.
 
   The other results support their narrower claims (case 6 sequential, case 7 simulated, case 10 a pure function). Version 0.11.3 corrects and qualifies them; round 3b is the focused follow-up. No redesign or policy decision is indicated.
+- Codex evidence review of round 3b and v0.11.4 (`b35392c`, delivered to the owner on 2026-11-20): **local round-3b feasibility closed**, with the explicitly open D25 extension; not an implementation authorization.
+  - **Resolved:** all three round-3 findings (full-precision in-database ordering with the one tie on independent users, the pending-only FENCE_ALL return, the lookup-failure outcome).
+  - **Sound as a specified design:** the ACCOUNT_GONE translation, with an accurate unverified label. Its verification should include same-named constraints on unrelated tables.
+  - **One Low finding:** D26 still named the ENSURE_ROW `23503`. Fixed in v0.11.5.

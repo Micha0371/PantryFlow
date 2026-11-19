@@ -1,5 +1,17 @@
 # Account lifecycle — overview, threat model and decisions
 
+**Version 0.11.5, 2026-11-20.** Codex evidence review of round 3b (`b35392c`): **local round-3b feasibility closed**, with the open D25 extension (`PF_DELETION_ACCOUNT_GONE` through all three wrappers, unrelated-FK controls including same-named constraints). This is not an implementation authorization. One Low wording fix in D26 is applied. Payload equality and restore selection remain modelled evidence, not proof of Resend delivery, concurrent deduplication or an operational restore.
+
+**Remaining before implementation authorization:**
+- **Local:** the D25 extension above.
+- **Hosted:** FV-A1, B1, B3, B8, B9, B10, plus the hosted timeout and configuration assumptions.
+- **Toolchain:** full CLI-3.x compatibility and a fresh Android regression.
+- **Phone:** FV-A3, TalkBack and native lifecycle checks.
+- **Edge/provider:** verified claims, rate limiting, actual ledger idempotency, invocation time budgets, and D26.
+- **Operational:** retention and `flow_state` decisions, a restore and crash rehearsal, and external-request verification.
+
+Codex indicates no further architecture redesign or broad local concurrency round.
+
 **Version 0.11.4, 2026-11-19.** This version adds the [round-3b evidence](../testing/2026-11-19-account-lifecycle-feasibility-round3b.md) in a disposable local stack. All four cases were confirmed:
 - the full-precision commit-order check (0 violations, 1 tie on independent users, not exhaustive);
 - FENCE_ALL's pending-only return;
