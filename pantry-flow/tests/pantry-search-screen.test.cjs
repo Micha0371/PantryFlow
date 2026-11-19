@@ -21,7 +21,7 @@ function render(initial) {
     emit: (name, e) => log.listeners.filter(l => l.name === name).forEach(l => l.cb(e)) };
   const store = { items: initial, household: 'h', force: () => {} };
   const native = { Text: 'Text', View: 'View', TextInput: 'TextInput', ActivityIndicator: 'Spinner', Pressable: 'Pressable', Modal: 'Modal',
-    Platform: { OS: 'android' }, Keyboard: { dismiss: () => { log.dismissed += 1; },
+    Platform: { OS: 'android' }, AppState: { addEventListener: () => ({ remove: () => {} }) }, Keyboard: { dismiss: () => { log.dismissed += 1; },
       addListener: (name, cb) => { const l = { name, cb }; log.listeners.push(l); return { remove: () => { log.removed += 1; log.listeners.splice(log.listeners.indexOf(l), 1); } }; } }, StyleSheet: { create: s => s, absoluteFill: {} },
     useWindowDimensions: () => ({ width: 400, height: 800 }),
     AccessibilityInfo: { setAccessibilityFocus: () => {} }, findNodeHandle: () => null,
