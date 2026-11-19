@@ -1,6 +1,8 @@
 # Password policy, recovery and session lifecycle — technical specification
 
-**Version 0.3, 2026-11-19, for the focused Codex follow-up review.** Implementation is not authorized.
+**Version 0.4, 2026-11-19, for the focused Codex follow-up review.** Implementation is not authorized.
+
+**Changes in 0.4** (owner requirement, 2026-11-19): inline password-validation feedback for registration, reset and change (section 2.6), with tests P08–P16.
 
 **Changes in 0.3:** runtime results from the [feasibility evidence](../testing/2026-11-19-account-lifecycle-feasibility.md) (disposable stack, Auth v2.198.0) are folded in.
 - FV-A2, A4 and A6: confirmed.
@@ -95,14 +97,7 @@ These were verified by reading the versioned source. Execution behavior is not v
 | 64 × 😀 | 64 | 128 | 256 | Rejected (too long) |
 | `"  correct horse battery  "` (leading and trailing spaces) | 25 | 25 | 25 | Accepted; sign-in requires the spaces |
 
-**Client feedback rules:**
-- The minimum counts code points with `[...value].length`.
-- The maximum counts bytes with `new TextEncoder().encode(value).length`.
-- Messages:
-  - "Use at least 15 characters";
-  - "This password is too long. Letters with accents and emoji count as more than one character."
-- The provider's error wording is never shown.
-- English and German strings go to KAN-60.
+**Client feedback rules:** see section 2.6. The provider's error wording is never shown, and the English and German strings go to KAN-60.
 
 ### 2.4 Existing accounts
 
@@ -117,6 +112,66 @@ These were verified by reading the versioned source. Execution behavior is not v
 - **If available on the approved plan:** enable it fail-open, so a HaveIBeenPwned outage doesn't block signup, and document that choice.
 - **If unavailable:** record the limitation and the owner's disposition. Nothing is purchased.
 - Completion evidence: the configuration read-back plus a direct signup with a known-breached 15-character password, rejected with reason `pwned`.
+
+### 2.6 Inline validation feedback
+
+**[Settled, owner requirement 2026-11-19].**
+
+**Where it applies:** the **new-password** field of exactly three screens:
+- registration;
+- password reset (RecoveryPending);
+- Change password.
+
+**Where it never applies:**
+- ordinary sign-in;
+- the deletion re-authentication (FreshAuth);
+- the "current password" field of Change password;
+- the UpdateUnknown check.
+
+Those fields accept any non-empty value, so a legacy 6-character password still signs in.
+
+**One shared evaluator.** A new pure module, `lib/password-policy.ts`, exports:
+- `PASSWORD_MIN_CODE_POINTS = 15`;
+- `PASSWORD_MAX_BYTES = 72`;
+- `evaluateNewPassword(value: string): { codePoints: number; bytes: number; remaining: number; meetsMinimum: boolean; tooLong: boolean }`.
+
+Its definitions:
+- `codePoints` is `[...value].length`;
+- `bytes` is `new TextEncoder().encode(value).length`;
+- `remaining` is `max(0, 15 − codePoints)`;
+- `tooLong` is `bytes > 72`.
+
+The value is evaluated exactly as given: never trimmed, normalized or truncated. All three screens use this one module, and no screen computes length itself. The constants are the client mirror of the server settings; the server stays authoritative (below).
+
+**Behavior on the three screens:**
+
+| Rule | Behavior |
+|---|---|
+| Policy before typing | Under the field, visible before any input: "Use at least 15 characters. Spaces are allowed. A longer passphrase is harder to guess." There are no uppercase, digit or special-character requirements, and nothing implies any. |
+| Live feedback | The status line updates on every change, typing or pasting, from `evaluateNewPassword`. |
+| Characters still required | With `0 < codePoints < 15`: "{remaining} more characters needed", the number rendered as separate text from the translated phrase, as `t()` has no interpolation. An empty field shows only the policy line. |
+| Minimum met | With `meetsMinimum` and not `tooLong`: "✓ Minimum length reached". It never says "strong", shows no strength meter, and does not claim the password is secure. |
+| Too long | With `tooLong`: "This password is too long. Letters with accents and emoji take up more space, so use fewer characters." |
+| Submit | The submit button stays enabled; tapping it with `!meetsMinimum` or `tooLong` shows the same inline message as an error and sends nothing. Feedback only, not enforcement. |
+| Server authoritative | A server rejection (422 `weak_password`, 400 too long, `pwned`, or any rule the client doesn't mirror) shows the matching localized message even when the client evaluation passed. The client never treats its own pass as success. |
+| Visibility toggle | A "Show password" / "Hide password" button with role button, `accessibilityState` reflecting the state, and a 48 dp target. It toggles `secureTextEntry` without clearing or changing the value; on Android the cursor stays at the end. |
+| Password managers and autofill | New-password fields use `autoComplete="new-password"` and `textContentType="newPassword"`. Current-password and sign-in fields use `current-password` / `password`. Paste is never blocked. `autoCorrect` and `autoCapitalize` are off. |
+| Accessibility | The policy line is the field's accessibility hint. The status line sits in a polite live region, but only **state changes** are announced: entering "more needed", reaching the minimum, becoming too long, and back. A remaining-count announcement happens at most once, after 1 second without input, never per keystroke. Submit errors are announced with the existing form-error mechanism (KAN-84 `announceKey`). |
+| Localization | All strings come from `lib/i18n` (English now; German listed for KAN-60, not longer than the English). |
+
+**Replaces the current hint.** Today both the sign-in and registration password fields show the placeholder "At least 6 characters" (`auth_password_placeholder`). Registration also blocks submit with `password.length < 6`, which counts UTF-16 units. Those match today's server minimum of 6 but not this policy:
+- a placeholder disappears on the first keystroke;
+- the sign-in screen must not show a new-password rule;
+- neither field sets password autofill attributes.
+
+The implementation therefore:
+- removes the placeholder from sign-in, which gets a neutral field with `current-password` autofill;
+- replaces the registration placeholder and the `length < 6` check with the shared evaluator and the persistent policy line above;
+- retires `auth_password_placeholder`.
+
+The new hint ships together with the server change to 15, never before it. Otherwise it would announce a rule the server doesn't enforce yet; see §2.2. Covered by tests P08 and P15.
+
+**Known limitation:** code points are not visible characters. A decomposed `é` (`e` + U+0301) counts as 2, matching the server (section 2.3). The counter can therefore differ from what a user perceives, in rare cases only, and the server agrees with the counter.
 
 ## 3. Recovery lifecycle
 
@@ -284,6 +339,15 @@ Destructive or concurrency tests run only in a disposable stack, never against t
 | P05 | Legacy account | A 6-character legacy account signs in; `data.weakPassword` is present; the app routes normally; a new password must comply | Auth + Comp |
 | P06 | Exact values | Leading and trailing spaces preserved through the form and the API; paste and autofill attributes present | Comp + Native |
 | P07 | Environment parity | Recorded local and hosted Auth versions, `minimum_password_length`, `password_requirements`, HIBP state, `update_password_require_current_password` and rate limits (hosted read needs authorization) | Config |
+| P08 | Policy before typing | On registration, reset and change, the policy line is visible with an empty field; it is the field's accessibility hint; no composition requirement appears anywhere | Comp |
+| P09 | Remaining count | `evaluateNewPassword` and the status line: 0 code points → policy only; 1 → "14 more characters needed"; 14 → "1 more"; 15 → "✓ Minimum length reached"; pasting 20 characters at once goes straight to "Minimum length reached"; 7 × (`e` + U+0301) → "1 more" | Unit + Comp |
+| P10 | Byte maximum feedback | 72 ASCII, 36 `ä`, 18 😀 → minimum reached, not too long; 73 ASCII, 37 `ä`, 19 😀, 64 `ä` → "too long"; leading and trailing spaces counted, never trimmed | Unit + Comp |
+| P11 | Not strength | No string or element on the three screens contains "strong", "secure" or a strength meter when the minimum is met | Comp |
+| P12 | Visibility and autofill | The toggle switches `secureTextEntry` without changing the value; it has a label, state and 48 dp; new-password fields carry `new-password` / `newPassword`; sign-in and current-password fields carry `current-password` / `password`; no paste blocking | Comp |
+| P13 | Announcements | Typing 20 characters one by one produces at most two state-change announcements (more needed → minimum reached) plus at most one paused count announcement, never one per keystroke; becoming too long announces once | Comp (fake timers) |
+| P14 | One shared evaluator | The three screens import `evaluateNewPassword`; no other length computation exists in their sources (static check); the evaluator's unit tests cover the §2.3 rows | Unit + static |
+| P15 | Not on login or re-authentication | Sign-in, deletion FreshAuth, the current-password field and the UpdateUnknown check show no policy or length feedback and submit a 6-character legacy password unchanged | Comp |
+| P16 | Server authoritative | A client-valid password rejected by the server (`weak_password`, `pwned`, too long) shows the server-mapped message and is not treated as success; a client-invalid password sends no request | Comp + Auth |
 | R01 | Neutral request | Known and unknown addresses give the same UI state; Mailpit receives mail only for the known one | Auth + Comp |
 | R02 | Throttle and outage | 429 shows the neutral message; network error and 5xx show the failure message; the cooldown works | Comp |
 | R03 | Warm and cold recovery | Valid link → RecoveryPending → Confirmed; kill after the exchange → restart opens RecoveryPending | Native |
