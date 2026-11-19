@@ -24,6 +24,9 @@ const shared = { 'react-native': native, '@/lib/theme': theme,
   '@/lib/pantry-data': load('lib/pantry-data.ts', { './constants': load('lib/constants.ts'), './pagination': load('lib/pagination.ts') }),
   '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'),
   '@/lib/accessibility': { announce: () => {} },
+  // KAN-92 search: inert here; the rows come through unfiltered.
+  '@/components/SearchField': { SearchField: 'SearchField' },
+  '@/lib/pantry-search': { filterItemsByName: items => items },
   '@/hooks/useItemMutation': load('hooks/useItemMutation.ts', { 'expo-router': { useFocusEffect: callback => React.useEffect(callback, [callback]) } }), };
 const politeRegions = renderer => renderer.root.findAll(n => n.type === 'View' && n.props.accessibilityLiveRegion === 'polite');
 // The real single-open hook runs with the same router stub; the list stays focused.

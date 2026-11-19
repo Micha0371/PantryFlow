@@ -65,6 +65,7 @@ function render({ items: initial = [mk('1', 'Milk', 'in_stock')], addItem } = {}
     '@/lib/accessibility': { announce: m => log.announced.push(m) },
     '@/lib/pantry-data': pantryData, '@/lib/pantry-shopping': pantryShopping,
     '@/lib/status-menu': statusMenu,
+    '@/components/SearchField': { SearchField: 'SearchField' }, '@/lib/pantry-search': { filterItemsByName: items => items },
     '@/hooks/usePantryItems': { usePantryItems: () => {
       const [, bump] = React.useState(0);
       store.force = () => bump(n => n + 1);

@@ -12,10 +12,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { EmptyState } from '@/components/EmptyState';
 import { PantryItem } from '@/components/PantryItem';
 import { Button } from '@/components/Button';
+import { SearchField } from '@/components/SearchField';
 import { StatusSelector, type ViewRef } from '@/components/StatusSelector';
 import { useItemMutation } from '@/hooks/useItemMutation';
 import { useShoppingPrompt, notice } from '@/hooks/useShoppingPrompt';
 import { announce } from '@/lib/accessibility';
+import { filterItemsByName } from '@/lib/pantry-search';
 import { PANTRY_STATUS_CONFLICT, PANTRY_STATUS_UNKNOWN, itemSaveErrorKey } from '@/lib/pantry-data';
 import { offersShoppingAdd } from '@/lib/pantry-shopping';
 import type { Frame } from '@/lib/status-menu';
@@ -30,12 +32,15 @@ export default function PantryScreen() {
   // One lock for rows and add actions: a tap burst opens one screen (KAN-33, KAN-38).
   const openScreen = useSingleOpen();
   const { t } = useTranslation();
-  const { items, loading, error, retry, setItemStatus, isUnconfirmed } = usePantryItems();
+  const { householdId, items, loading, error, retry, setItemStatus, isUnconfirmed } = usePantryItems();
   const { busy, run } = useItemMutation();
   const prompt = useShoppingPrompt();
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [open, setOpen] = useState<{ id: string; anchor: Frame; ref: React.RefObject<ViewRef | null> } | null>(null);
-  const openItem = open ? items.find((it) => it.id === open.id) ?? null : null;
+  const [query, setQuery] = useState('');
+  const results = filterItemsByName(items, query);
+  const trimmedQuery = query.trim();
+  const openItem = open ? results.find((it) => it.id === open.id) ?? null : null;
   const { invalidate } = prompt;
 
   // The selector, its writes and an unanswered prompt belong to the focused list;
@@ -50,7 +55,24 @@ export default function PantryScreen() {
     };
   }, [invalidate]));
 
-  // The selector never outlives its item (deleted elsewhere, household change).
+  // A query belongs to one household's list.
+  useEffect(() => { setQuery(''); }, [householdId]);
+
+  // One count announcement once typing pauses, never one per keystroke.
+  const resultCount = useRef(0);
+  resultCount.current = results.length;
+  useEffect(() => {
+    if (!trimmedQuery) return;
+    const timer = setTimeout(() => {
+      const count = resultCount.current;
+      announce(count === 0 ? t('pantry_search_no_match_title')
+        : count === 1 ? t('pantry_search_results_one')
+          : `${count} ${t('pantry_search_results_many')}`);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [trimmedQuery, t]);
+
+  // The selector never outlives its item (deleted elsewhere, filtered out, household change).
   useEffect(() => {
     if (open && !openItem) setOpen(null);
   }, [open, openItem]);
@@ -115,26 +137,41 @@ export default function PantryScreen() {
         />
       ) : (
         <>
-          <FlatList
-            data={items}
-            keyExtractor={(it) => it.id}
-            extraData={[pendingId, busy, open?.id, isUnconfirmed]}
-            renderItem={({ item }) => (
-              <PantryItem
-                item={item}
-                onPress={() => openScreen(`/edit-item/${item.id}`)}
-                onStatusPress={(anchor, ref) => {
-                  // Ignored while unfocused or while a row/add navigation is pending.
-                  if (!busy && focused.current && !openScreen.isLocked()) setOpen({ id: item.id, anchor, ref });
-                }}
-                editDisabled={pendingId === item.id || isUnconfirmed(item.id)}
-                statusDisabled={busy}
-                statusBusy={pendingId === item.id}
-                statusExpanded={open?.id === item.id}
+          <SearchField value={query} onChangeText={setQuery} />
+          {trimmedQuery && results.length === 0 ? (
+            <View style={styles.noMatch} testID="pantry-search-no-match">
+              <Text style={styles.noMatchTitle}>{t('pantry_search_no_match_title')}</Text>
+              <Text style={styles.noMatchQuery}>{`"${trimmedQuery}"`}</Text>
+              <Button
+                label={t('pantry_search_clear')}
+                onPress={() => setQuery('')}
+                testID="pantry-search-no-match-clear"
               />
-            )}
-            contentContainerStyle={styles.list}
-          />
+            </View>
+          ) : (
+            <FlatList
+              data={results}
+              keyExtractor={(it) => it.id}
+              extraData={[pendingId, busy, open?.id, isUnconfirmed]}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              renderItem={({ item }) => (
+                <PantryItem
+                  item={item}
+                  onPress={() => openScreen(`/edit-item/${item.id}`)}
+                  onStatusPress={(anchor, ref) => {
+                    // Ignored while unfocused or while a row/add navigation is pending.
+                    if (!busy && focused.current && !openScreen.isLocked()) setOpen({ id: item.id, anchor, ref });
+                  }}
+                  editDisabled={pendingId === item.id || isUnconfirmed(item.id)}
+                  statusDisabled={busy}
+                  statusBusy={pendingId === item.id}
+                  statusExpanded={open?.id === item.id}
+                />
+              )}
+              contentContainerStyle={styles.list}
+            />
+          )}
         </>
       )}
 
@@ -175,6 +212,9 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     paddingBottom: spacing.xxl * 2.5,
   },
+  noMatch: { padding: spacing.xl, alignItems: 'center', gap: spacing.md },
+  noMatchTitle: { ...typography.heading, color: colors.text, textAlign: 'center' },
+  noMatchQuery: { ...typography.body, color: colors.textMuted, textAlign: 'center' },
   errorText: {
     ...typography.body,
     color: colors.danger,
