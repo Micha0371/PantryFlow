@@ -4,7 +4,7 @@ const React = require('react');
 const { create, act } = require('react-test-renderer');
 const { load } = require('./helpers.cjs');
 const theme = load('lib/theme.ts');
-const native = { Text: 'Text', View: 'View', ActivityIndicator: 'Spinner', FlatList: 'FlatList',
+const native = { Keyboard: { dismiss: () => {} }, Text: 'Text', View: 'View', ActivityIndicator: 'Spinner', FlatList: 'FlatList',
   Pressable: 'Pressable', ScrollView: 'ScrollView', KeyboardAvoidingView: 'KeyboardAvoidingView',
   Platform: { OS: 'ios' }, StyleSheet: { create: styles => styles } };
 const t = key => key;
@@ -24,12 +24,15 @@ const shared = { 'react-native': native, '@/lib/theme': theme,
   '@/lib/pantry-data': load('lib/pantry-data.ts', { './constants': load('lib/constants.ts'), './pagination': load('lib/pagination.ts') }),
   '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'),
   '@/lib/accessibility': { announce: () => {} },
+  // KAN-92 search: inert here; the rows come through unfiltered.
+  '@/components/SearchField': { SearchField: 'SearchField' },
+  '@/lib/pantry-search': { filterItemsByName: items => items },
   '@/hooks/useItemMutation': load('hooks/useItemMutation.ts', { 'expo-router': { useFocusEffect: callback => React.useEffect(callback, [callback]) } }), };
 const politeRegions = renderer => renderer.root.findAll(n => n.type === 'View' && n.props.accessibilityLiveRegion === 'polite');
 // The real single-open hook runs with the same router stub; the list stays focused.
 const routerStubs = push => {
   const expoRouter = { useRouter: () => ({ push }), useFocusEffect: callback => React.useEffect(callback, [callback]) };
-  return { 'expo-router': expoRouter, '@/hooks/useSingleOpen': load('hooks/useSingleOpen.ts', { 'expo-router': expoRouter }) };
+  return { 'expo-router': expoRouter, '@/hooks/useKeyboardOverlap': { useKeyboardOverlap: () => 0 }, '@/hooks/useSingleOpen': load('hooks/useSingleOpen.ts', { 'expo-router': expoRouter }) };
 };
 
 test('initial inventory loading shows progress without claiming an empty pantry', () => {

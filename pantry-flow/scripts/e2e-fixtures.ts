@@ -105,6 +105,39 @@ if (command === 'prepare') {
   await alice.auth.signOut();
   await bob.auth.signOut();
   console.log('Verified Android status outcomes: Milk out, the linked add, the duplicate and declined prompts, and household isolation.');
+} else if (command === 'search-seed') {
+  // Ordinary client only: Alice adds two items the way the app does.
+  const alice = stack.client();
+  const signIn = await alice.auth.signInWithPassword({ email: emails[0], password });
+  assert.equal(signIn.error, null);
+  const membership = await alice.from('pantry_household_members').select('household_id').single();
+  assert.equal(membership.error, null);
+  const inserted = await alice.from('pantry_items').insert(['Rice', 'Rye flour'].map(name => ({
+    household_id: membership.data!.household_id, created_by: signIn.data.user!.id, name,
+  }))).select('name');
+  assert.equal(inserted.error, null);
+  assert.deepEqual(inserted.data?.map(row => row.name).sort(), ['Rice', 'Rye flour']);
+  await alice.auth.signOut();
+  console.log('Seeded Rice and Rye flour for the search journey.');
+} else if (command === 'search-verify') {
+  // Ordinary clients only: search is local, so it must have written nothing.
+  const alice = stack.client();
+  assert.equal((await alice.auth.signInWithPassword({ email: emails[0], password })).error, null);
+  const pantry = await alice.from('pantry_items').select('name, category, status').order('name');
+  assert.equal(pantry.error, null);
+  assert.deepEqual(pantry.data?.map(row => row.name), ['Milk', 'Rice', 'Rye flour'],
+    'The search journey must leave exactly Milk, Rice and Rye flour');
+  const milk = pantry.data!.find(row => row.name === 'Milk')!;
+  assert.deepEqual({ category: milk.category, status: milk.status }, { category: 'dairy', status: 'out' },
+    'Milk must stay as the status journey left it');
+  assert.deepEqual(pantry.data!.filter(row => row.name !== 'Milk').map(row => row.status), ['in_stock', 'in_stock'],
+    'Rice and Rye flour must keep their default status');
+  const bob = stack.client();
+  assert.equal((await bob.auth.signInWithPassword({ email: emails[1], password })).error, null);
+  assert.deepEqual((await bob.from('pantry_items').select('id')).data, []);
+  await alice.auth.signOut();
+  await bob.auth.signOut();
+  console.log('Verified the search journey wrote nothing: Milk, Rice and Rye flour unchanged.');
 } else if (command === 'confirmation-first') {
   const state = JSON.parse(await fs.readFile(path.join(appRoot, '.verification/confirmation-state.json'), 'utf8'));
   const location = await openVerification(await confirmationLink(emails[3], new Set(state.previousIds)));
@@ -152,7 +185,7 @@ if (command === 'prepare') {
   await fs.rm(path.join(appRoot, '.verification/e2e-env.json'), { force: true });
   await fs.rm(path.join(appRoot, '.verification/confirmation-state.json'), { force: true });
   console.log('Removed only reserved local test accounts and their cascading household data.');
-} else throw new Error('Expected prepare, verify, shopping-verify, status-verify or cleanup');
+} else throw new Error('Expected prepare, verify, shopping-verify, status-verify, search-seed, search-verify or cleanup');
 
 }
 main().catch(error => { console.error(error.message); process.exitCode = 1; });
