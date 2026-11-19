@@ -1,5 +1,14 @@
 # Account lifecycle — overview, threat model and decisions
 
+**Version 0.10, 2026-11-19.** This version responds to the Codex evidence review of v0.9 (`b86cc6c`; `docs/reviews/2026-11-19/specs-v0.9-evidence-review.md`, verdict "request changes"):
+
+- **V9-1 (High):** FENCE_OWN and per-generation outcome attribution, with the new kind `superseded`.
+- **V9-2 (Medium):** ENSURE_ROW serializes first-row creation before the generation is read.
+- **V9-3 (Medium):** a uniform `PF_DELETION_PAUSED` prefix; D25 covers every prefix; D26 separates Edge mapping.
+- **V9-4 (Low):** the evidence's gateway timing is corrected.
+
+**Next:** a local verification round 3 for the V9-1 to V9-3 failure cases and a commit-order-logged D20.7, which needs owner authorization. The hosted, toolchain, phone, Edge-integration and operational gates stay open, as listed by Codex.
+
 **Version 0.9, 2026-11-19.** This version adds the [round-2 evidence](../testing/2026-11-19-account-lifecycle-feasibility-round2.md) in a disposable local stack (CLI 3.2.0, Auth v2.198.0):
 
 - **Confirmed locally:** FV-B9, FV-B10, D17, D20.1–D20.7, D21, D22, D24, D25, and the R18 and R20 server facts.
