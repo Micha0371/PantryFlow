@@ -83,14 +83,13 @@ function EditItemModalContent() {
 
   if (!item) {
     return (
-      <View style={styles.centered}>
+      <View style={styles.missing}>
         <Text style={styles.errorText} accessibilityRole="alert">{t(loadError ?? 'err_item_missing')}</Text>
         <Button label={t('common_retry')} onPress={() => { void retry(); }} />
         <Button
           label={t('common_back')}
           onPress={() => router.back()}
           variant="secondary"
-          style={{ marginTop: spacing.lg }}
         />
       </View>
     );
@@ -248,6 +247,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.xl,
+  },
+  missing: {
+    flex: 1,
+    backgroundColor: colors.bg,
+    alignItems: 'stretch',
+    justifyContent: 'center',
+    padding: spacing.xl,
+    gap: spacing.md,
   },
   title: {
     ...typography.title,
