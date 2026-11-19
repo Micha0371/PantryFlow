@@ -191,7 +191,10 @@ Each issue below gets a dated comment pointing here; descriptions stay unchanged
 - **Recovery:** a reset ends with sign-out on **every** device, including the current one. The user then signs in with the new password.
 - **Uncertain outcome** (no response) in either flow: sign out everywhere, and the sign-in screen decides. The app claims neither "changed" nor "not changed".
 - **Confirmed in-app change:** §5 stands. The current session continues, and other sessions are revoked by the update's own transaction.
-- **Sign-out evidence:** only an HTTP 204 from the logout endpoint, or 403 `session_not_found`.
+- **Sign-out evidence (corrected after the Codex review of v0.6, V6-1):**
+  - All devices count as signed out only on an HTTP **204** from a global logout made with a live session.
+  - `session_not_found` proves only that the presented session is gone.
+  - **Disposition of that case, proposed as OD-A11 and awaiting owner confirmation:** the user signs in again, and a logout of all *other* sessions from the new session must return 204. The user then stays signed in on that fresh, ordinary password session.
 - **Why:** this meets §5's condition "no reopening without a demonstrated provider incompatibility":
   - the provider's recovery exemption from the current-password check has no freshness limit, and the recovery session keeps it through refresh and password update (verified in source and in FV-A4);
   - a continuing recovery session would therefore keep reset capability (Codex N4);

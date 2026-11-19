@@ -1,5 +1,16 @@
 # Account lifecycle — overview, threat model and decisions
 
+**Version 0.7, 2026-11-19.** This version responds to the Codex review of v0.6 (`4c71e12`; `docs/reviews/2026-11-19/specs-v0.6-review.md`): three High findings and two Medium. Codex judged that the request-bound deletion architecture and the restore selection need no redesign.
+
+| Codex v0.6 finding | 0.7 correction | Where |
+|---|---|---|
+| V6-1 (High): `session_not_found` isn't a global logout | Only a 204 from `scope=global` with a live session counts. Otherwise **reauth_required**: sign in, then `scope=others` must return 204 [OD-A11, proposed] | Password §3.3, §4.1; decision record A1; R18, R20 |
+| V6-2 (High): the marker is written after the crash boundary | `pf.auth.credential_op` is written **before** dispatch, with the phases dispatching → signout_pending → revoked or reauth_required, plus restart rules and interrupted cleanup | Password §3.3; R19 |
+| V6-3 (High): the fence cutoff isn't monotonic or clock-safe | Admission needs a **single-use ticket**; every fence clears it. The proof is logical (equality under the row lock), with no clocks | Deletion §5.1; D20 |
+| V6-4 (Medium): expiry is 403 `bad_jwt`, not 401 | Proactive refresh at `exp` − 60 s; `bad_jwt` with an expired `exp` → refresh and retry; otherwise the session is unusable | Password §3.3; deletion §3; R18, D23 |
+| V6-5 (Medium): the private function isn't reachable over RPC | `public.pf_*` wrappers (`SECURITY INVOKER`, service-role-only `EXECUTE`) around the `private` implementations; the private schema stays unexposed | Deletion §2; FV-B9, FV-B10 |
+| Test and verification alignment | D04, D07, D19, D20, D23, R18–R20, FV-A9 (provider and configuration bound with cancellation), FV-B9/B10 (exact boundary); FV-B11 retired | Both specs |
+
 **Version 0.6, 2026-11-19.** This version responds to the Codex review of v0.5 (`ef89b30`; V5-1 to V5-8) and to the owner decisions of 2026-11-19, recorded as **Amendment 1** to the decision record:
 
 - **OD-A10:** close the session.
@@ -133,7 +144,8 @@ Status after the 2026-11-19 experiments: **done** A2 (Auth behavior), A4, A5 (lo
 | FV-B5 | Admin API error shape for the guard exception | Done; superseded by option X (relevant only to the trigger backstop) |
 | FV-A9 | The provider's server-side request and statement lifetime (bounds the late-commit residual) | Password §3.3 |
 | FV-B9 | A `postgres`-owned function may delete from `auth.users` (local and hosted); `set_config` local scope reaches the trigger | Deletion §2 |
-| FV-B10 | PostgREST RPC returns `P0001` code and message to the service-role caller | Deletion §4.2 |
+| FV-B10 | PostgREST RPC returns `P0001` code and message to the service-role caller, through the exact `public.pf_*` boundary | Deletion §2, §4.2 |
+| FV-B11 | Retired in 0.7 (ticket replaces the clock comparison) | — |
 | FV-B6 | Rate-limit keying, direct versus from a function | OD-B1 rate-limit claim |
 
 ## 4. Owner decisions
@@ -157,6 +169,7 @@ Status after the 2026-11-19 experiments: **done** A2 (Auth behavior), A4, A5 (lo
 | OD-A10 | Session after a password reset or an uncertain outcome | **Close the session:** a proven global logout, then sign-in with the new password; a confirmed in-app change keeps this device signed in | **Accepted 2026-11-19** (decision record Amendment 1) |
 | OD-B8 | Unresolved ledger intents at restore | Restoration blocked per unresolved intent. Default completion only with explicit owner approval per UUID, after a request-validity check, with an auditable resolution record | **Accepted 2026-11-19** (Codex conditions included) |
 | OD-B9 | Deletion execution path (Codex V5-1) | **Option X:** one service-only database function bound to the request id, instead of the Auth Admin API | **Accepted 2026-11-19** (decision record Amendment 1) |
+| OD-A11 | Current session gone before global logout is proven (Codex V6-1, A1 disposition) | Sign in again, then `logout?scope=others` from the new session must return 204; stay signed in on that fresh password session; no tabs until then | **New, proposed** |
 | OD-B7 | Orphaned `auth.flow_state` rows after deletion (FV-B3) | Accept until provider expiry is verified; otherwise delete them in the function after a confirmed deletion | Open |
 | OD-B6 | Maintenance pause for self-service deletion | Pause plus drain through the admission barrier (deletion §4.3) | **Accepted 2026-11-19** (the requirement; the mechanism is part of v0.6 review) |
 

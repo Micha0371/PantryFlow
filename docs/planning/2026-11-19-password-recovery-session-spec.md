@@ -1,5 +1,14 @@
 # Password policy, recovery and session lifecycle — technical specification
 
+**Version 0.7, 2026-11-19.** This version responds to the Codex review of v0.6 (`docs/reviews/2026-11-19/specs-v0.6-review.md`).
+
+**Changes in 0.7:**
+- **V6-1:** `session_not_found` or `refresh_token_not_found` proves only that *this* session is gone, not the global logout. A new phase, **reauth_required**, completes it: the user signs in again, then a raw `logout?scope=others` must return 204 [A1 disposition, OD-A11].
+- **V6-2:** a user- and session-bound marker is written **before** dispatching the update, with explicit phase conversions and restart rules, including interrupted cleanup.
+- **V6-4:** proactive refresh, and Auth's 403 `bad_jwt` for expired tokens.
+- **V5-2 wording:** a late commit can also replace a password set by a later reset.
+- **FV-A9:** now a provider and configuration bound, including cancellation behaviour.
+
 **Version 0.6, 2026-11-19.** This version responds to the Codex review of v0.5 (V5-2, V5-3, V5-4) and to owner decision **OD-A10: close the session**, recorded as Amendment 1 to the decision record.
 
 **Changes in 0.6:**
@@ -7,7 +16,7 @@
   - **A password reset always ends with sign-out on every device, including this one.** The user then signs in with the new password.
   - **An uncertain outcome in either flow** also signs out everywhere, and the sign-in screen decides. Nothing is claimed as changed or not changed.
   - **A confirmed in-app change** keeps this device signed in. The update's own 200, whose transaction revokes the other sessions, is the evidence.
-- **Sign-out evidence (V5-4):** a raw `POST /auth/v1/logout?scope=global` that must return **204** (or 403 `session_not_found`), never an SDK `{ error: null }`.
+- **Sign-out evidence (V5-4):** a raw `POST /auth/v1/logout?scope=global` that must return **204** (or 403 `session_not_found`), never an SDK `{ error: null }`. *Superseded in 0.7: `session_not_found` no longer counts as global evidence (V6-1).*
 - **Restart-safe:** a non-secret `pf.auth.signout_pending` marker keeps the stored tokens until the revocation is proven, so a restart resumes it (V5-3, V5-8).
 - **Late commits (V5-2):** an earlier update that commits later is a documented residual, bounded by the provider's request lifetime [FV-A9]. No confirmed claim can be falsified by it, because uncertain attempts claim nothing.
 
@@ -264,8 +273,10 @@ stateDiagram-v2
     UpdatePending --> RecoveryPending: confirmed rejection, weak or too long
     UpdatePending --> FinalSignOut: 200, password changed
     UpdatePending --> FinalSignOut: no response, outcome unknown
-    FinalSignOut --> FinalSignOut: logout not proven, retry; restart resumes from marker
-    FinalSignOut --> SignedOut: global logout 204 or session_not_found
+    FinalSignOut --> FinalSignOut: logout not proven, retry or refresh; restart resumes from marker
+    FinalSignOut --> SignedOut: global logout 204, proven
+    FinalSignOut --> ReauthRequired: this session gone, session_not_found or dead token; global unproven
+    ReauthRequired --> SignedIn: user signs in, then logout scope others 204
     SignedOut --> [*]: sign in with the new password, or the previous one
 ```
 
@@ -280,17 +291,18 @@ stateDiagram-v2
 | **Exchanging** | `exchangeCodeForSession(code)` on the shared client, only with no session present. |
 | **LinkInvalid** | `AuthPKCECodeVerifierMissingError` gives "Open the link from the most recent email on the phone where you requested it." Expired, used, malformed or flow-state-not-found gives "This link has expired or was already used. Request a new one." No session is created. |
 | **ExchangeUnknown** | The SDK already removed the verifier, so a retry is impossible: "We couldn't complete the reset. Request a new link." If a session was in fact saved, the cold-start rule below applies. |
-| **RecoveryPending** | The screen shows "Set a new password for {email}", with no tab access. **Cold start:** a stored session whose `amr` includes `recovery` opens this screen instead of the tabs. A recovery session never continues past FinalSignOut, so no completion marker is needed. `pf.auth.signout_pending` takes precedence over this rule. **Cancel:** `signOut({ scope: 'local' })` revokes the recovery session server-side; the password is unchanged. |
-| **UpdatePending** | `updateUser({ password })`. Confirmed rejections: 422 `weak_password` gives the policy message; 400 too long gives the length message; 422 `same_password` gives "Choose a password different from your current one"; `reauthentication_needed` gives "This reset session has expired. Request a new link." and signs out. `same_password` is only ever a rejection. It is never read as proof that an earlier request succeeded, because it would equally match an old password the user happened to re-enter. |
-| **FinalSignOut** (OD-A10) | Entered after a 200 **or** after no response. The session ends on every device, including this one:<ol><li>Persist the non-secret marker `pf.auth.signout_pending = {user_id, session_id, reason: 'changed' \| 'unknown'}` **before** anything else. The stored session stays in storage until step 3.</li><li>Raw `POST /auth/v1/logout?scope=global` with the stored access token. 401 (expired): refresh with the stored refresh token and retry. `refresh_token_not_found` means the session is gone.</li><li>**Proven** only by HTTP **204**, or **403 `session_not_found`** (the session no longer exists). Then remove the session locally and clear the marker.</li><li>Anything else (network, 5xx, other 4xx): stay in FinalSignOut, retry with backoff, and show "Finishing sign-out…". An SDK `{ error: null }` is never evidence (V5-4).</li></ol>**Restart:** a marker on cold start resumes step 2 with the stored session, independently of `amr` (V5-3). The tabs are never shown while it exists. |
+| **RecoveryPending** | The screen shows "Set a new password for {email}", with no tab access. **Cold start:** a stored session whose `amr` includes `recovery` opens this screen instead of the tabs. A recovery session never continues past FinalSignOut, so no completion marker is needed. `pf.auth.credential_op` takes precedence over this rule. **Cancel:** `signOut({ scope: 'local' })` revokes the recovery session server-side; the password is unchanged. |
+| **UpdatePending** | `updateUser({ password })`. Confirmed rejections: 422 `weak_password` gives the policy message; 400 too long gives the length message; 422 `same_password` gives "Choose a password different from your current one"; `reauthentication_needed` gives "This reset session has expired. Request a new link." and signs out. `same_password` is only ever a rejection. It is never read as proof that an earlier request succeeded, because it would equally match an old password the user happened to re-enter. **Before dispatch (V6-2):** persist `pf.auth.credential_op = {user_id, session_id, flow: 'recovery' \| 'change', phase: 'dispatching'}`. **Conversions:** a confirmed 4xx rejection clears it; a 200 in recovery, or any unknown outcome, sets `phase: 'signout_pending'` with `reason`; a 200 for an in-app change clears it. A new update is never dispatched while a marker exists. |
+| **FinalSignOut** (OD-A10) | Entered after a 200 (recovery) **or** any unknown outcome (both flows). The marker is already `signout_pending`; the stored session stays in storage until it's revoked.<ol><li>**Proactive refresh:** if the access token's `exp` is less than 60 s away, refresh with the stored refresh token first.</li><li>Raw `POST /auth/v1/logout?scope=global` with the stored access token.</li><li>**204: proven global logout.** Set `phase: 'revoked'`, remove the local session, then clear the marker.</li><li>**403 `bad_jwt` with an expired `exp`** (Auth reports expiry as 403, not 401, V6-4): refresh and retry, at most once per refresh.</li><li>**403 `session_not_found`, `refresh_token_not_found`, or `bad_jwt` with an unexpired token: only *this* session is gone (V6-1).** Global revocation is **unresolved**: set `phase: 'reauth_required'` and remove the dead local session.</li><li>Anything else (network, 5xx, other 4xx): stay in FinalSignOut and retry with backoff. An SDK `{ error: null }` is never evidence.</li></ol>**Restart rules:**<ul><li>`dispatching` → treated as an unknown outcome, so `signout_pending`.</li><li>`signout_pending` → resume from step 1.</li><li>`revoked` → remove any stored session and clear the marker; this covers interrupted cleanup.</li><li>`reauth_required` → the sign-in screen with its message.</li></ul>Tabs are never shown while a marker exists, independently of `amr`. |
+| **ReauthRequired** (V6-1; A1 disposition, OD-A11) | The sign-in screen: "Sign in to finish signing out your other devices."<ol><li>The user signs in with an ordinary sign-in, using the new or previous password as appropriate.</li><li>The app immediately sends raw `POST /auth/v1/logout?scope=others` with the **new** session. Only **204** completes it, proving that every other session, including any surviving recovery session, was deleted.</li><li>On 204: clear the marker; the user stays signed in on the new, ordinary password session.</li><li>Until then: "Finishing sign-out of other devices…", with retry and no tabs.</li></ol>The all-device promise for the *old* sessions is met. The current device was signed out (its session ended) and signed in afresh. |
 | **SignedOut** | The sign-in screen with a message by `reason`. **changed:** "Your password was changed. Please sign in with your new password." **unknown:** "We couldn't confirm whether your password was changed. Sign in with your new password; if that doesn't work, use your previous one or request a new reset link." The app claims nothing further; the user's sign-in decides. |
 
 **Late commits [residual, V5-2]:**
 - An earlier update request that outlived its client timeout can still commit after FinalSignOut.
 - It writes *its* password and revokes every session other than its own calling session, which is already revoked, including a session the user has just created by signing in. The user is then signed out once more, and the password is the value that request carried.
 - Within one reset the user submits a single value, so the result matches what they typed. A different value only arises if they started *another* reset meanwhile.
-- The window is bounded by the provider's server-side request and statement lifetime, which is [Feasibility FV-A9] to establish.
-- Because uncertain attempts claim nothing and a 200 is the only "changed" evidence, a late commit can't falsify an earlier claim. It can only sign the user out again, and that's documented.
+- The window is bounded by the provider's server-side request and statement lifetime and its cancellation behaviour. For example: does Auth cancel the database work when the client disconnects, and does the gateway keep the upstream request alive? Establishing this is [Feasibility FV-A9], a provider and configuration verification rather than a client-timeout measurement.
+- Uncertain attempts claim nothing. But a late commit **can** falsify a later claim: if the user started *another* reset meanwhile and that one returned 200 ("changed"), the late commit replaces its password. This is documented as a residual within the FV-A9 bound, not excluded.
 
 - **Cost:** none beyond one ordinary sign-in by the user. There is no isolated client and no Check request.
 - **In-app change:** a confirmed 200 keeps the device signed in (§4.3); an uncertain outcome uses FinalSignOut with `reason: 'unknown'`.
@@ -321,7 +333,7 @@ stateDiagram-v2
 - "Revocation response lost" is the same event as "update response lost": both end in FinalSignOut with `reason: 'unknown'`.
 - **Claims and their evidence (N3):**
   - "Password changed, other devices signed out" is claimed only on the update's **200**, whose single transaction writes the hash and deletes the other sessions (FV-A6).
-  - "This device is signed out" is claimed only on a raw global logout returning **204** (or `session_not_found`).
+  - "All devices are signed out" is claimed only on a raw `scope=global` logout returning **204**, or, in ReauthRequired, on `scope=others` from the new session returning **204**. `session_not_found` proves only the presented session's absence (V6-1).
   - Uncertain outcomes claim nothing.
 - **Residual window:** another device's already-issued JWT can still read and write pantry data through PostgREST until it expires. This is documented, not hidden. [Owner OD-A8]: keep the 3600 s default (recommended) or shorten `jwt_expiry`.
 
@@ -410,8 +422,9 @@ Destructive or concurrency tests run only in a disposable stack, never against t
 | R10b | `same_password` ambiguity | With three other sessions, the user submits the **existing** password; the 422 is dropped by the fault proxy → FinalSignOut with `unknown` → the global logout is proven → the "couldn't confirm" message. Assert: no "changed" claim; the user signs in with the existing password; all sessions that existed are revoked | Auth + Comp |
 | R10c | Late commit (V5-2) | Hold update A before its transaction; client timeout → FinalSignOut (proven) → the user signs in with the new password, which fails, then with the previous one, which succeeds, creating session S. Release A: A commits, S is revoked (refresh fails), and the password is A's value. Assert the app handles S's revocation as an ordinary sign-out, and no earlier "changed" claim was made. This documents the residual and its bound (FV-A9) | Auth + Comp |
 | R15b | Stolen recovery session | Copy the recovery session's tokens during RecoveryPending. After a successful reset and a proven FinalSignOut: the copy's refresh fails, and its access token gets `session_not_found` at Auth, so it can't change the password again. Before completion the copy can (the documented reset-capability residual) | Auth |
-| R18 | Logout evidence (V5-4) | Inject on the raw global logout: 204 → done; 403 `session_not_found` → done; 403 with another code, 401 without a refreshable session, 5xx and network → stays FinalSignOut and retries, even though the SDK would return `{ error: null }` for some of them | Comp + Auth |
-| R19 | Restart during FinalSignOut (V5-3) | Kill the app after the marker is written, before 204; restart → no tabs, the logout resumes with the stored session, and it's proven before the marker clears. Also during an in-app change with an uncertain outcome | Comp + Native |
+| R18 | Logout evidence (V5-4, V6-1, V6-4) | Inject on the raw global logout:<ul><li>204 → proven.</li><li>403 `bad_jwt` with an expired token and a valid refresh token → refresh → 204, with no endless loop.</li><li>403 `session_not_found` → **reauth_required**, never "all signed out".</li><li>Other 403 codes, 5xx and network → stays pending and retries.</li></ul>For each, assert the SDK's `{ error: null }` would not have been accepted | Comp + Auth |
+| R19 | Restart across the whole operation (V5-3, V6-2) | Kill the app:<ul><li>**immediately after dispatching** the update, before any response handling or timeout, in both flows;</li><li>during FinalSignOut;</li><li>after 204 but before local cleanup;</li><li>in ReauthRequired.</li></ul>Each restart resumes the right phase, shows no tabs, never dispatches a second update while a marker exists, and clears the marker only after its proof | Comp + Native |
+| R20 | Current session gone, another alive (V6-1) | Sessions A (this device) and B; revoke only A, then global logout with A → 403 `session_not_found` → reauth_required. B still refreshes and is **not** reported revoked. Sign in → `logout?scope=others` 204 → B's refresh fails | Auth + Comp |
 | R17 | Auth-operation race | Pause an exchange, attempt a competing sign-in or sign-out, then release: operations serialize through the app lock; the selected session is never silently overwritten; ActiveSessionBlock is re-evaluated | Comp + Native |
 | P13b | TalkBack on the phone | Typing, pausing, deleting, pasting, crossing 15 and crossing 72 bytes: announcements only on state changes plus at most one paused count; no per-keystroke speech; the cursor and autofill behave natively | Native (owner) |
 | R10 | Lost update response | (a) The fault proxy drops the 200 after commit → FinalSignOut `unknown` → proven → the sign-in screen; the new password works. (b) The proxy drops the request before Auth → the same path; the previous password works. Neither claims "changed" or "not changed". No automatic resend; no password in storage, checked by dumping AsyncStorage keys | Auth + Comp |
@@ -434,3 +447,4 @@ Destructive or concurrency tests run only in a disposable stack, never against t
 | FV-A5 | **Local: done** (`[auth.email] require_current_password`; exemption confirmed). Hosted: part of FV-A1. |
 | FV-A6 | **Done:** confirmed; re-run on every Auth upgrade. |
 | FV-A7 | **Done:** signup is enumerable (see §5). |
+| FV-A9 | Provider and configuration bound on how long an update request can still commit after the client gave up: Auth server and request timeouts, database statement timeout, and whether a client disconnect cancels the database work (context cancellation), locally and on hosted. |
