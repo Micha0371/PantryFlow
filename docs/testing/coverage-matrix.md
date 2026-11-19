@@ -361,9 +361,39 @@ cached status) and offers the D3 shopping prompt. Files are under
 | STATUS-09 | The D3 prompt fires only for in stock to low, in stock to out, low to out and out to low; never for a change to in stock; Add uses the saved name and id and one linked add; a failed add shows the shopping notice and keeps the new status; Not now adds nothing | `shopping-prompt.test.cjs` (four D3 transitions, saved name and id, other household's item, failed add, prompting state); `pantry-list-status.test.cjs` (prompting transitions, failed add notice) | Android wording and buttons: STATUS-E2E-01 |
 | STATUS-10 | Selecting the current status changes nothing: the selector closes and no call, write or prompt happens | `pantry-list-status.test.cjs` (same status closes without any call); `components/status-selector.test.tsx` (current option, scrim or Back dismiss, never select); `pantry-status.test.cjs` (cached status makes no API call) | None |
 | STATUS-11 | The selector places itself: below the row when there is room, flipped above for the last row, a 16 dp edge margin, centered when neither side fits (large font), never over the top inset; a double tap or a second control writes once | `status-menu.test.cjs`; `pantry-list-status.test.cjs` (double tap, other controls disabled while in flight) | Real positioning at the largest font and in split screen: A11Y-STATUS-01 |
-| STATUS-E2E-01 | Android journey, owner amendment A4: Out and Add hits the open Milk (duplicate notice, status stays Out); In Stock with no prompt; complete the open Milk on the Shopping tab; Low and Add creates a new open linked Milk with no notice; Out and Not now adds nothing; Out again changes nothing; the name still opens the edit screen. Taps: status change without prompt 2, with the prompt answered 3 | `.maestro/slice-3-status.yaml` on real local Auth/PostgREST through the loopback proxy, after `shopping-verify` in `run-e2e.cjs` | Written, not yet run; the device run happens with the owner present |
+| STATUS-E2E-01 | Android journey, owner amendment A4: Out and Add hits the open Milk (duplicate notice, status stays Out); In Stock with no prompt; complete the open Milk on the Shopping tab; Low and Add creates a new open linked Milk with no notice; Out and Not now adds nothing; Out again changes nothing; the name still opens the edit screen. Taps: status change without prompt 2, with the prompt answered 3 | `.maestro/slice-3-status.yaml` on real local Auth/PostgREST through the loopback proxy, after `shopping-verify` in `run-e2e.cjs` | Passed on the phone (2026-11-19): see the UX-01B Android evidence below |
 | STATUS-E2E-02 | The journey's persisted outcome: Milk `out` with name and category unchanged, exactly three shopping rows (Milk completed and linked, Milk open and linked, Rye bread completed and unlinked), and nothing for the other household | `e2e-fixtures.ts status-verify` with ordinary clients after the flow | Local stack only |
-| A11Y-STATUS-01 | The content control reads name, details and "Edit item"; the status control reads name, status and "Change status" and is at least 48 dp; each option is at least 48 dp, the group is labelled with the item name and only the checked option is checked; tapping the status never opens the edit screen | `components/pantry-item-row.test.tsx` (labels, 48 dp, pressing status never calls onPress); `components/status-selector.test.tsx` (radio group label, checked option, 48 dp options) | Pending owner acceptance on the physical device (Task 6 step 4): touch targets measured, positioning at the largest font and split screen, TalkBack focus into the checked option and back to the status control, one announcement, no accidental edit, a lost dialog leaving the controls usable. A failure applies the design's section 4 bottom-sheet fallback |
+| A11Y-STATUS-01 | The content control reads name, details and "Edit item"; the status control reads name, status and "Change status" and is at least 48 dp; each option is at least 48 dp, the group is labelled with the item name and only the checked option is checked; tapping the status never opens the edit screen | `components/pantry-item-row.test.tsx` (labels, 48 dp, pressing status never calls onPress); `components/status-selector.test.tsx` (radio group label, checked option, 48 dp options) | Owner acceptance on the phone (2026-11-19), see the UX-01B Android evidence below: selector placement on the first and last rows, TalkBack focus into the menu and back to the status control, one announcement, no accidental edit, a dialog interrupted by backgrounding leaving the controls usable. Touch size is unit-tested at 48 dp and judged on the phone, not measured. Split screen was not checked |
+
+### UX-01B Android evidence
+
+The phone (Xiaomi 23122PCD1G, Android 16, arm64-v8a, German system language)
+ran over Wi-Fi ADB, against the local stack through the loopback proxy and
+`adb reverse`.
+
+- **Maestro (2026-11-19), APK from 595b16d:** `npm run test:e2e` exited 0. All
+  eight flows passed, including the Slice 3 status journey (3m 8s) and
+  `status-verify`, after the Slice 1.1 and shopping journeys with their checks
+  and the five confirmation flows. TalkBack was off.
+- **Badge alignment:** during that run the owner saw the status badge sitting
+  at the top of its row. `StatusBadge` kept `alignSelf: 'flex-start'` inside the
+  new full-height status control. 4cf9841 removes it, with a row test that
+  failed first.
+- **Owner acceptance, APK from 4cf9841 (SHA-256 starting `059f5c09`):** the
+  reserved account Alice had twelve local pantry items, including a long name,
+  so the list scrolled. The screenshot shows every badge centred. The owner
+  reported every step working:
+  - the menu opens below the first row and above the last;
+  - a tap outside closes it without a change;
+  - with TalkBack on:
+    - the row reads as two controls, edit and change status;
+    - focus moves into the menu with the selected option announced;
+    - choosing a status returns focus to the status control and announces it once;
+    - Back closes the menu without a change;
+    - the Milk prompt is read and Not now adds nothing;
+    - backgrounding during a prompt leaves the badges usable.
+  The step at the largest font was optional. Split screen was not checked. The
+  owner operated TalkBack.
 
 ## Slice 1.1 baseline coverage
 
