@@ -1,6 +1,6 @@
 # Account lifecycle — overview, threat model and decisions
 
-**Version 0.1, 2026-11-19, draft for owner review and a focused Codex follow-up review.**
+**Version 0.2, 2026-11-19, for the focused Codex follow-up review.** 0.2 records the owner decisions of 2026-11-19 (section 4).
 
 This page connects the two technical specifications:
 - [password policy, recovery and sessions](2026-11-19-password-recovery-session-spec.md) ("password spec", items marked A);
@@ -44,7 +44,7 @@ Codex review: original findings H1–H5 and M1–M3; follow-up findings F1–F3.
 | H2 Household safety and transaction boundary | Exact graph G1–G4; `BEFORE DELETE` guard on `auth.users` with row locks inside Auth's deletion transaction, active only for self-service requests; lock-order rule for privileged writers | Deletion §4 | Specified; OD-B2, FV-B1, FV-B2 |
 | H3 Fifteen characters is version-dependent; byte maximum | Code points for the minimum and 72 UTF-8 bytes for the maximum; v2.198.0 or later required (v2.197.0 counts bytes); full boundary table | Password §2 | Blocked on OD-A1, FV-A1, FV-A2 |
 | H4 Recovery purpose, active account, restart | State machine; trusted purpose = local recovery verifier plus `amr`; no exchange while signed in; cold-start rule via `amr` and a completion marker | Password §3 | Specified; OD-A3, FV-A3, FV-A4 |
-| H5 Uncertain outcomes | Password update: UpdateUnknown with a user-initiated retry, where `same_password` confirms the commit, and no persistence. Deletion: UUID-bound, function-side read-only reconciliation, app Reconciling via `user_not_found` | Password §3.3; deletion §5 | Specified; FV-B5 |
+| H5 Uncertain outcomes | Password update: UpdateUnknown reconciled by an explicit isolated sign-in with the intended password (`same_password` is never evidence); no automatic resend, no persistence. Deletion: UUID-bound, function-side read-only reconciliation, app Reconciling via `user_not_found` | Password §3.3; deletion §5 | Specified; FV-B5 |
 | M1 Session effects | Provider deletes other sessions in the password transaction; the current one continues; outstanding JWT window documented (≤ `jwt_expiry`) | Password §4.1 | Specified; FV-A6, OD-A8 |
 | M2 Retention and restoration | Inventory R-1 to R-8 with no invented periods; isolated restore plus out-of-band ledger; external request runbook | Deletion §7 | Specified; OD-B4, OD-B5; periods unverified |
 | M3 Abuse controls and failure UX | Provider versus app enforcement table; neutral recovery for 200 and 429; generic wrong-password errors; one disclosure plus password for deletion | Password §5; deletion §5.2 | Specified; OD-A7 |
@@ -59,7 +59,7 @@ Each needs separate authorization, in an isolated disposable environment unless 
 | ID | Assumption | Why it matters |
 |---|---|---|
 | FV-A1 | Hosted Auth version and settings (minimum, requirements, HIBP entitlement, rate limits, `jwt_expiry`, current-password setting) | Policy enforcement and parity. **Hosted read.** |
-| FV-A2 | A Supabase CLI release bundles Auth ≥ v2.198.0; P01–P04 pass against it | Local and CI enforcement of code points |
+| FV-A2 | CLI v3.2.0 bundles Auth v2.198.0 (confirmed from the CLI's Dockerfile); P01–P04 pass against it in a disposable stack; project compatibility with CLI 3.x recorded | Local and CI enforcement of code points |
 | FV-A3 | Overlapping recovery requests with auth-js 2.119.0 on React Native | Older-link outcome |
 | FV-A4 | `amr` `recovery` present after the exchange, after a refresh and after a password update | Cold-start gating |
 | FV-A5 | `update_password_require_current_password` configurable locally and on hosted | Stolen-session takeover |
@@ -70,25 +70,26 @@ Each needs separate authorization, in an isolated disposable environment unless 
 | FV-B3 | Auth-schema FK cascades (identities, sessions, refresh tokens, factors, flow state) | Table contract |
 | FV-B4 | Fresh isolated sign-in `amr` timestamp; Edge gateway exposes verified claims | Freshness proof |
 | FV-B5 | Admin API error shape for the guard exception | Result mapping |
+| FV-B6 | Rate-limit keying, direct versus from a function | OD-B1 rate-limit claim |
 
 ## 4. Owner decisions
 
-| ID | Decision | Recommendation |
-|---|---|---|
-| OD-A1 | How the 15 minimum is enforced, given v2.197.0 counts bytes | Require Auth ≥ v2.198.0 everywhere; ship the policy only after FV-A1 and FV-A2 confirm. No client-only check. |
-| OD-A2 | Maximum = 72 UTF-8 bytes (provider) with the stated guidance | Approve |
-| OD-A3 | Reset link while signed in | Block the exchange; offer Stay signed in or Sign out plus a new link. An isolated-exchange variant was rejected: it depends on SDK-internal verifier storage. |
-| OD-A4 | Enable `update_password_require_current_password` and ship the in-app Change password in Slice 3 | Approve both (the hosted change under separate authorization) |
-| OD-A5 | Hint for legacy short passwords | None in Slice 3 |
-| OD-A6 | Compromised-password protection | Read entitlement; enable fail-open if included; otherwise record the limitation; no purchase |
-| OD-A7 | CAPTCHA on auth forms | Not in Slice 3 |
-| OD-A8 | Access-token lifetime | Keep 3600 s and document the window |
-| OD-B1 | Freshness mechanism | B: fresh isolated sign-in plus a 300 s `amr` check |
-| OD-B2 | Guard scope | Active only for self-service requests (keeps the existing author-deletion semantics and tests); alternative: unconditional guard and rewritten tests |
-| OD-B3 | Request limits | 5 per user per 24 h; 5-minute in-flight window |
-| OD-B4 | Auth audit-log and support-record retention | Owner and legal to set periods; until then "retained, period undecided" in the privacy notice |
-| OD-B5 | Restore ledger | UUID-plus-time notification per deletion to the support mailbox, kept longer than backups |
-| OD-B6 | Maintenance pause for self-service deletion | A flag row checked by the function (returns 503); used during privileged repairs |
+| ID | Decision | Recommendation | Owner status (2026-11-19) |
+|---|---|---|---|
+| OD-A1 | How the 15 minimum is enforced, given v2.197.0 counts bytes | Require Auth ≥ v2.198.0 everywhere; ship the policy only after FV-A1 and FV-A2 confirm. No client-only check. | **Direction approved**; verify local, CI and hosted before rollout |
+| OD-A2 | Maximum = 72 UTF-8 bytes (provider) with the stated guidance | Approve | **Approved** (provider-supported byte maximum) |
+| OD-A3 | Reset link while signed in | Block the exchange; offer Stay signed in or Sign out plus a new link. An isolated-exchange variant was rejected: it depends on SDK-internal verifier storage. | **Approved**; native warm, cold and interruption runs required |
+| OD-A4 | Enable `update_password_require_current_password` and ship the in-app Change password in Slice 3 | Approve both (the hosted change under separate authorization) | **Direction approved**; exemption verified by R15; no hosted change yet |
+| OD-A5 | Hint for legacy short passwords | None in Slice 3 | Open |
+| OD-A6 | Compromised-password protection | Read entitlement; enable fail-open if included; otherwise record the limitation; no purchase | Open (decision record: enable when included in the plan) |
+| OD-A7 | CAPTCHA on auth forms | Not in Slice 3 | Open |
+| OD-A8 | Access-token lifetime | Keep 3600 s and document the window | Open |
+| OD-B1 | Freshness mechanism | B: fresh isolated sign-in plus a 300 s `amr` check | **Conditionally approved**: exact checks, temporary sessions, FV-B4 and FV-B6 |
+| OD-B2 | Guard scope | Active only for self-service requests (keeps the existing author-deletion semantics and tests); alternative: unconditional guard and rewritten tests | **Conditionally approved**: trusted activation (deletion spec §2.1), concurrency tests |
+| OD-B3 | Request limits | 5 per user per 24 h; 5-minute in-flight window | Open |
+| OD-B4 | Auth audit-log and support-record retention | Owner and legal to set periods; until then "retained, period undecided" in the privacy notice | Open |
+| OD-B5 | Restore ledger | UUID-plus-time notification per deletion to the owner mailbox, kept longer than backups | **Requirement approved**; ledger design in deletion spec §7 for review; OD-B5a: how often to check for `ledger_failed` |
+| OD-B6 | Maintenance pause for self-service deletion | A flag row checked by the function (returns 503); used during privileged repairs | Open |
 
 ## 5. Implementation sequence
 

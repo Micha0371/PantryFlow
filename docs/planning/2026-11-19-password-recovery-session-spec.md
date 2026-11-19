@@ -1,6 +1,13 @@
 # Password policy, recovery and session lifecycle — technical specification
 
-**Version 0.1, 2026-11-19, draft for owner review and a focused Codex follow-up review.** Implementation is not authorized.
+**Version 0.2, 2026-11-19, for the focused Codex follow-up review.** Implementation is not authorized.
+
+**Changes in 0.2** (owner decisions of 2026-11-19):
+- OD-A1 direction approved (section 2.2).
+- OD-A4 direction approved, with exemption verification (section 4.3).
+- Uncertain-outcome reconciliation now uses explicit authentication with the intended password; `same_password` is no longer evidence (section 3.3).
+- The signed-in recovery policy is approved (section 3.3, ActiveSessionBlock).
+- CLI v3.2.0 identified as bundling Auth v2.198.0 (FV-A2).
 
 **Sources:**
 - the [Slice 3 decision record](2026-11-19-slice-3-decision-record.md), section 5 (KAN-81);
@@ -52,16 +59,14 @@ These were verified by reading the versioned source. Execution behavior is not v
 
 ### 2.2 Server enforcement prerequisite
 
-**[Blocked] until [Owner OD-A1] and [Feasibility FV-A1, FV-A2]:**
+**[Settled direction, OD-A1, 2026-11-19]; rollout [Blocked] until FV-A1 and FV-A2 pass:**
 - On v2.197.0 the server counts the minimum in bytes. For example, 8 `ä` (16 bytes) passes a 15 minimum while having only 8 code points. The approved rule therefore cannot be enforced on v2.197.0.
-- **Recommended resolution:** require Auth **≥ v2.198.0** in every environment:
-  - **local / CI:** pin a Supabase CLI release whose bundled Auth is ≥ v2.198.0;
-  - **hosted:** an authorized read confirms the deployed version (Supabase manages hosted Auth upgrades).
-- The policy change to `minimum_password_length = 15` ships only after both are confirmed.
-- **Alternatives** (the owner chooses):
-  - an explicit, documented interim amendment that measures bytes until hosted Auth is ≥ v2.198.0 (not recommended);
-  - delaying the policy change.
-- **Rejected:** a client-only code-point check over a byte-counting server. It is bypassable through direct API calls.
+- **Requirement:** every environment runs an Auth version that enforces the code-point minimum server-side. v2.198.0 is the candidate minimum.
+  - **Local:** Supabase CLI **v3.2.0** (2026-11-16) bundles Auth v2.198.0; CLI 2.122.1 bundles v2.197.0. The CLI major-version change is itself a compatibility item: config, migrations and the existing integration and Maestro suites must pass on it.
+  - **CI:** the workflows use the same pinned CLI.
+  - **Hosted:** the deployed version is confirmed by the authorized read-only inspection (FV-A1). Supabase manages hosted Auth upgrades.
+- The policy change to `minimum_password_length = 15` ships only after all three are confirmed.
+- **Never:** a silent byte-count fallback, or a client-only code-point check over a byte-counting server. The latter is bypassable through direct API calls.
 
 ### 2.3 Expected outcomes (Auth ≥ v2.198.0, minimum 15)
 
@@ -151,8 +156,8 @@ stateDiagram-v2
     UpdatePending --> RecoveryPending: confirmed rejection, weak or too long
     UpdatePending --> Confirmed: 200
     UpdatePending --> UpdateUnknown: no response
-    UpdateUnknown --> Confirmed: user retry gives 200 or same_password
-    UpdateUnknown --> RecoveryPending: app closed, on restart
+    UpdateUnknown --> Confirmed: isolated sign-in with the intended password succeeds
+    UpdateUnknown --> RecoveryPending: isolated sign-in rejected, so not committed; or app closed
     Confirmed --> SignedIn: current session continues
 ```
 
@@ -163,13 +168,26 @@ stateDiagram-v2
 | **RequestPending** | `resetPasswordForEmail(email, { redirectTo: 'pantryflow://auth/reset' })` (the test app uses `pantryflowtest://`) on the shared client. The request is offered only on the signed-out sign-in screen. |
 | **NeutralSent** | The same message for known and unknown addresses, and for 429: "If an account exists for this address, we've sent a reset link. Open it on this phone. If nothing arrives, wait a few minutes before requesting another." A 60-second resend cooldown applies as feedback only. Nothing about account existence is stored locally. |
 | **RequestFailed** | Network error or 5xx: "We couldn't send the email. Check your connection and try again." It never claims "sent". Residual risk: 5xx and 429 occur only for known addresses, so a careful attacker can still distinguish them. Constant-time behavior is not claimed. |
-| **ActiveSessionBlock** | Dialog: "You're signed in as {current email}. Reset links can only be used while signed out." The current email is shown as separate text. Buttons: **Stay signed in** (default; changes nothing) and **Sign out**. Sign out uses `signOut({ scope: 'local' })`, shows the sign-in screen with "Request a new reset link from Forgot password", and the old link becomes unusable because the verifiers are removed. If the user wants to change their own password, the dialog also points to Settings → Change password (section 4.3). [Owner OD-A3] |
+| **ActiveSessionBlock** | **[Settled, OD-A3, 2026-11-19].** Dialog: "You're signed in as {current email}. Reset links can only be used while signed out." The current email is shown as separate text. Buttons: **Stay signed in** (default; changes nothing) and **Sign out**. Sign out uses `signOut({ scope: 'local' })`, shows the sign-in screen with "Request a new reset link from Forgot password", and the old link becomes unusable because the verifiers are removed. If the user wants to change their own password, the dialog also points to Settings → Change password (section 4.3). [Owner OD-A3] |
 | **Exchanging** | `exchangeCodeForSession(code)` on the shared client, only with no session present. |
 | **LinkInvalid** | `AuthPKCECodeVerifierMissingError` gives "Open the link from the most recent email on the phone where you requested it." Expired, used, malformed or flow-state-not-found gives "This link has expired or was already used. Request a new one." No session is created. |
 | **ExchangeUnknown** | The SDK already removed the verifier, so a retry is impossible: "We couldn't complete the reset. Request a new link." If a session was in fact saved, the cold-start rule below applies. |
 | **RecoveryPending** | The screen shows "Set a new password for {email}", with no tab access. **Cold start:** with a stored session whose `amr` includes `recovery` and whose `session_id` differs from the stored marker `pf.recovery.completed`, the app opens this screen instead of the tabs. The marker is not secret; it relaxes gating only after a confirmed success. **Cancel:** `signOut({ scope: 'local' })` revokes the recovery session server-side; the password is unchanged. |
-| **UpdatePending** | `updateUser({ password })`. Confirmed rejections: 422 `weak_password` gives the policy message; 400 too long gives the length message; 422 `same_password` gives "Choose a password different from your current one" (unless `pf.recovery.uncertain` is set, see below); `reauthentication_needed` gives "This reset session has expired. Request a new link." and signs out. |
-| **UpdateUnknown** | No response, so the password may or may not have been committed. Set `pf.recovery.uncertain = session_id` (not secret). The typed value stays in component memory only while the screen is mounted and is never persisted. "We couldn't confirm the change. Tap Try again." A user-initiated retry sends the same value: 200, or 422 `same_password` while `pf.recovery.uncertain` matches, is **Confirmed**. On restart the value is gone: the user re-enters a password, and `same_password` with the marker set is again treated as Confirmed. There is never an automatic resend. |
+| **UpdatePending** | `updateUser({ password })`. Confirmed rejections: 422 `weak_password` gives the policy message; 400 too long gives the length message; 422 `same_password` gives "Choose a password different from your current one"; `reauthentication_needed` gives "This reset session has expired. Request a new link." and signs out. `same_password` is only ever a rejection. It is never read as proof that an earlier request succeeded, because it would equally match an old password the user happened to re-enter. |
+| **UpdateUnknown** | No response, so the password may or may not have been committed. Set `pf.recovery.uncertain = session_id` (not secret). The typed value stays in component memory only while the screen is mounted, is never persisted, and is never resent automatically. "We couldn't confirm the change. Tap Check." **Reconciliation by explicit authentication** (see the table below). |
+
+**UpdateUnknown reconciliation.** On a user tap, the app signs in with the intended password through an isolated, non-persisting client (memory storage, `persistSession: false`, `autoRefreshToken: false`, `detectSessionInUrl: false`), never through the shared client.
+
+| Result of the isolated sign-in | Meaning | Next step |
+|---|---|---|
+| Success, for the same user id | The intended password is current | Sign the temporary session out at once (`signOut({ scope: 'local' })`, which revokes it server-side); **Confirmed** |
+| `invalid_credentials` | The intended password is not current, so the update did not commit | Back to RecoveryPending with "Your password was not changed. Try again." The user submits again by choice |
+| Rate limit, network error or 5xx | Still unknown | Stay in UpdateUnknown |
+
+- **After a restart:** the value is gone. With `pf.recovery.uncertain` set, RecoveryPending asks for the password. The app first runs the same isolated sign-in check with what was typed. If it succeeds, the state is Confirmed without an update; otherwise it is a normal update.
+- **If the temporary session cannot be signed out** (network): its tokens exist only in memory and are discarded. The server row is a residual orphan session until the provider's session limits remove it, and it is documented.
+- **Cost:** each check consumes one sign-in against the token rate limit.
+- The same reconciliation applies to the in-app change (section 4.3), without the recovery markers. |
 | **Confirmed** | Set `pf.recovery.completed = session_id`, clear `pf.recovery.uncertain`, announce, open the tabs. The current session continues. Every other session was deleted in the same transaction as the hash write (section 4.1). |
 
 ### 3.4 Further cases
@@ -208,7 +226,14 @@ stateDiagram-v2
 
 ### 4.3 In-app password change
 
-**[Specified]; whether it ships in Slice 3 is part of [Owner OD-A4].**
+**[Settled direction, OD-A4, 2026-11-19]:** require the current password for ordinary changes, and include a proportionate in-app Change password. No hosted setting changes are authorized yet.
+
+**Recovery exemption: can an ordinary session exploit it?** In v2.197.0 the exemption applies when *any* `amr` entry of the calling session is `recovery`, `otp` or `magiclink` (`Session.IsRecovery`).
+- **Who can create such an entry:** only the flows that create a new session: recovery link, email OTP or magic link. Each requires control of the account's mailbox.
+- **Who cannot:** an ordinary password session cannot add such an entry to itself. Token refresh adds no `amr` entry (`tokens/service.go` refresh path), and adding a claim happens only when a session is issued.
+- **Conclusion:** the exemption is reachable only with mailbox control, which already allows a full reset and is out of scope in the threat model.
+- **Residual:** the provider's email OTP and magic-link sign-in can't be disabled separately from email sign-in. That is equivalent to recovery and documented.
+- **Verification:** [Feasibility FV-A5] covers both the setting and the exemption (tests R15).
 
 - **Where:** Settings → Change password, with fields "Current password" and "New password". It uses the same policy and feedback as section 2.
 - **Request:** `updateUser({ password, current_password })`. The client always sends the current password.
@@ -261,10 +286,12 @@ Destructive or concurrency tests run only in a disposable stack, never against t
 | R07 | Active A, own link | Same block plus the Change password pointer | Comp |
 | R08 | Overlap and missing verifier | Per FV-A3 outcome; another installation gives LinkInvalid | Native |
 | R09 | Interruption | Background or kill before submit restores RecoveryPending; nothing routes to the tabs | Native |
-| R10 | Lost update response | Fault proxy drops the 200 after commit → UpdateUnknown → retry gives `same_password` → Confirmed; sign-in with the new password works; no automatic resend observed | Auth + Comp |
+| R10 | Lost update response | (a) Fault proxy drops the 200 after commit → UpdateUnknown → isolated sign-in with the intended password succeeds → Confirmed, and the temporary session is revoked (its refresh fails). (b) The proxy drops the request before Auth → isolated sign-in gets `invalid_credentials` → "not changed". No automatic resend; no password in storage, checked by dumping AsyncStorage keys | Auth + Comp |
 | R11 | Session effects | With two other sessions plus the recovery session: after Confirmed, the others' refresh fails and the recovery session refreshes. Other sessions' JWTs: Auth `GET /user` gives 403 `session_not_found`; PostgREST still serves until `exp` (documents the window) | Auth |
 | R12 | Rejection keeps sessions | Weak or too-long update leaves all sessions able to refresh | Auth |
 | R13 | In-app change | With OD-A4 enabled: a missing or wrong current password is rejected; correct current password plus a valid new one is accepted; other sessions are revoked | Auth + Comp |
+| R15 | Recovery exemption | With `update_password_require_current_password` on: a password session updating without the current password → `current_password_required`; after a refresh → still required; a recovery session → accepted; a session that only refreshed, never via recovery or OTP → required | Auth |
+| R16 | Native recovery while signed in, plus warm, cold and interruption runs on the phone | ActiveSessionBlock leaves the session id unchanged; PKCE exchange is never called; warm and cold link handling and kill-after-exchange behave per §3.3 | Native |
 | R14 | Diagnostics | Passwords, codes, tokens and callback URLs are absent from logs and crash payloads | Unit + review |
 | G01 | Regression | Signup, confirmation, login, logout, restore and household isolation suites unchanged and green | Existing suites |
 
@@ -273,7 +300,7 @@ Destructive or concurrency tests run only in a disposable stack, never against t
 | ID | What it checks |
 |---|---|
 | FV-A1 | Hosted Auth version and settings read-back: minimum length, HIBP entitlement, rate limits, JWT expiry. |
-| FV-A2 | A CLI version bundling Auth ≥ v2.198.0, and P01–P04 against it. |
+| FV-A2 | CLI v3.2.0 (bundling Auth v2.198.0) in a disposable stack: P01–P04 against it. Whether the project's config, migrations and test suites work on CLI 3.x is recorded as a separate compatibility item. |
 | FV-A3 | Overlapping recovery requests on React Native with auth-js 2.119.0. |
 | FV-A4 | The `amr` `recovery` entry is present after the exchange, after a refresh and after a password update. |
 | FV-A5 | `update_password_require_current_password` is available in CLI `config.toml` and the hosted dashboard. |

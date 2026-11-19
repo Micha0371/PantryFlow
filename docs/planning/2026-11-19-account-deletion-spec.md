@@ -1,6 +1,11 @@
 # Account deletion, retention and privileged boundary — technical specification
 
-**Version 0.1, 2026-11-19, draft for owner review and a focused Codex follow-up review.** Implementation, migrations, Edge Function deployment and destructive tests are not authorized.
+**Version 0.2, 2026-11-19, for the focused Codex follow-up review.** Implementation, migrations, Edge Function deployment and destructive tests are not authorized.
+
+**Changes in 0.2** (owner decisions of 2026-11-19):
+- OD-B1 conditionally approved: exact claim checks, temporary-session behavior, and verification of the rate-limit advantage (section 3).
+- OD-B2 conditionally approved: trusted activation context, why it can't be bypassed, and exempted operations (section 2.1).
+- OD-B5 requirement approved and the ledger designed (section 7).
 
 **Sources:**
 - the [Slice 3 decision record](2026-11-19-slice-3-decision-record.md), section 6 (KAN-57, option B);
@@ -68,6 +73,28 @@ These were verified by reading the source. Execution is not verified.
    - Deletions without an active request (operators, test fixtures, the existing author-deletion semantics) are unchanged. [Owner OD-B2]
    - Placing a trigger on `auth.users` in hosted Supabase is [Feasibility FV-B1]. The project already has an `AFTER INSERT` trigger there (`on_auth_user_created`).
 
+### 2.1 Trusted activation context
+
+**[Conditionally approved, OD-B2, 2026-11-19].**
+
+**How the context reaches Auth's transaction:**
+1. The function, holding the service-role key, commits the `in_progress` row in its own short transaction **before** it calls the Admin API.
+2. Auth's deletion transaction then runs the trigger, which reads that committed row (READ COMMITTED) inside the same transaction that deletes the user.
+3. No request parameter, header, claim or session setting is used. The Admin API offers no way to pass context into its transaction, and none is needed.
+
+**Why ordinary callers can't forge or bypass it:**
+- `anon` and `authenticated` have no grants on `account_deletion_requests`, and row level security is enabled with no policies. A client can neither create nor delete a row: verified by tests D16 and D17.
+- Clients cannot delete `auth.users` at all, because they have no SQL grants and the Admin API requires the service-role key. So "bypassing" the guard means deleting a user without a row, which only a privileged operator can do.
+- Activation can only make a deletion stricter. A forged row, if one could exist, would block the deletion, never permit it.
+
+**Explicitly exempted operations** (guard inactive, existing semantics; each is privileged):
+
+| Operation | Who | Rule |
+|---|---|---|
+| Disposable or local test fixtures and their cleanup (`local-stack.ts`, `e2e-fixtures.ts`, the existing author-deletion tests) | Test harness with the local service key | Local and disposable environments only |
+| Operator deletion through the dashboard or Admin API without a request row | Owner or operator | **Not used for user-requested deletions.** User-requested and external requests always insert the `in_progress` row first (section 7). Allowed only for test or legacy accounts, with an owner-approved, recorded reason |
+| Database maintenance as `postgres` or `supabase_admin` | Owner or operator | Follows the lock-order rule (section 4.3) or the maintenance pause (OD-B6) |
+
 **Why the guard sits in the database and is conditional:**
 - An eligibility check in the function followed by a separate `admin.deleteUser` is not atomic.
 - Locks taken in one RPC end with that RPC.
@@ -88,12 +115,41 @@ These were verified by reading the source. Execution is not verified.
 | Temporary credentials | Created in the function and must be cleaned up there. | The fresh session belongs to the app. The hard delete removes it on success; the app signs it out on rejection. |
 | Freshness proof | The direct password check. | `amr` contains `password` with `timestamp ≥ now − 300 s`, on a session that still exists. A refreshed token keeps its old `amr` timestamp, so a stolen refresh token cannot produce a fresh entry. A client flag or `iat` is never used. |
 
-**[Specified] for B.** The function rejects with 401 `not_fresh` unless all of these hold:
-1. The gateway JWT verification passes (`verify_jwt = true`).
-2. `auth.getUser(token)` succeeds, which proves that the user **and** the session still exist (403 `user_not_found` / `session_not_found` → 401).
-3. The caller is `getUser().user.id`, and the token's `sub` equals it. The target is always the caller.
-4. The request body is empty JSON `{}`. Any field, including a user id or email, gives 400 `unexpected_field`; there is no client-supplied target.
-5. The token's `amr` contains a `password` entry with `timestamp ≥ now − 300 s`. A just-recovered user satisfies this by entering the new password, since a `recovery` entry does not count.
+**[Conditionally approved, OD-B1, 2026-11-19]: B, if the proof is sufficient.** The function rejects with 401 `not_fresh` (or 401 `unauthenticated`) unless every check holds. Each check is independent of the app.
+
+| # | Check | How |
+|---|---|---|
+| 1 | **Authenticity** | The JWT signature is verified against the project's Auth signing keys (the gateway's `verify_jwt = true` plus an in-function verification of the same token). Expected claims: `iss` is the project Auth URL, `aud` is `authenticated`, `role` is `authenticated`, `exp` in the future (60 s clock tolerance), `is_anonymous` false, `sub` a UUID, `session_id` a non-nil UUID. |
+| 2 | **Current session and user** | `auth.getUser(token)` succeeds. Auth itself looks up the user, then the session named in the token (403 `user_not_found` / `session_not_found` → 401). |
+| 3 | **Immutable identity** | The caller is `getUser().user.id`; it must equal `sub`. The target is always the caller. Email is never used for targeting. |
+| 4 | **No client target** | The body is empty JSON `{}`; any field gives 400 `unexpected_field`. |
+| 5 | **Password method, server-derived time, ≤ 300 s** | The verified token's `amr` contains an entry with `method === 'password'`, and that entry's `timestamp` satisfies `now − 300 ≤ timestamp ≤ now + 60`. The timestamp is written by Auth when it issues the session (`mfa_amr_claims.updated_at`) and signed into the token. The app supplies nothing for this check. |
+
+**Why a refreshed token cannot renew the window:**
+- A refresh issues a new access token from the session's stored `amr` entries and adds no new entry; `AddClaimToSession` runs only when a session is issued (`tokens/service.go`).
+- The `password` timestamp therefore stays at the original sign-in time.
+- `iat` is never used. [Feasibility FV-B4] verifies this at runtime.
+
+**Why recovery, OTP and other sessions cannot satisfy it:**
+- Only `method === 'password'` counts. `recovery`, `otp`, `magiclink`, `email/signup` and `token_refresh` entries are ignored.
+- `amr` is per session, so another session's sign-in never appears in this token.
+- A just-recovered user satisfies the check by signing in with the new password, which creates a new session.
+
+**Temporary and replacement sessions** (the fresh session belongs to the isolated client and never replaces the main session):
+
+| Situation | Behavior |
+|---|---|
+| Cancel during or after FreshAuth, before dispatch | The app signs the fresh session out (`signOut({ scope: 'local' })` on the isolated client), which revokes it server-side |
+| Confirmed rejection | Same; the main session stays the active one |
+| Confirmed deletion | Every session, the fresh one included, is gone with the user |
+| Unknown | The isolated client stays in memory until Reconciling ends. If not deleted, sign the fresh session out; if deleted, nothing remains. If the app is closed first, the fresh session is an orphan: its tokens existed only in memory, the server row remains until the provider's session limits remove it. This residual is documented. |
+
+**Rate-limit advantage and residual risk** [Feasibility FV-B6]:
+- **Claim:**
+  - With B, password attempts reach Auth from the phone's address, so the per-address token limiter applies per attacker.
+  - With A, every user's attempt would come from the function's egress address and share one bucket, unless Auth honors a forwarded client address.
+- **To verify:** in the disposable stack, compare limiter behavior for direct sign-ins with sign-ins sent from inside a locally served function. For hosted keying, record it as a provider assumption, documented by Supabase or confirmed in the authorized read.
+- **Residual risk, stated plainly:** an attacker who obtains a fresh token (for example, malware on the phone) within its 300-second window, while that session is alive, can trigger deletion. This is equivalent to having just stolen the password. The 5-per-24-hour request limit bounds repetition, not a single use.
 
 **Also specified:**
 - **Logging:** the function logs only `request_id`, the outcome code and the duration. It never logs headers, tokens, passwords or emails.
@@ -260,12 +316,32 @@ No periods are invented. "Unverified" means it needs a plan or settings read (au
 | R-7 | Device-local storage | Session, cache, preferences | User's device | Until cleanup or uninstall | CleanedUp on this device; other devices on their next refresh failure | — | Specified |
 | R-8 | Support and external requests | Email thread, UUID, outcome | PantryFlow | [Owner OD-B4] | Manual | Proof of fulfillment | Owner decision |
 
-**Restoration [Specified with Owner OD-B5]:**
-1. A backup is restored only into an **isolated** project first, never directly into production access.
-2. Before access opens, every deletion completed after the backup's timestamp is re-applied by UUID.
-3. **Source of those UUIDs:** an out-of-band deletion ledger. The recommended form is that the function sends one notification per completed deletion to the owner's support mailbox, containing only the UUID and the UTC time. That record lives outside the database, so a restore can't roll it back. Its retention must exceed the backup retention.
-4. **Alternative:** the platform logs, valid only within their retention window. If the gap exceeds that window, the restore is blocked pending an owner or legal decision.
-5. Re-applying uses the same Admin delete. An ineligible graph after restore is handled by the support repair procedure.
+**Restoration and the deletion ledger [Requirement approved, OD-B5, 2026-11-19; design below for review]:**
+
+Requirement: a restored backup never silently brings deleted accounts back into an accessible system.
+
+| Ledger option | Survives a database restore? | New infrastructure | Verdict |
+|---|---|---|---|
+| A table in the same database | No: rolled back with the restore, losing exactly the deletions that matter | None | Rejected |
+| Platform logs | Only within their (plan-dependent, unverified) retention | None | Fallback only |
+| **One notification per completed deletion to the owner's mailbox, sent through the existing Resend account** | Yes: stored outside the database | None (Resend already sends Auth email) | **Proposed** |
+
+**Proposed ledger:**
+- **Content:** the subject `PantryFlow deletion ledger`, the account UUID and the UTC completion time. No email address, name or other data.
+- **When:** sent by the function only after a **confirmed** deletion (a 200 from the Admin API, or reconciliation found the user absent). A ledger entry never exists for an account that still exists, so a restore can't wrongly delete a live account.
+- **Failure handling:** up to 3 send attempts within the request. If all fail, the user still gets `deleted` (the deletion is final), and the function logs `ledger_failed` with the UUID. This is the one log line that contains a UUID; function logs are operator-only and short-lived. The owner checks for `ledger_failed` per the operations runbook. Residual: a gap is possible if the logs expire before the check. [Owner OD-B5a]: how often to check.
+- **Durability:** the mailbox provider plus Resend's own delivery records (R-5). The two are independent of the Supabase database and its backups.
+- **Access:** the owner's mailbox only. Entries are never forwarded to third parties.
+- **Retention:** at least the longest database backup or PITR retention plus 30 days, then deleted. The exact figure follows the plan read-back (R-4).
+- **Privacy:** the UUID is pseudonymous personal data kept as a minimal fulfilment record. Its lawful basis and retention are part of the legal review, and the privacy notice mentions it (KAN-72).
+
+**Restore procedure** (operations runbook, owner-executed):
+1. Restore only into an **isolated** project, never directly into production access.
+2. Note the backup or recovery-point timestamp T.
+3. Collect the ledger entries with completion time ≥ T − 24 h. The 24-hour overlap covers clock and recovery-point uncertainty.
+4. For each UUID present in the restored `auth.users`: insert an `in_progress` request row and run the Admin delete (the guard applies). An ineligible graph goes through the support repair procedure.
+5. Verify that none of those UUIDs remain, then open access.
+6. If the gap since T exceeds what the ledger and logs cover (for example after a `ledger_failed` whose log has expired), access stays closed pending an owner or legal decision.
 
 **External deletion requests** (no app access) **[Specified]:**
 - **Request channel:** the support email published under KAN-72. It is also the web deletion route Google Play requires.
@@ -303,6 +379,10 @@ These are proposed tests, not a claim that any currently passes. Destructive and
 | D13 | Local cleanup | After Deleted, restart shows the signed-out screen; no cached rows; late responses dropped | Comp + Native |
 | D14 | UX | Cancel before dispatch has no effect; no cancel after; errors announced; English and German; TalkBack | Comp + Native |
 | D15 | Unguarded paths unchanged | The existing author-deletion tests (`database.test.cjs`, `shopping.test.sql`, `behavior.integration.ts`) and fixture cleanup pass unmodified | Existing suites |
+| D16 | Request table unreachable by clients | As `anon` and `authenticated`: insert, update, delete and select on `account_deletion_requests` are all denied | pgTAP |
+| D17 | Guard activation only from the committed row | Delete without a row → existing semantics (D15); with a row older than 5 min → unguarded; with a fresh `in_progress` row → guarded | pgTAP + DB |
+| D18 | Freshness claims | Tokens with a `password` entry at 301 s → 401; `recovery`, `otp` or `magiclink` entries only → 401; refreshed token of a 10-minute-old password session → 401; wrong `aud`, `role` or `iss`, anonymous, or missing `session_id` → 401 | Function + Auth |
+| D19 | Ledger | A confirmed deletion sends exactly one ledger message with the UUID and time only; a rejected or unknown outcome sends none; send failure → `deleted` response plus a `ledger_failed` log | Function |
 | V01 | Diagnostics | Function logs and crash payloads contain no password, token, authorization header or email | Review + test |
 | V02 | Restore rehearsal | Disposable restore → re-apply the ledger UUIDs → deleted accounts absent before access opens | Operational exercise |
 | V03 | External request | The runbook is executed on a fixture account; the identity check is recorded; another user is unaffected | Manual |
@@ -317,6 +397,7 @@ These are proposed tests, not a claim that any currently passes. Destructive and
 | FV-B3 | The auth-schema FK cascades of the deployed version. |
 | FV-B4 | The `amr` password timestamp on a fresh isolated sign-in, its retention across refresh, and the Edge gateway's JWT verification exposing `amr` to the function. |
 | FV-B5 | How the Admin API reports the guard exception (status and body), for the step 5 mapping. |
+| FV-B6 | Rate-limit keying for direct sign-ins compared with sign-ins sent from a function (disposable stack). Hosted keying is recorded as a provider assumption. |
 
 ## 9. Slice 4 compatibility
 
