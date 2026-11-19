@@ -35,8 +35,9 @@ name: Slice 3 pantry search journey
 - eraseText
 - inputText: " RI "
 - extendedWaitUntil:
-    visible: Rice
+    notVisible: Milk
     timeout: 15000
+- assertVisible: Rice
 - assertNotVisible: Milk
 - assertNotVisible: Rye flour
 
@@ -76,11 +77,15 @@ name: Slice 3 pantry search journey
     visible:
       id: edit-item-name
     timeout: 15000
+# Plain title text: the edit form keeps taps (keyboardShouldPersistTaps="handled"),
+# so a tap on non-input text closes the keyboard. Never hideKeyboard (acts as Back).
+- tapOn: Edit Item
 - tapOn:
     id: edit-item-cancel
 - extendedWaitUntil:
     notVisible:
       id: edit-item-name
     timeout: 15000
-- assertVisible:
-    id: pantry-screen
+# The query survived the round trip.
+- assertVisible: Rice
+- assertNotVisible: Milk

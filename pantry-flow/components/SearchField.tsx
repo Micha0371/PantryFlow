@@ -23,7 +23,6 @@ export function SearchField({ value, onChangeText }: Readonly<Props>) {
         accessibilityRole="search"
         accessibilityLabel={t('pantry_search_label')}
         returnKeyType="search"
-        blurOnSubmit
         autoCapitalize="none"
         autoCorrect={false}
         style={styles.input}
@@ -34,7 +33,6 @@ export function SearchField({ value, onChangeText }: Readonly<Props>) {
           onPress={() => onChangeText('')}
           accessibilityRole="button"
           accessibilityLabel={t('pantry_search_clear')}
-          hitSlop={4}
           style={styles.clear}
           testID="pantry-search-clear"
         >

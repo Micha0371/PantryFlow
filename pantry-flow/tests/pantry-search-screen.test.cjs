@@ -17,10 +17,10 @@ const NODE = { measureInWindow: cb => cb(10, 20, 30, 40) };
 const mk = (id, name, status = 'in_stock') => ({ id, household_id: 'h', name, category: 'dairy', location: 'fridge', status });
 
 function render(initial) {
-  const log = { writes: [], announced: [], nav: [] };
+  const log = { writes: [], announced: [], nav: [], dismissed: 0 };
   const store = { items: initial, household: 'h', force: () => {} };
   const native = { Text: 'Text', View: 'View', TextInput: 'TextInput', ActivityIndicator: 'Spinner', Pressable: 'Pressable', Modal: 'Modal',
-    Platform: { OS: 'android' }, StyleSheet: { create: s => s, absoluteFill: {} },
+    Platform: { OS: 'android' }, Keyboard: { dismiss: () => { log.dismissed += 1; } }, StyleSheet: { create: s => s, absoluteFill: {} },
     useWindowDimensions: () => ({ width: 400, height: 800 }),
     AccessibilityInfo: { setAccessibilityFocus: () => {} }, findNodeHandle: () => null,
     FlatList: props => React.createElement('FlatList', props, props.data.map(item =>
@@ -207,5 +207,34 @@ test('search never calls a write', () => {
     h.type('egg');
     act(() => h.by('pantry-search-clear').props.onPress());
     assert.deepEqual(h.log.writes, []);
+  } finally { h.unmount(); }
+});
+
+test('the keyboard is dismissed when a row, a status control or the add button is pressed', () => {
+  const h = render(base());
+  try {
+    act(() => h.by('pantry-item-1').props.onPress());
+    assert.equal(h.log.dismissed, 1);
+    assert.deepEqual(h.log.nav, ['/edit-item/1']);
+    act(() => h.by('pantry-item-status-1').props.onPress());
+    assert.equal(h.log.dismissed, 2);
+    assert.equal(h.has('status-modal'), true);
+    act(() => h.by('pantry-fab-add').props.onPress());
+    assert.equal(h.log.dismissed, 3);
+    assert.equal(h.log.nav.at(-1), '/add-item');
+  } finally { h.unmount(); }
+});
+
+test('an emptied pantry drops the stale query so a later add shows the full list', () => {
+  const h = render(base());
+  try {
+    h.type('milk');
+    assert.deepEqual(h.ids(), ['1', '2']);
+    h.set(() => { h.store.items = []; });
+    assert.equal(h.renderer.root.findAllByType('EmptyState').length, 1);
+    h.set(() => { h.store.items = [mk('9', 'Bread'), mk('10', 'Tea')]; });
+    assert.deepEqual(h.ids(), ['9', '10']);
+    assert.equal(h.has('pantry-search-no-match'), false);
+    assert.equal(h.by('pantry-search').props.value, '');
   } finally { h.unmount(); }
 });

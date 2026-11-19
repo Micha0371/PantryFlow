@@ -22,7 +22,7 @@ function render({ items: initial = [mk('1', 'Milk', 'in_stock')], addItem } = {}
   const set = fn => act(() => { fn(); store.force(); });
   store.commit = (id, status) => { store.items = store.items.map(i => (i.id === id ? { ...i, status } : i)); store.force(); };
 
-  const native = { Text: 'Text', View: 'View', ActivityIndicator: 'Spinner', Pressable: 'Pressable', Modal: 'Modal',
+  const native = { Keyboard: { dismiss: () => {} }, Text: 'Text', View: 'View', ActivityIndicator: 'Spinner', Pressable: 'Pressable', Modal: 'Modal',
     Platform: { OS: 'android' }, StyleSheet: { create: s => s, absoluteFill: {} },
     useWindowDimensions: () => ({ width: 400, height: 800 }),
     AccessibilityInfo: { setAccessibilityFocus: () => {} }, findNodeHandle: () => null,

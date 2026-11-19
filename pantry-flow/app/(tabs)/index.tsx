@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Keyboard,
   Pressable,
   StyleSheet,
   Text,
@@ -57,6 +58,10 @@ export default function PantryScreen() {
 
   // A query belongs to one household's list.
   useEffect(() => { setQuery(''); }, [householdId]);
+
+  // An emptied pantry (not a loading one) drops its query, so a later add is not hidden by it.
+  const emptied = !loading && items.length === 0;
+  useEffect(() => { if (emptied) setQuery(''); }, [emptied]);
 
   // One count announcement once typing pauses, never one per keystroke.
   const resultCount = useRef(0);
@@ -158,10 +163,13 @@ export default function PantryScreen() {
               renderItem={({ item }) => (
                 <PantryItem
                   item={item}
-                  onPress={() => openScreen(`/edit-item/${item.id}`)}
+                  onPress={() => { Keyboard.dismiss(); openScreen(`/edit-item/${item.id}`); }}
                   onStatusPress={(anchor, ref) => {
                     // Ignored while unfocused or while a row/add navigation is pending.
-                    if (!busy && focused.current && !openScreen.isLocked()) setOpen({ id: item.id, anchor, ref });
+                    if (!busy && focused.current && !openScreen.isLocked()) {
+                      Keyboard.dismiss();
+                      setOpen({ id: item.id, anchor, ref });
+                    }
                   }}
                   editDisabled={pendingId === item.id || isUnconfirmed(item.id)}
                   statusDisabled={busy}
@@ -187,7 +195,7 @@ export default function PantryScreen() {
       ) : null}
 
       <Pressable
-        onPress={() => openScreen('/add-item')}
+        onPress={() => { Keyboard.dismiss(); openScreen('/add-item'); }}
         style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
         accessibilityRole="button"
         accessibilityLabel={t('item_add_button')}

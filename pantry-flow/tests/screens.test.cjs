@@ -4,7 +4,7 @@ const React = require('react');
 const { create, act } = require('react-test-renderer');
 const { load } = require('./helpers.cjs');
 const theme = load('lib/theme.ts');
-const native = { Text: 'Text', View: 'View', ActivityIndicator: 'Spinner', FlatList: 'FlatList',
+const native = { Keyboard: { dismiss: () => {} }, Text: 'Text', View: 'View', ActivityIndicator: 'Spinner', FlatList: 'FlatList',
   Pressable: 'Pressable', ScrollView: 'ScrollView', KeyboardAvoidingView: 'KeyboardAvoidingView',
   Platform: { OS: 'ios' }, StyleSheet: { create: styles => styles } };
 const t = key => key;
