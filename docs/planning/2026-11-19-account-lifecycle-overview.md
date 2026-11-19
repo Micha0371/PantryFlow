@@ -1,5 +1,12 @@
 # Account lifecycle — overview, threat model and decisions
 
+**Version 0.11, 2026-11-19.** This version responds to the Codex review of v0.10 (`0ecad1e`):
+- **High:** the fences skip the maintenance barrier, so draining works while paused.
+- **Medium:** one authoritative generation-outcome rule (`committed` or `not_committed`), separate from the account-level `account_deleted`, with timestamp-free identical payloads.
+- **Medium:** the missing-row test covers both orders.
+
+Codex: round 3 is the right next step after these corrections. No new policy decision or redesign is indicated.
+
 **Version 0.10, 2026-11-19.** This version responds to the Codex evidence review of v0.9 (`b86cc6c`; `docs/reviews/2026-11-19/specs-v0.9-evidence-review.md`, verdict "request changes"):
 
 - **V9-1 (High):** FENCE_OWN and per-generation outcome attribution, with the new kind `superseded`.

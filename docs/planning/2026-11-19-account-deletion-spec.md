@@ -1,5 +1,10 @@
 # Account deletion, retention and privileged boundary — technical specification
 
+**Version 0.11, 2026-11-19.** This version responds to the Codex review of v0.10 (`0ecad1e`, recorded in `docs/reviews/2026-11-19/README.md`):
+- **Fences skip the maintenance barrier,** so draining works while paused.
+- **One authoritative outcome rule per generation** (`committed` or `not_committed`, both provable and monotonic), separate from the account-level `account_deleted`. Payloads carry no per-sender timestamp.
+- **The missing-row test covers both possible orders.**
+
 **Version 0.10, 2026-11-19.** This version responds to the Codex evidence review of v0.9 (`docs/reviews/2026-11-19/specs-v0.9-evidence-review.md`):
 - **V9-1:** the function's own error handling fences only its own generation (FENCE_OWN), and ledger outcomes are attributed per generation, with a new kind `superseded`.
 - **V9-2:** FENCE_ALL creates and locks the row before reading the previous generation.
@@ -277,7 +282,7 @@ Errors are raised with SQLSTATE `P0001` and a stable message prefix. PostgREST's
 
 | Prefix | Raised by | Edge Function response |
 |---|---|---|
-| `PF_DELETION_PAUSED` | Every RPC, at the barrier, admission included (V9-3; the round-2 prototype used `MAINTENANCE` for admission and is to be aligned) | 503 `maintenance` |
+| `PF_DELETION_PAUSED` | ISSUE_TICKET, admission and the delete function at the barrier (V9-3; the round-2 prototype used `MAINTENANCE` for admission and is to be aligned). **Never** the fences | 503 `maintenance` |
 | `PF_DELETION_RATE_LIMITED` | admit | 429 `rate_limited` |
 | `PF_DELETION_IN_PROGRESS` | issue_ticket, admit (row `pending`) | 409 `in_progress` |
 | `PF_DELETION_REAUTHENTICATE` | admit (ticket missing or mismatched while `fenced`) | 401 `reauthenticate` |
@@ -317,7 +322,9 @@ Errors are raised with SQLSTATE `P0001` and a stable message prefix. PostgREST's
 
 ### 5.1 Function steps
 
-**Admission ticket (V6-3, a logical post-fence proof).** A deletion needs a ticket that no fence has invalidated. Every procedure below runs in one transaction behind the barrier (`SELECT paused … FOR SHARE`; if paused, raise `PF_DELETION_PAUSED`).
+**Admission ticket (V6-3, a logical post-fence proof).** A deletion needs a ticket that no fence has invalidated. Each procedure below runs in one transaction.
+- **Behind the barrier:** ISSUE_TICKET, admission and the delete function take `SELECT paused … FOR SHARE` and raise `PF_DELETION_PAUSED` when paused.
+- **Not behind it:** the fences (FENCE_ALL, FENCE_OWN) neither read nor wait for the barrier. They can only *stop* deletions, so they must keep working while paused; that is how pause-and-drain fences every pending row after the pause (§4.3).
 
 ```text
 ENSURE_ROW(U)      -- shared first step; serializes first-row creation (V9-2)
@@ -374,16 +381,22 @@ A positive lookup *without* a prior fence is never terminal.
 3. **Ledger intent** for g (§7). If it isn't accepted: FENCE_OWN(U, g), 503 `try_later`, with outcome per the mapping. Nothing is dispatched without an intent.
 4. Eligibility pre-check (§4.1). If ineligible: FENCE_OWN(U, g), 409 with the code, and outcome per the mapping.
 5. Call `rpc('pf_delete_own_account', { p_user: U, p_request: g })` **exactly once**, with no client retry.
-6. **Map the result.** Every outcome names its generation g:
+6. **Map the result.** There are two separate layers.
+   - **Generation layer:** what provably happened to request g. One authoritative rule, which every resolver applies identically:
+     - **`committed`:** only when g's own (single) RPC returned `'deleted'`.
+     - **`not_committed`:** when g's single RPC failed definitively (any `P0001`), **or** g was replaced while its request row still existed. A present row implies the user still exists, because of the FK cascade. So g can't have committed, and it never can.
+     - Otherwise **no generation outcome**: attribution unavailable, kept as uncertainty.
+     - The two kinds are mutually exclusive and monotonic, so concurrent resolvers can't disagree.
+   - **Account layer:** whether the account still exists, from a lookup after a fence. When it no longer exists, an `account_deleted` message for the UUID is recorded. That is independent of which generation deleted it.
 
-   | RPC result | Next step | Response | Ledger outcome for g |
+   | RPC result | Next step | Response (account layer) | Generation outcome for g |
    |---|---|---|---|
-   | `'deleted'` | none | 200 `deleted` | `deleted` |
-   | `PF_DELETION_STALE` | no fence (g is already dead); lookup | account deleted → 200 `deleted`; exists → 409 `superseded` (the app reconciles) | `superseded` |
-   | `PF_DELETION_INELIGIBLE`, `PF_DELETION_PAUSED` | FENCE_OWN(U, g), then lookup | `fenced_own` and the account exists → the table response (409 with the code, or 503); `superseded` and exists → 409 `superseded`; account deleted → 200 `deleted` | `not_deleted` when `fenced_own` and the account exists; otherwise `superseded` |
-   | Anything else (timeout, `57014`, reset, 5xx, unparsable) | FENCE_OWN(U, g), then lookup | `gone`, or the account deleted → 200 `deleted`; `fenced_own` and exists → 500 `not_deleted`; `superseded` and exists → 409 `superseded`; lock timeout or lookup error → 503 `unknown` | `deleted (by g or a newer generation)` when gone; `not_deleted` when `fenced_own`; `superseded`; **none** when unknown (the intent stays open) |
+   | `'deleted'` | none | 200 `deleted`, plus `account_deleted` | `committed` |
+   | `PF_DELETION_STALE` | no fence; lookup | account gone → 200 `deleted` plus `account_deleted`; exists → 409 `superseded` (the app reconciles) | `not_committed` (g's single call failed definitively) |
+   | `PF_DELETION_INELIGIBLE`, `PF_DELETION_PAUSED` | FENCE_OWN(U, g) for state hygiene, then lookup | `fenced_own` and exists → the table response; `superseded` and exists → 409 `superseded`; gone → 200 `deleted` plus `account_deleted` | `not_committed` |
+   | Anything else (timeout, `57014`, reset, 5xx, unparsable) | FENCE_OWN(U, g), then lookup | `gone` → 200 `deleted` plus `account_deleted`; `fenced_own` and exists → 500 `not_deleted`; `superseded` and exists → 409 `superseded`; lock timeout or lookup error → 503 `unknown` | `not_committed` when `fenced_own` or `superseded` (g was replaced while the row existed); **none** when `gone` (g or a newer generation deleted it, so attribution is unavailable) or unknown |
 
-   An account deleted while g was superseded is recorded for g as `superseded`. Its own generation's invocation, or the operator (§7), records that generation's `deleted`.
+   The **status request**, the **takeover** in ISSUE_TICKET and the **operator** apply the same rule. Replacing generation p while the row exists gives `not_committed` for p. An FK failure means the account is gone: `account_deleted`, and no outcome for p.
 
 **App order:**
 1. Get a ticket (the main session).
@@ -396,7 +409,7 @@ A ticket whose fresh sign-in isn't completed within the 300 s freshness window i
 **Status request** (normal authentication; app reconciliation; FENCE_ALL plus the lookup):
 - Auth rejecting the caller's token with `user_not_found` means deleted. The ledger outcome is then left to the **operator** (§7, V5-7).
 - Otherwise: FENCE_ALL(U), then `deleted`, `not_deleted` or `unknown` for the **account**.
-  - For the replaced generation `previous`, if its intent is open: `not_deleted` when the account exists, `deleted` when it doesn't.
+  - For the replaced generation `previous`: `not_committed`, because it was replaced while the row existed. When ENSURE_ROW's insert hits the FK (account gone): `account_deleted`, with no outcome for `previous`.
   - FENCE_ALL deliberately stops any running request, which is the cancel semantics of reconciliation. It shares the request rate limit.
 
 ### 5.2 App state machine
@@ -492,26 +505,29 @@ Requirement: a restored backup never silently brings deleted accounts back into 
 - **Messages:** sent through the existing Resend account to the owner's mailbox, containing only:
   - the UUID;
   - the `request_id`;
-  - the kind: `intent`, `deleted` (`by g` or `by g or a newer generation`), `not_deleted`, or `superseded` (g didn't commit; the account's fate belongs to a later generation);
-  - one UTC timestamp, captured **once** and reused unchanged on every retry, because Resend rejects a changed payload under the same key.
+  - the kind, one of:
+    - `intent` (per generation);
+    - `committed` or `not_committed` (per generation, under §5.1's single rule);
+    - `account_deleted` (per account: UUID only, no generation);
+  - **no timestamp or other sender-specific field in the payload.** Different resolvers then produce **byte-identical** payloads under the same key, which Resend requires (a changed payload under a key is rejected). The time comes from the mailbox's receive time.
 - **Intent:** sent before the RPC (§5.1 step 3). No intent means no dispatch.
 - **Outcome:** sent when the function or the status request reaches a terminal result.
-- **Idempotency:** keys `intent-<request_id>` and `outcome-<request_id>`, with at most 3 attempts per request.
+- **Idempotency:** keys `intent-<g>`, `outcome-<g>` (carrying `committed` or `not_committed`) and `account-deleted-<uuid>`, with at most 3 attempts per sender.
   - Resend's idempotency window is **24 hours** [FV-B7]. Later resolutions use distinct keys (`outcome-<request_id>-op-<n>`).
-  - Duplicate messages are tolerated: restoration deduplicates by `request_id`, taking the latest outcome.
+  - Duplicate messages are identical by construction, and restoration deduplicates them by key.
 - **Crash boundaries:**
 
   | Crash point | Effect |
   |---|---|
   | Before the intent | No dispatch |
-  | After the intent, before the RPC | The row stays `pending`; the next status call or request fences it and records `not_deleted` |
+  | After the intent, before the RPC | The row stays `pending`; the next status call or request replaces the generation while the row exists, and records `not_committed` for it |
   | After the commit, before the outcome | The status call sees `user_not_found` and can't run, so the intent stays **unresolved** until the operator resolves it |
 
 - **Operator reconciliation** (V5-7; frequency per OD-B5a): list intents without an outcome, older than one hour. For each:
   1. Look the UUID up with `getUserById`.
   2. Read its request row, if it still exists.
-  3. If deleted: send `deleted`.
-  4. If it exists with a `fenced` row: send `not_deleted`.
+  3. If the account is gone: send `account_deleted` for the UUID. The generation outcome stays absent unless g's own `committed` evidence exists.
+  4. If it exists and the row no longer carries g as `pending`: send `not_committed` for g (replaced while the row existed).
   5. If it exists with the same `pending` generation: FENCE_ALL, then the same steps.
   6. Record the action in the support log.
 
@@ -522,11 +538,11 @@ Requirement: a restored backup never silently brings deleted accounts back into 
 **Restore procedure** (operations runbook, owner-executed):
 1. Restore into an **isolated** project and note the recovery point T.
 2. **Selection by operation lifetime (V5-5):**
-   - every intent **without an outcome, regardless of age**;
+   - every intent with neither a generation outcome **nor** an `account_deleted` message for its UUID, regardless of age;
    - every intent whose `deleted` outcome time is ≥ T − 24 h, **regardless of the intent's age**.
 3. Resolve each selected UUID still present in the restored `auth.users`:
-   - outcome `deleted`: re-apply;
-   - outcome `superseded` or `not_deleted`: that generation deleted nothing. The account's fate comes from its other intents;
+   - an `account_deleted` message for the UUID, or `committed` for any of its generations, whose receive time is ≥ T − 24 h: re-apply;
+   - `not_committed`: that generation deleted nothing. The account's fate comes from its other messages;
    - unresolved: restoration stays **blocked** for it. Check production if it's still available.
 4. **Default completion [OD-B8, accepted; Codex conditions]:** applies only when production can't answer, and only with the owner's explicit approval per UUID. Requirements:
    - a **request-validity check**: a genuine function-sent intent with a `request_id`, no later `not_deleted` outcome, and a UUID that matches the restored user;
@@ -577,17 +593,17 @@ These are proposed tests, not a claim that any currently passes. Destructive and
 | D16 | Request table unreachable by clients | As `anon` and `authenticated`: insert, update, delete and select on `account_deletion_requests` are all denied | pgTAP |
 | D17 | Activation never expires; generations bind | No row → existing semantics (D15). A row in any state with deletion outside the function → `PF_DELETION_USE_FUNCTION`. A function call with a fenced or older generation → `PF_DELETION_STALE`. The current `pending` generation of **any** age (including > 1 day) → G1–G4 checked at commit | pgTAP + DB **Local result (round 2): confirmed** |
 | D18 | Freshness claims | Tokens with a `password` entry at 301 s → 401; `recovery`, `otp` or `magiclink` entries only → 401; refreshed token of a 10-minute-old password session → 401; wrong `aud`, `role` or `iss`, anonymous, or missing `session_id` → 401 | Function + Auth |
-| D19 | Ledger | Exactly one intent before any dispatch (key `intent-<request_id>`); intent not accepted → fenced, no dispatch, 503 `try_later`. Outcome messages for one request all carry the **same kind**: retries reuse the key within Resend's 24 h window, and later operator resolutions use distinct keys, so duplicates are possible and restore deduplicates by `request_id`. Messages contain only UUID, `request_id`, kind and time | Function |
+| D19 | Ledger | Exactly one intent before any dispatch (key `intent-<g>`); intent not accepted → FENCE_OWN, no dispatch, 503 `try_later`. Generation outcomes follow §5.1's single rule (`committed` or `not_committed`), and account outcomes are `account_deleted` per UUID. Payloads are byte-identical across senders, with no per-sender timestamp, so retries and competing resolvers deduplicate under the same key. Messages contain only UUID, `request_id` (generation messages) and kind | Function |
 | D24 | Other deletion paths are refused | Admin API, dashboard or SQL deletion of a user **with** a request row → `PF_DELETION_USE_FUNCTION`, nothing deleted; a user without a row → existing semantics (D15) | DB + Admin API The oracle checks the database state and the **raw** HTTP body, because supabase-js reports only "Database error deleting user". **Local result (round 2): confirmed** |
 | D25 | Database error propagation | **Every** prefix in the §4.2 table, including `RATE_LIMITED`, arrives through PostgREST at the service-role caller as `P0001` with message (and `details` for INELIGIBLE). The barrier raises `PAUSED` in every RPC. `57014` is observed as such. **Round 2 (local):** STALE, INELIGIBLE, PAUSED, IN_PROGRESS and REAUTHENTICATE were demonstrated, plus `MAINTENANCE` under its old name; `RATE_LIMITED` was **not** demonstrated. Round 3 completes it | Function + DB |
 | D26 | Edge response mapping | With the real Edge Function, each database result (every prefix, `57014`, timeout, success) maps to the §5.1 response, ledger outcome and generation attribution, including `superseded`. Not testable with the prototype; this is part of the implementation verification | Edge Function |
-| D20 | Fence and quiescence | Deterministic barriers through the real RPCs:<ol><li>A call held inside `pf_delete_own_account` before commit: a concurrent fence **waits**, and its result is terminal and matches the database.</li><li>**Pre-admission:** an invocation holding ticket T is paused before admission; a fence runs; release, and admission is refused (`reauthenticate`).</li><li>**Reactivation:** an old RPC is delayed before the database; a fence, a new ticket and a new request run; release the old call, which is refused `STALE`.</li><li>**Fence ordering (V6-3):** two fences complete in the reverse of their start order, then a ticket issued between them is presented: refused.</li><li>**Consumed ticket replayed:** after a successful admission, presenting the same ticket again → `in_progress` while the row is `pending`, or `reauthenticate` after a fence. Never admitted.</li><li>**Concurrent consumption:** two admissions with the same ticket at once → exactly one succeeds, and the other gets `reauthenticate` or `in_progress`.</li><li>**Stale call versus a newer deletion (V9-1):** generation g1's call returns `STALE` while g2's call (a) commits, or (b) is held past FENCE_OWN's lock timeout. Assert:<ul><li>no fence touches g2;</li><li>g1's outcome is `superseded`;</li><li>the response is 200 `deleted` in (a), and 409 `superseded` or 503 `unknown` in (b);</li><li>no `not_deleted` claim for the account in either case.</li></ul></li><li>**Initially missing row (V9-2):** pause FENCE_ALL between its INSERT … DO NOTHING and its SELECT … FOR UPDATE, then run issue and admit concurrently. Assert that FENCE_ALL returns the generation it actually replaced (not NULL), and that the admitted generation is then refused `STALE`.</li><li>**Issue, admit and fence interleavings:** each order of these three on one user leaves at most one live generation, and never admits a ticket issued before a completed fence.</li></ol>At most one deletion commits, matching the current generation | DB + Function **Local result (round 2): confirmed**, with `pg_blocking_pids` proof; the concurrent-orders oracle is weak (no commit-order log). Round 3 adds a commit-order log, for example via `track_commit_timestamp`, before any exhaustive-ordering claim |
+| D20 | Fence and quiescence | Deterministic barriers through the real RPCs:<ol><li>A call held inside `pf_delete_own_account` before commit: a concurrent fence **waits**, and its result is terminal and matches the database.</li><li>**Pre-admission:** an invocation holding ticket T is paused before admission; a fence runs; release, and admission is refused (`reauthenticate`).</li><li>**Reactivation:** an old RPC is delayed before the database; a fence, a new ticket and a new request run; release the old call, which is refused `STALE`.</li><li>**Fence ordering (V6-3):** two fences complete in the reverse of their start order, then a ticket issued between them is presented: refused.</li><li>**Consumed ticket replayed:** after a successful admission, presenting the same ticket again → `in_progress` while the row is `pending`, or `reauthenticate` after a fence. Never admitted.</li><li>**Concurrent consumption:** two admissions with the same ticket at once → exactly one succeeds, and the other gets `reauthenticate` or `in_progress`.</li><li>**Stale call versus a newer deletion (V9-1):** generation g1's call returns `STALE` while g2's call (a) commits, or (b) is held past FENCE_OWN's lock timeout. Assert:<ul><li>no fence touches g2;</li><li>g1's outcome is `superseded`;</li><li>the response is 200 `deleted` in (a), and 409 `superseded` or 503 `unknown` in (b);</li><li>no `not_deleted` claim for the account in either case.</li></ul></li><li>**Initially missing row, both orders (V9-2):**<ul><li>(a) **The fence inserts first** and holds its uncommitted insert: a concurrent ISSUE_TICKET waits. The fence returns `NULL`, which is correct because no generation existed; issuance then proceeds.</li><li>(b) **Issuance and admission commit first:** FENCE_ALL returns the admitted generation, invalidates it, and a call with it is refused `STALE`.</li></ul></li><li>**Paused draining:**<ol><li>Pause.</li><li>FENCE_ALL every pending row: it succeeds while paused.</li><li>ISSUE_TICKET, admission and delete calls raise `PAUSED`.</li><li>Resume, then issuance works again.</li></ol></li><li>**Competing ledger resolvers:** a status call fences g while g's delayed handler later receives `STALE`. Both compute `not_committed` for g with byte-identical payloads under `outcome-<g>`. Account deletion by a newer generation yields `account_deleted` and no outcome for g.</li><li>**Issue, admit and fence interleavings:** each order of these three on one user leaves at most one live generation, and never admits a ticket issued before a completed fence.</li></ol>At most one deletion commits, matching the current generation | DB + Function **Local result (round 2): confirmed**, with `pg_blocking_pids` proof; the concurrent-orders oracle is weak (no commit-order log). Round 3 adds a commit-order log, for example via `track_commit_timestamp`. That strengthens the evidence but doesn't by itself establish exhaustive coverage |
 | D21 | Late delivery | An RPC delayed far beyond any window with an eligibility change injected meanwhile (same generation): G1–G4 re-checked at commit and the call aborts; the other member's graph is intact. With a newer generation it is refused as `STALE` | DB + Function **Local result (round 2): confirmed** |
 | D22 | Maintenance admission barrier (V5-6) | A request paused **between its maintenance check and its upsert** while the pause is set: the pause waits for it or it fails `PAUSED`; it never becomes executable during repairs. An RPC in flight finishes before the pause commits; later RPCs fail `PAUSED`; drain fences every `pending` row | DB + Function **Local result (round 2): confirmed** |
 | D23 | Temporary-session lifecycle (V5-8, V6-4) | The fresh tokens stay in memory through Unknown. A first raw logout fails (network); after connectivity returns, the retry gets 204 and the fresh session's refresh fails. With an **expired access token and a valid refresh token**: 403 `bad_jwt` → refresh → logout 204, with no endless loop. A 403 other than `session_not_found` or expired `bad_jwt` leaves revocation pending. App killed → orphan documented | Comp + Auth |
 | V01 | Diagnostics | Function logs and crash payloads contain no password, token, authorization header or email | Review + test |
 | V02b | Old intent across the recovery point (V5-5) | Intent created two days before T; backup at T; deletion committed after T, with or without its outcome mail; restore → the UUID is selected, and access stays blocked until the deletion is re-applied or resolved | Operational exercise |
-| V02 | Restore rehearsal and crash boundaries | Terminate the function before the intent, after the intent, after the commit, and after the outcome send. The disposable restore then either re-applies the deletion (outcome `deleted`), skips it (`not_deleted`), or **stays blocked** on the unresolved intent until it's resolved. Never silently reopens a deleted account | Operational exercise |
+| V02 | Restore rehearsal and crash boundaries | Terminate the function before the intent, after the intent, after the commit, and after the outcome send. The disposable restore then either re-applies the deletion (`account_deleted` or `committed`), skips it (`not_committed`), or **stays blocked** on the unresolved intent until it's resolved. Never silently reopens a deleted account | Operational exercise |
 | V03 | External request | The runbook is executed on a fixture account. A correct code is accepted. A forged sender without the code, a wrong code, an expired code and a replayed (used) code are each rejected. Another user is unaffected | Manual |
 | G01 | Regression | Signup, confirmation, login, CRUD and household-isolation suites green | Existing suites |
 
