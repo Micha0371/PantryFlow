@@ -1,0 +1,281 @@
+# Password policy, recovery and session lifecycle — technical specification
+
+**Version 0.1, 2026-11-19, draft for owner review and a focused Codex follow-up review.** Implementation is not authorized.
+
+**Sources:**
+- the [Slice 3 decision record](2026-11-19-slice-3-decision-record.md), section 5 (KAN-81);
+- the Codex account-lifecycle review (H3, H4, H5 for password update, M1, M3) and its follow-up (F1–F3), held in ignored `.verification/account-spec-review-20261119/`;
+- [the account-lifecycle overview](2026-11-19-account-lifecycle-overview.md), which holds the threat model, finding dispositions, provider assumptions, owner decisions and sequence.
+
+**Tickets:**
+- [KAN-80](https://michaelwuerthner.atlassian.net/browse/KAN-80) and [KAN-81](https://michaelwuerthner.atlassian.net/browse/KAN-81), password policy;
+- [KAN-42](https://michaelwuerthner.atlassian.net/browse/KAN-42), [KAN-54](https://michaelwuerthner.atlassian.net/browse/KAN-54) and [KAN-55](https://michaelwuerthner.atlassian.net/browse/KAN-55), recovery.
+
+**Status tags:**
+- **[Settled]:** an owner decision.
+- **[Specified]:** decided here, technically.
+- **[Feasibility FV-x]:** needs an authorized experiment in a disposable environment.
+- **[Owner OD-x]:** needs an owner decision; see the overview.
+- **[Blocked]:** cannot proceed until the named item resolves.
+
+## 1. Provider facts this specification relies on
+
+These were verified by reading the versioned source. Execution behavior is not verified; see the FV items.
+
+| Fact | Source |
+|---|---|
+| Local Auth is **v2.197.0** (container `public.ecr.aws/supabase/gotrue:v2.197.0`, CLI 2.122.1). Hosted parity was recorded on 2026-11-09; the current hosted version is unverified. | `docker ps`; `docs/testing/coverage-matrix.md` |
+| v2.197.0 `checkPasswordStrength`: minimum is `len(password)`, which counts **UTF-8 bytes**. The maximum is `len(password) > 72`, also bytes. | [password.go@v2.197.0](https://raw.githubusercontent.com/supabase/auth/v2.197.0/internal/api/password.go) |
+| **v2.198.0** (released 2026-11-16, PR #2879) counts the minimum in **code points** (`utf8.RuneCountInString`). The maximum stays 72 bytes. | [password.go@master](https://raw.githubusercontent.com/supabase/auth/master/internal/api/password.go); release notes |
+| Passwords are hashed as given (bcrypt via `crypto.GenerateFromPassword`). There is no trimming and no Unicode normalization. | `models/user.go` `SetPassword` |
+| Sign-in with a valid password that fails the current policy succeeds and returns `weak_password` (reasons). The SDK exposes it as `data.weakPassword`, not as an error. | `api/token.go` lines 129–206; auth-js 2.119.0 `GoTrueClient.ts` line 1284 |
+| `PUT /user` with a password runs `checkPasswordStrength`, rejects the same password (`same_password`, 422), then in **one database transaction** writes the hash and deletes every *other* session of the user (`LogoutAllExceptMe`). Without a session id it deletes all sessions. | `api/user.go` lines 150–216; `models/user.go` `UpdatePassword`; `models/sessions.go` |
+| `update_password_require_current_password`: when enabled, a non-recovery session must send `current_password`. Recovery-type sessions (`recovery`, `otp`, `magiclink` sign-in methods) are exempt. `update_password_require_reauthentication` requires a nonce when the session is older than 24 h. | `api/user.go` lines 154–186; `conf/configuration.go` lines 905–906; `models/factor.go` `IsRecovery` |
+| Authenticated Auth endpoints load the user, then the session named in the JWT: deleted user → 403 `user_not_found`; deleted session → 403 `session_not_found`. PostgREST does not check sessions, so an issued JWT is honored until `exp` (local default 3600 s; `jwt_expiry` unset). | `api/auth.go` `maybeLoadUserOrSession`; `conf` `JWT.Exp` default |
+| Access tokens carry `amr` entries `{method, timestamp}` and `session_id`. A recovery exchange records method `recovery`. A refresh keeps the session's stored entries. | `tokens/service.go`; `models/amr.go`; `models/factor.go` |
+| `POST /recover`: an unknown email returns 200 `{}` without sending. A known email creates a PKCE flow state (`recovery`) and sends mail. Errors such as email rate limits arise only on the known-email path. | `api/recover.go` |
+| SDK `resetPasswordForEmail` stores a PKCE verifier marked as recovery. `exchangeCodeForSession` reads the local verifier, **saves the resulting session as the current session**, emits `PASSWORD_RECOVERY` only when the local verifier carried the recovery mark, returns `redirectType`, and removes the verifier on success and on error. | auth-js 2.119.0 `GoTrueClient.ts` lines 2018–2092, 4530–4556 |
+| SDK `signOut` (any scope that removes the local session) calls `_removeSession`, which deletes **all** stored PKCE verifiers. | `GoTrueClient.ts` lines 4094–4125, 5327–5345 |
+| Rate limits: `/recover` has its own limiter. `/token` (password sign-in and refresh) shares the token limiter (`GOTRUE_RATE_LIMIT_TOKEN_REFRESH`, default 150). `PUT /user` has a user limiter. The limiters key on the client address or the configured `RATE_LIMIT_HEADER`. There is no per-account lockout. | `api/api.go` lines 255–283; `api/token.go` line 45; `apilimiter.go`; `middleware.go` line 73 |
+| Compromised-password checks (HaveIBeenPwned) exist with a fail-open/fail-closed setting. Supabase documents them as Pro plan and above. | `password.go`; [Supabase password security](https://supabase.com/docs/guides/auth/password-security) |
+
+## 2. Password policy
+
+### 2.1 Rules
+
+1. **[Settled] Minimum length:** 15 **Unicode code points**. This means scalar values, the same unit Go counts as runes. It is not UTF-16 code units (JavaScript `.length`) and not UTF-8 bytes.
+2. **[Specified] Maximum length:** 72 **UTF-8 bytes**, the provider limit in both inspected versions. At least 64 ASCII characters are supported. Universal support for 64 code points is not provided, as the owner amendment allows. The guaranteed number of code points for any script is 18 (18 × 4 bytes).
+3. **[Settled] No composition rules:** the provider's `password_requirements` stays empty. No periodic changes.
+4. **[Settled] Exact values:** spaces and passphrases are allowed, and leading or trailing spaces are part of the password. Paste, autofill and password managers work: no `autoComplete="off"`, no paste blocking, `textContentType` `password` / `newPassword`.
+5. **[Specified] No transformation:** the client never trims, truncates or normalizes (no NFC or NFKC). The provider doesn't normalize either, so both stay consistent. A password typed in a different normalization form on another device is a different password; this is a known limitation and is stated in the help text only if support cases show a need.
+6. **[Specified] Enforcement:** the server enforces the policy (signup, recovery update, in-app change). The client checks the same rules in advance as **feedback only**, and never as a substitute for missing server enforcement.
+
+### 2.2 Server enforcement prerequisite
+
+**[Blocked] until [Owner OD-A1] and [Feasibility FV-A1, FV-A2]:**
+- On v2.197.0 the server counts the minimum in bytes. For example, 8 `ä` (16 bytes) passes a 15 minimum while having only 8 code points. The approved rule therefore cannot be enforced on v2.197.0.
+- **Recommended resolution:** require Auth **≥ v2.198.0** in every environment:
+  - **local / CI:** pin a Supabase CLI release whose bundled Auth is ≥ v2.198.0;
+  - **hosted:** an authorized read confirms the deployed version (Supabase manages hosted Auth upgrades).
+- The policy change to `minimum_password_length = 15` ships only after both are confirmed.
+- **Alternatives** (the owner chooses):
+  - an explicit, documented interim amendment that measures bytes until hosted Auth is ≥ v2.198.0 (not recommended);
+  - delaying the policy change.
+- **Rejected:** a client-only code-point check over a byte-counting server. It is bypassable through direct API calls.
+
+### 2.3 Expected outcomes (Auth ≥ v2.198.0, minimum 15)
+
+| Input | Code points | UTF-16 units | UTF-8 bytes | Signup / reset / change |
+|---|---:|---:|---:|---|
+| 14 ASCII letters | 14 | 14 | 14 | Rejected: 422 `weak_password`, reason `length` |
+| 15 ASCII letters | 15 | 15 | 15 | Accepted |
+| 14 × `ä` (U+00E4) | 14 | 14 | 28 | Rejected (`length`). **v2.197.0 would accept it.** |
+| 15 × `ä` | 15 | 15 | 30 | Accepted |
+| 15 × 😀 (U+1F600) | 15 | 30 | 60 | Accepted |
+| 14 × `e` + U+0301 (combining acute) | 28 | 28 | 42 | Accepted: each combining mark is its own code point (14 visible characters) |
+| 7 × `e` + U+0301 | 14 | 14 | 21 | Rejected (`length`), although it shows 7 characters |
+| 64 ASCII | 64 | 64 | 64 | Accepted |
+| 72 ASCII | 72 | 72 | 72 | Accepted (boundary) |
+| 73 ASCII | 73 | 73 | 73 | Rejected: 400 `validation_failed`, "cannot be longer than 72 characters" |
+| 36 × `ä` | 36 | 36 | 72 | Accepted (boundary) |
+| 64 × `ä` | 64 | 64 | 128 | Rejected (too long) |
+| 18 × 😀 | 18 | 36 | 72 | Accepted (boundary) |
+| 19 × 😀 | 19 | 38 | 76 | Rejected (too long) |
+| 64 × 😀 | 64 | 128 | 256 | Rejected (too long) |
+| `"  correct horse battery  "` (leading and trailing spaces) | 25 | 25 | 25 | Accepted; sign-in requires the spaces |
+
+**Client feedback rules:**
+- The minimum counts code points with `[...value].length`.
+- The maximum counts bytes with `new TextEncoder().encode(value).length`.
+- Messages:
+  - "Use at least 15 characters";
+  - "This password is too long. Letters with accents and emoji count as more than one character."
+- The provider's error wording is never shown.
+- English and German strings go to KAN-60.
+
+### 2.4 Existing accounts
+
+- **[Settled]** Existing accounts with shorter passwords keep signing in. The new rules apply when the password is next changed or reset.
+- **[Specified]** A sign-in that returns `data.weakPassword` is treated as a normal success. The app does not block or sign out.
+- **[Owner OD-A5]** Whether to show a non-blocking hint to change the password. The recommendation is no hint in Slice 3, because no public users exist yet. Verified by test P05.
+
+### 2.5 Compromised-password protection
+
+**[Owner OD-A6], [Feasibility FV-A1].**
+- Record the hosted plan's entitlement.
+- **If available on the approved plan:** enable it fail-open, so a HaveIBeenPwned outage doesn't block signup, and document that choice.
+- **If unavailable:** record the limitation and the owner's disposition. Nothing is purchased.
+- Completion evidence: the configuration read-back plus a direct signup with a known-breached 15-character password, rejected with reason `pwned`.
+
+## 3. Recovery lifecycle
+
+### 3.1 Principles
+
+1. **[Specified] Trusted purpose:**
+   - Recovery mode requires both conditions:
+     - (a) the exchange returned `redirectType === 'recovery'`, which comes from the verifier *this installation* stored when it requested the reset;
+     - (b) the resulting access token's `amr` contains `recovery`.
+   - The route name, the URL path and query parameters are never trusted.
+   - A link that yields a non-recovery session through the reset route is handled by the existing confirmation logic, never as recovery.
+2. **[Specified] No silent account replacement:** the app never calls `exchangeCodeForSession` while a session exists on the device, because the SDK would replace that session.
+3. **[Specified] Reuse:** the existing shared client, persisted AsyncStorage, PKCE and Auth provider. One dedicated route, `auth/reset`, uses the existing exchange helper with a recovery classification. There is no second auth client for recovery.
+4. **[Specified] Provider authorization is separate from navigation:**
+   - Any valid session can call `PUT /user` with a password.
+   - Unless `update_password_require_current_password` is enabled, a non-recovery session can do so without the current password; see section 4.3 and [Owner OD-A4].
+   - Screen gating is UX only.
+
+### 3.2 State machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> SignedOut
+    SignedOut --> RequestPending: Forgot password, submit email
+    RequestPending --> NeutralSent: 200, or 429 rate limit
+    RequestPending --> RequestFailed: network error or 5xx
+    RequestFailed --> RequestPending: retry
+    NeutralSent --> LinkReceived: deep link pantryflow://auth/reset
+    SignedOut --> LinkReceived: link from an earlier request
+    SignedIn --> ActiveSessionBlock: link received while signed in
+    ActiveSessionBlock --> SignedIn: Stay signed in, link discarded
+    ActiveSessionBlock --> SignedOut: Sign out, verifiers removed, request a new link
+    LinkReceived --> Exchanging: no session on device
+    Exchanging --> LinkInvalid: missing verifier, expired, used, malformed
+    Exchanging --> ExchangeUnknown: network error during exchange
+    Exchanging --> NotRecovery: success without the recovery mark
+    Exchanging --> RecoveryPending: recovery mark and amr recovery
+    NotRecovery --> SignedIn: existing confirmation handling
+    LinkInvalid --> SignedOut
+    ExchangeUnknown --> SignedOut: request a new link
+    RecoveryPending --> UpdatePending: submit a valid new password
+    RecoveryPending --> SignedOut: Cancel, recovery session signed out
+    UpdatePending --> RecoveryPending: confirmed rejection, weak or too long
+    UpdatePending --> Confirmed: 200
+    UpdatePending --> UpdateUnknown: no response
+    UpdateUnknown --> Confirmed: user retry gives 200 or same_password
+    UpdateUnknown --> RecoveryPending: app closed, on restart
+    Confirmed --> SignedIn: current session continues
+```
+
+### 3.3 State details
+
+| State | Behavior |
+|---|---|
+| **RequestPending** | `resetPasswordForEmail(email, { redirectTo: 'pantryflow://auth/reset' })` (the test app uses `pantryflowtest://`) on the shared client. The request is offered only on the signed-out sign-in screen. |
+| **NeutralSent** | The same message for known and unknown addresses, and for 429: "If an account exists for this address, we've sent a reset link. Open it on this phone. If nothing arrives, wait a few minutes before requesting another." A 60-second resend cooldown applies as feedback only. Nothing about account existence is stored locally. |
+| **RequestFailed** | Network error or 5xx: "We couldn't send the email. Check your connection and try again." It never claims "sent". Residual risk: 5xx and 429 occur only for known addresses, so a careful attacker can still distinguish them. Constant-time behavior is not claimed. |
+| **ActiveSessionBlock** | Dialog: "You're signed in as {current email}. Reset links can only be used while signed out." The current email is shown as separate text. Buttons: **Stay signed in** (default; changes nothing) and **Sign out**. Sign out uses `signOut({ scope: 'local' })`, shows the sign-in screen with "Request a new reset link from Forgot password", and the old link becomes unusable because the verifiers are removed. If the user wants to change their own password, the dialog also points to Settings → Change password (section 4.3). [Owner OD-A3] |
+| **Exchanging** | `exchangeCodeForSession(code)` on the shared client, only with no session present. |
+| **LinkInvalid** | `AuthPKCECodeVerifierMissingError` gives "Open the link from the most recent email on the phone where you requested it." Expired, used, malformed or flow-state-not-found gives "This link has expired or was already used. Request a new one." No session is created. |
+| **ExchangeUnknown** | The SDK already removed the verifier, so a retry is impossible: "We couldn't complete the reset. Request a new link." If a session was in fact saved, the cold-start rule below applies. |
+| **RecoveryPending** | The screen shows "Set a new password for {email}", with no tab access. **Cold start:** with a stored session whose `amr` includes `recovery` and whose `session_id` differs from the stored marker `pf.recovery.completed`, the app opens this screen instead of the tabs. The marker is not secret; it relaxes gating only after a confirmed success. **Cancel:** `signOut({ scope: 'local' })` revokes the recovery session server-side; the password is unchanged. |
+| **UpdatePending** | `updateUser({ password })`. Confirmed rejections: 422 `weak_password` gives the policy message; 400 too long gives the length message; 422 `same_password` gives "Choose a password different from your current one" (unless `pf.recovery.uncertain` is set, see below); `reauthentication_needed` gives "This reset session has expired. Request a new link." and signs out. |
+| **UpdateUnknown** | No response, so the password may or may not have been committed. Set `pf.recovery.uncertain = session_id` (not secret). The typed value stays in component memory only while the screen is mounted and is never persisted. "We couldn't confirm the change. Tap Try again." A user-initiated retry sends the same value: 200, or 422 `same_password` while `pf.recovery.uncertain` matches, is **Confirmed**. On restart the value is gone: the user re-enters a password, and `same_password` with the marker set is again treated as Confirmed. There is never an automatic resend. |
+| **Confirmed** | Set `pf.recovery.completed = session_id`, clear `pf.recovery.uncertain`, announce, open the tabs. The current session continues. Every other session was deleted in the same transaction as the hash write (section 4.1). |
+
+### 3.4 Further cases
+
+- **Overlapping requests.** auth-js 2.119.0 keeps verifiers per flow, and the native app passes no `flowId`. [Feasibility FV-A3]: establish whether an older link still works after a newer request on React Native. The specified outcome is either "the older link works" or LinkInvalid with the most-recent-email message. Experimental flow-id options are not used without review.
+- **Another installation or device:** the verifier is missing, so LinkInvalid applies. PKCE is never disabled to make such links work.
+- **Background or kill:** before exchange, the link is processed again on resume if the OS redelivers it. Otherwise the user opens it again. After exchange, the cold-start rule restores RecoveryPending.
+- **Wrong-purpose links** (signup confirmation, email change) arriving at `auth/reset`: there is no recovery mark, so the link is classified as NotRecovery and follows the existing confirmation behavior, including its active-session rejection. Recovery UI never appears.
+
+## 4. Password update and session contract
+
+### 4.1 Session effects
+
+**[Specified], verified by source; [Feasibility FV-A4, FV-A6] verifies execution.**
+
+| Event | Current session | Other sessions (refresh) | Outstanding access JWTs |
+|---|---|---|---|
+| Recovery update confirmed | Continues (same `session_id`) | Deleted in the same transaction as the password write | Still accepted by PostgREST until `exp` (≤ 3600 s with the local default). Rejected by Auth endpoints (`session_not_found`). |
+| In-app change confirmed | Continues | Deleted in the same transaction | Same |
+| Update rejected | Unchanged | Unchanged | Unchanged |
+| Update outcome unknown | Continues either way (the provider never deletes the calling session) | Deleted if and only if the password was committed | Same |
+
+**Consequences:**
+- Codex F2's "password committed but revocation failed" cannot occur on v2.197.0 when the request carries a session id: both happen in one transaction.
+- "Revocation response lost" is the same event as "update response lost", handled by UpdateUnknown.
+- No separate revocation call is required.
+- **Fallback, kept in the design but not called on v2.197.0:**
+  - If a future provider version stops revoking in the same transaction (FV-A6 re-run on every Auth upgrade), the app calls `signOut({ scope: 'others' })` after a confirmed update.
+  - That call is idempotent and needs no password, so it can be retried until confirmed.
+- **Residual window:** another device's already-issued JWT can still read and write pantry data through PostgREST until it expires. This is documented, not hidden. [Owner OD-A8]: keep the 3600 s default (recommended) or shorten `jwt_expiry`.
+
+### 4.2 Identifying the current session
+
+- The current session is the `session_id` claim of the access token held by the shared client, after the exchange (recovery) or the current sign-in (in-app change).
+- The markers in section 3.3 store only this id.
+
+### 4.3 In-app password change
+
+**[Specified]; whether it ships in Slice 3 is part of [Owner OD-A4].**
+
+- **Where:** Settings → Change password, with fields "Current password" and "New password". It uses the same policy and feedback as section 2.
+- **Request:** `updateUser({ password, current_password })`. The client always sends the current password.
+- **Server enforcement** needs `update_password_require_current_password = true`, which is a hosted setting.
+- **Without that setting,** any holder of a valid session (for example a stolen session) can set a new password without knowing the old one. The provider then deletes the owner's other sessions.
+- **Recommendation:** enable it.
+  - Recovery sessions stay exempt by design.
+  - Local CLI and hosted configurability is [Feasibility FV-A5].
+  - The hosted change needs separate authorization.
+- **Outcomes** follow UpdatePending and UpdateUnknown, without the recovery markers.
+- **Wrong current password:** `current_password_mismatch` gives a generic "Current password is incorrect".
+
+## 5. Abuse controls
+
+| Threat | Provider control (Supabase Auth) | Application control | Residual |
+|---|---|---|---|
+| Recovery email flooding | `/recover` limiter; project email-send rate limit; per-address minimum interval | 60 s client cooldown (feedback only) | Values must be read back (FV-A1) |
+| Account enumeration via recovery | Unknown email returns 200 `{}` | Same neutral message for 200 and 429 | 5xx and timing differ for known addresses; not claimed constant-time |
+| Enumeration via signup | Confirmation-enabled signup does not reveal existing confirmed accounts (to verify in FV-A7) | Neutral signup copy, as today | — |
+| Password guessing | `/token` limiter per client address (shared with refresh); optional CAPTCHA (off) | None; the 15-code-point minimum reduces guessability | No per-account lockout. [Owner OD-A7]: CAPTCHA not in Slice 3 (recommended) |
+| Stolen session changes password | `update_password_require_current_password` | Always send the current password | Until enabled (OD-A4), a stolen session can take over the account |
+| Auth outage | — | Explicit "couldn't reach the service" for network errors and 5xx; never "sent" or "changed" without a 200 | — |
+| Deletion attempts | See the deletion spec, section 5 | — | — |
+
+## 6. Tests
+
+These are proposed tests, not a claim that any currently passes. Layers:
+- **Auth:** direct HTTP against a disposable local stack.
+- **Unit:** `node:test`.
+- **Comp:** component tests.
+- **Native:** Maestro or the physical phone.
+
+Destructive or concurrency tests run only in a disposable stack, never against the shared local stack or hosted.
+
+| ID | Requirement | Oracle | Layer |
+|---|---|---|---|
+| P01 | 14/15 ASCII | 14 rejected `weak_password` (`length`); 15 accepted; signup, recovery update and in-app change | Auth + Comp |
+| P02 | Code points | Every row of the §2.3 table on Auth ≥ v2.198.0; the same inputs on v2.197.0 recorded as evidence for OD-A1 | Auth + Unit |
+| P03 | Byte maximum | 72/73 ASCII, 36/37 `ä`, 18/19 emoji at the boundary; no truncation (sign-in with the 72-byte password succeeds, a 71-byte prefix fails) | Auth |
+| P04 | Direct bypass | Raw `POST /signup` and `PUT /user` cannot set a 14-code-point password | Auth |
+| P05 | Legacy account | A 6-character legacy account signs in; `data.weakPassword` is present; the app routes normally; a new password must comply | Auth + Comp |
+| P06 | Exact values | Leading and trailing spaces preserved through the form and the API; paste and autofill attributes present | Comp + Native |
+| P07 | Environment parity | Recorded local and hosted Auth versions, `minimum_password_length`, `password_requirements`, HIBP state, `update_password_require_current_password` and rate limits (hosted read needs authorization) | Config |
+| R01 | Neutral request | Known and unknown addresses give the same UI state; Mailpit receives mail only for the known one | Auth + Comp |
+| R02 | Throttle and outage | 429 shows the neutral message; network error and 5xx show the failure message; the cooldown works | Comp |
+| R03 | Warm and cold recovery | Valid link → RecoveryPending → Confirmed; kill after the exchange → restart opens RecoveryPending | Native |
+| R04 | Invalid links | Expired, used and malformed links create no session; correct message | Auth + Native |
+| R05 | Wrong purpose | A signup-confirmation code at `auth/reset` never shows recovery UI; the recovery mark comes only from the local verifier | Comp + Auth |
+| R06 | Active A, link for B | ActiveSessionBlock; A's session unchanged (same `session_id` before and after); no exchange request sent | Comp + Native |
+| R07 | Active A, own link | Same block plus the Change password pointer | Comp |
+| R08 | Overlap and missing verifier | Per FV-A3 outcome; another installation gives LinkInvalid | Native |
+| R09 | Interruption | Background or kill before submit restores RecoveryPending; nothing routes to the tabs | Native |
+| R10 | Lost update response | Fault proxy drops the 200 after commit → UpdateUnknown → retry gives `same_password` → Confirmed; sign-in with the new password works; no automatic resend observed | Auth + Comp |
+| R11 | Session effects | With two other sessions plus the recovery session: after Confirmed, the others' refresh fails and the recovery session refreshes. Other sessions' JWTs: Auth `GET /user` gives 403 `session_not_found`; PostgREST still serves until `exp` (documents the window) | Auth |
+| R12 | Rejection keeps sessions | Weak or too-long update leaves all sessions able to refresh | Auth |
+| R13 | In-app change | With OD-A4 enabled: a missing or wrong current password is rejected; correct current password plus a valid new one is accepted; other sessions are revoked | Auth + Comp |
+| R14 | Diagnostics | Passwords, codes, tokens and callback URLs are absent from logs and crash payloads | Unit + review |
+| G01 | Regression | Signup, confirmation, login, logout, restore and household isolation suites unchanged and green | Existing suites |
+
+**Feasibility verification items** (each needs separate authorization and a disposable environment):
+
+| ID | What it checks |
+|---|---|
+| FV-A1 | Hosted Auth version and settings read-back: minimum length, HIBP entitlement, rate limits, JWT expiry. |
+| FV-A2 | A CLI version bundling Auth ≥ v2.198.0, and P01–P04 against it. |
+| FV-A3 | Overlapping recovery requests on React Native with auth-js 2.119.0. |
+| FV-A4 | The `amr` `recovery` entry is present after the exchange, after a refresh and after a password update. |
+| FV-A5 | `update_password_require_current_password` is available in CLI `config.toml` and the hosted dashboard. |
+| FV-A6 | Other-session revocation and the outstanding-JWT window (R11). |
+| FV-A7 | Signup enumeration behavior. |
