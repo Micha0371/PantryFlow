@@ -126,8 +126,8 @@
 **Journey:**
 1. `search-seed` inserts `Rice` and `Rye flour` for Alice through an ordinary signed-in client, never the admin key.
 2. The flow:
-   - type `ri` → `Rice` and `Rye flour` are visible and `Milk` is not;
-   - type ` RI ` → the same;
+   - type `ri` → `Rice` is visible; `Milk` and `Rye flour` are not (`ri` is a substring of 'rice' only);
+   - type ` RI ` → the same (`Rice` visible; `Milk` and `Rye flour` not);
    - type `zz` → `pantry-search-no-match` is visible;
    - tap its clear button → `Milk` is visible;
    - tap `Rice` with the keyboard open → the edit screen opens on the first tap; go back.

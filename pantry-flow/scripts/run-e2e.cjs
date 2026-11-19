@@ -57,6 +57,13 @@ await new Promise((resolve, reject) => {
       env: { ...process.env, MAESTRO_CLI_NO_ANALYTICS: '1', MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: 'true' },
     });
   fixture('status-verify');
+  fixture('search-seed');
+  run(maestro, [...maestroDevice, 'test', ...testOptions, '--format', 'junit', '--output', '.verification/maestro/slice-3-search.xml',
+    '--debug-output', '.verification/maestro/slice-3-search', '.maestro/slice-3-search.yaml'], {
+      shell: process.platform === 'win32',
+      env: { ...process.env, MAESTRO_CLI_NO_ANALYTICS: '1', MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: 'true' },
+    });
+  fixture('search-verify');
   const confirmationFlow = (file, callback, report = file) => run(maestro, [...maestroDevice, 'test', ...testOptions, '--format', 'junit',
     '--output', `.verification/maestro/${report}.xml`, '--debug-output', `.verification/maestro/${report}`,
     `.maestro/${file}.yaml`], { shell: process.platform === 'win32',
