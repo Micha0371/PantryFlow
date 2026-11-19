@@ -1,0 +1,91 @@
+appId: com.pantryflow.test
+name: Slice 3 pantry search journey
+---
+# Runs after slice-3-status.yaml, status-verify and search-seed. Starting state:
+# Alice's pantry has Milk (Out), Rice and Rye flour. Search is local filtering of
+# the loaded list, so it writes nothing; search-verify reads the rows back.
+- runScript: helpers/restore.js
+- launchApp:
+    clearState: true
+- runFlow:
+    file: helpers/login.yaml
+    env:
+      EMAIL: pf.test.alice@example.com
+- extendedWaitUntil:
+    visible: Milk
+    timeout: 15000
+- assertVisible: Rice
+- assertVisible: Rye flour
+
+# 1. "ri" matches only Rice by substring; Milk and Rye flour drop out.
+- tapOn:
+    id: pantry-search
+- inputText: ri
+- extendedWaitUntil:
+    notVisible: Milk
+    timeout: 15000
+- assertVisible: Rice
+- assertNotVisible: Rye flour
+- assertNotVisible:
+    id: pantry-search-no-match
+
+# 2. Case and edge spaces are ignored: " RI " gives the same result.
+- tapOn:
+    id: pantry-search
+- eraseText
+- inputText: " RI "
+- extendedWaitUntil:
+    notVisible: Milk
+    timeout: 15000
+- assertVisible: Rice
+- assertNotVisible: Milk
+- assertNotVisible: Rye flour
+
+# 3. No match shows its own state.
+- tapOn:
+    id: pantry-search
+- eraseText
+- inputText: zz
+- extendedWaitUntil:
+    visible:
+      id: pantry-search-no-match
+    timeout: 15000
+- assertNotVisible: Milk
+- assertNotVisible: Rice
+
+# 4. Its clear button restores the full list.
+- tapOn:
+    id: pantry-search-no-match-clear
+- extendedWaitUntil:
+    visible: Milk
+    timeout: 15000
+- assertVisible: Rice
+- assertVisible: Rye flour
+- assertNotVisible:
+    id: pantry-search-no-match
+
+# 5. Tapping a result with the keyboard open opens the edit screen on the first
+# tap (by the name text: the row's pressable combines several texts).
+- tapOn:
+    id: pantry-search
+- inputText: ri
+- extendedWaitUntil:
+    notVisible: Milk
+    timeout: 15000
+- tapOn: Rice
+- extendedWaitUntil:
+    visible:
+      id: edit-item-name
+    timeout: 15000
+# Plain title text: the edit form keeps taps (keyboardShouldPersistTaps="handled"),
+# so a tap on non-input text closes the keyboard. Never hideKeyboard (acts as Back).
+- tapOn: Edit Item
+- tapOn:
+    id: edit-item-cancel
+- extendedWaitUntil:
+    notVisible:
+      id: edit-item-name
+    timeout: 15000
+# The query survived the round trip.
+- assertVisible: Rice
+- assertNotVisible: Milk

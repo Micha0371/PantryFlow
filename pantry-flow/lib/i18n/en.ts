@@ -72,6 +72,14 @@ export const en = {
   empty_pantry_subtitle: 'Add your first item to get started.',
   empty_pantry_cta: 'Add Item',
 
+  // Pantry search
+  pantry_search_label: 'Search pantry',
+  pantry_search_placeholder: 'Search items',
+  pantry_search_clear: 'Clear search',
+  pantry_search_no_match_title: 'No matching items',
+  pantry_search_results_one: '1 item found',
+  pantry_search_results_many: 'items found',
+
   // Common
   common_cancel: 'Cancel',
   common_save: 'Save',
