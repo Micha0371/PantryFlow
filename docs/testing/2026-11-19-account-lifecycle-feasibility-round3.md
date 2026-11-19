@@ -10,6 +10,13 @@ Disclosure: one diagnostic command printed the disposable stack's well-known loc
 
 The discrepancies are folded into deletion spec v0.11.2.
 
+**Codex evidence review (`231e294`): request changes before closing local feasibility.** Qualifications that apply to the results below (deletion spec v0.11.3):
+- **Case 9 is not an exact commit-order check.** `c9_commit_order.js` sorts the commit timestamps as JavaScript dates (millisecond precision), then breaks ties by xid. That loses PostgreSQL's microsecond precision, so there may be more ties than the 2 counted in SQL, and xid order can't establish commit order. The result supports the recorded workload only. Round 3b redoes it.
+- **Case 6** computes the two resolvers' payloads sequentially. It shows identical payloads, not concurrent delivery or Resend deduplication.
+- **Case 7's** lost response is a simulation.
+- **Case 10** tests the pure selection function, not a restore or re-application exercise.
+- **The pending-only FENCE_ALL return** (v0.11.2) postdates these runs. The prototype returns every pre-existing id, so that rule is unverified.
+
 ## Subagent results
 
 

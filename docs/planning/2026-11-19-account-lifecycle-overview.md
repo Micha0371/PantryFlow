@@ -1,5 +1,14 @@
 # Account lifecycle — overview, threat model and decisions
 
+**Version 0.11.3, 2026-11-19.** This version responds to the Codex evidence review of round 3 (`231e294`). There were three Medium findings, with no redesign or policy decision:
+- the commit-order replay isn't an exact check yet;
+- FENCE_ALL's pending-only return is untested;
+- a lookup failure after a proven fence had contradictory generation outcomes.
+
+The spec and evidence are corrected and qualified (deletion spec v0.11.3).
+
+**Next:** a focused local round 3b (commit-order oracle, FENCE_ALL return, lookup-failure helper cases, constraint-specific `23503`), which needs owner authorization. The hosted, toolchain, phone, Edge/provider and operational gates stay open.
+
 **Version 0.11.2, 2026-11-19.** This version adds the [round-3 evidence](../testing/2026-11-19-account-lifecycle-feasibility-round3.md) for deletion spec v0.11.1, in a disposable local stack:
 - **Confirmed locally:** all 11 cases. Both missing-row orders, paused draining, stale versus newer, competing resolvers, ambiguous-then-gone, every D25 prefix, the commit-order-logged D20.7 (0 violations, not exhaustive), V02c selection logic, and the round-2 regression.
 - **Folded in:** seven clarifications (deletion spec v0.11.2), none a policy change.

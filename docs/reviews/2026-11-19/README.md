@@ -15,3 +15,9 @@ The reports mention material "beside this report" (a source archive and Jira JSO
 - Codex review of v0.10 (`0ecad1e`, delivered to the owner): V9-3 and V9-4 addressed. Three inconsistencies remained: maintenance blocked draining (High), contradictory ledger attribution with a resolver race (Medium), and an impossible missing-row interleaving (Medium). Version 0.11 corrects them. Round 3 is the next step; it should include paused draining, competing resolvers, both first-row orders, all prefixes and logged ordering.
 - Codex review of v0.11 (`d706d49`, delivered to the owner): core corrections sound. Two consistency fixes, applied in v0.11.1: restore selection still used removed outcome names (High), and D20 kept a contradictory ledger expectation (Medium). Round 3 recommended afterwards, with a restore-selection check.
 - Codex review of v0.11.1 (`072e60a`, delivered to the owner): both findings resolved in design, no new blocking finding. Technical clearance for local round 3 including V02c, with reproducible scripts, sanitized results, explicit expected outcomes and cleanup evidence. Not owner authorization; implementation and the hosted, phone, toolchain, retention and operational gates remain open.
+- Codex evidence review of round 3 and v0.11.2 (`231e294`, delivered to the owner): request changes before closing local feasibility. Three Medium findings:
+  - the case-9 replay lost timestamp precision and used an xid tie-breaker;
+  - the pending-only FENCE_ALL return is untested;
+  - a lookup failure after a proven fence had contradictory generation outcomes.
+
+  The other results support their narrower claims (case 6 sequential, case 7 simulated, case 10 a pure function). Version 0.11.3 corrects and qualifies them; round 3b is the focused follow-up. No redesign or policy decision is indicated.
