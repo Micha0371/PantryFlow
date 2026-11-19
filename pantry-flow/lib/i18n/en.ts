@@ -25,6 +25,11 @@ export const en = {
   status_in_stock: 'In Stock',
   status_low: 'Low',
   status_out: 'Out',
+  status_group_label: 'Status',
+  status_change_hint: 'Change status',
+  status_not_changed_title: 'Status not changed',
+  status_unconfirmed_title: 'Status change not confirmed',
+  item_edit_hint: 'Edit item',
 
   // Categories
   cat_dairy: 'Dairy',
@@ -99,6 +104,8 @@ export const en = {
   err_register_failed: 'Could not create account.',
   err_load_items: 'Could not load items.',
   err_save_item: 'Could not save item.',
+  err_status_unconfirmed: 'Check your connection. The list shows the saved status once it reloads.',
+  err_status_conflict: 'This item was just changed on another device. Its current status is shown.',
   err_delete_item: 'Could not delete item.',
   err_no_household: 'No household found. Please sign out and back in.',
   err_load_shopping: 'Could not load the shopping list.',

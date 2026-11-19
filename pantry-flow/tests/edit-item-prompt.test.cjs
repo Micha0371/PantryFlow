@@ -10,7 +10,7 @@ const pantryData = load('lib/pantry-data.ts', { './constants': constants, './pag
 const shoppingData = load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') });
 const pantryShopping = load('lib/pantry-shopping.ts');
 const t = key => key;
-const baseItem = { id: '1', name: 'Milk', category: 'dairy', location: 'fridge', status: 'in_stock' };
+const baseItem = { id: '1', household_id: 'h', name: 'Milk', category: 'dairy', location: 'fridge', status: 'in_stock' };
 
 function render({ updateItem, addItem, shopping = {}, current = 'in_stock' } = {}) {
   const item = { ...baseItem, status: current };
@@ -38,6 +38,12 @@ function render({ updateItem, addItem, shopping = {}, current = 'in_stock' } = {
       updateItem: async (id, input) => { log.updates++; return updateItem(id, input); } }) },
     '@/hooks/useShoppingItems': { useShoppingItems: () => ({ loading: false, items: [], ...shopping,
       addItem: async input => { log.adds.push(input); return (addItem ?? (async () => ({})))(input); } }) },
+    '@/hooks/useShoppingPrompt': load('hooks/useShoppingPrompt.ts', { 'react-native': native,
+      '@/hooks/useShoppingItems': { useShoppingItems: () => ({ loading: false, items: [], ...shopping,
+        addItem: async input => { log.adds.push(input); return (addItem ?? (async () => ({})))(input); } }) },
+      '@/lib/shopping-data': shoppingData, '@/lib/pantry-shopping': pantryShopping,
+      '@/lib/i18n': { useTranslation: () => ({ t }) },
+      '@/hooks/household-scope': { useHouseholdScope: () => ({ householdId: 'h' }) } }),
   });
   let renderer;
   act(() => { renderer = create(React.createElement(Screen)); });

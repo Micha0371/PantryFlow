@@ -51,6 +51,12 @@ await new Promise((resolve, reject) => {
       env: { ...process.env, MAESTRO_CLI_NO_ANALYTICS: '1', MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: 'true' },
     });
   fixture('shopping-verify');
+  run(maestro, [...maestroDevice, 'test', ...testOptions, '--format', 'junit', '--output', '.verification/maestro/slice-3-status.xml',
+    '--debug-output', '.verification/maestro/slice-3-status', '.maestro/slice-3-status.yaml'], {
+      shell: process.platform === 'win32',
+      env: { ...process.env, MAESTRO_CLI_NO_ANALYTICS: '1', MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: 'true' },
+    });
+  fixture('status-verify');
   const confirmationFlow = (file, callback, report = file) => run(maestro, [...maestroDevice, 'test', ...testOptions, '--format', 'junit',
     '--output', `.verification/maestro/${report}.xml`, '--debug-output', `.verification/maestro/${report}`,
     `.maestro/${file}.yaml`], { shell: process.platform === 'win32',

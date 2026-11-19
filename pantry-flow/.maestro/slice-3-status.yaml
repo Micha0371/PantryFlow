@@ -1,0 +1,214 @@
+appId: com.pantryflow.test
+name: Slice 3 pantry status journey
+---
+# Runs after slice-2-shopping.yaml and shopping-verify. Starting state: Alice's
+# pantry has Milk (Dairy, Low); shopping has Milk open and linked, and Rye bread
+# completed. Milk is the only pantry row, so the status control is matched by
+# its id pattern. status-verify reads the final rows back afterwards.
+- runScript: helpers/restore.js
+- launchApp:
+    clearState: true
+- runFlow:
+    file: helpers/login.yaml
+    env:
+      EMAIL: pf.test.alice@example.com
+- extendedWaitUntil:
+    visible: Milk
+    timeout: 15000
+
+# 1. Out, Add: the open Milk is a duplicate, so the notice shows and the status
+# stays changed. Taps: status, option, Add (3).
+- tapOn:
+    id: pantry-item-status-.*
+- extendedWaitUntil:
+    visible:
+      id: status-option-out
+    timeout: 15000
+- tapOn:
+    id: status-option-out
+- extendedWaitUntil:
+    visible:
+      text: Add to shopping list?
+    timeout: 15000
+- assertVisible:
+    id: android:id/message
+    text: Milk
+- tapOn:
+    id: android:id/button1
+- extendedWaitUntil:
+    visible:
+      text: Not added to the shopping list
+    timeout: 15000
+- assertVisible:
+    id: android:id/message
+    text: This item is already on your shopping list.
+- tapOn:
+    id: android:id/button1
+- extendedWaitUntil:
+    notVisible:
+      id: status-option-out
+    timeout: 15000
+- extendedWaitUntil:
+    visible: Out
+    timeout: 15000
+- assertVisible:
+    id: pantry-screen
+- assertVisible: Out
+- assertNotVisible: Low
+
+# 2. In Stock: no prompt. Taps: status, option (2).
+- tapOn:
+    id: pantry-item-status-.*
+- extendedWaitUntil:
+    visible:
+      id: status-option-in_stock
+    timeout: 15000
+- tapOn:
+    id: status-option-in_stock
+- extendedWaitUntil:
+    notVisible:
+      id: status-option-in_stock
+    timeout: 15000
+- extendedWaitUntil:
+    visible: In Stock
+    timeout: 15000
+- assertNotVisible: Add to shopping list?
+- assertNotVisible: Not added to the shopping list
+
+# 3. Complete the open Milk on the Shopping tab. The open-name unique index only
+# covers open items, so a new open Milk can be added next.
+- tapOn: Shopping
+- extendedWaitUntil:
+    visible:
+      id: shopping-section-open
+    timeout: 15000
+- tapOn:
+    id: shopping-toggle-.*
+    text: Milk
+- extendedWaitUntil:
+    visible:
+      text: Milk
+      below:
+        id: shopping-section-completed
+    timeout: 15000
+- assertNotVisible:
+    id: shopping-section-open
+- assertVisible:
+    text: Rye bread
+    below:
+      id: shopping-section-completed
+
+# 4. Low, Add: no notice, and a new open linked Milk exists. Taps: status,
+# option, Add (3).
+- tapOn: Pantry
+- extendedWaitUntil:
+    visible:
+      id: pantry-screen
+    timeout: 15000
+- tapOn:
+    id: pantry-item-status-.*
+- extendedWaitUntil:
+    visible:
+      id: status-option-low
+    timeout: 15000
+- tapOn:
+    id: status-option-low
+- extendedWaitUntil:
+    visible:
+      text: Add to shopping list?
+    timeout: 15000
+- tapOn:
+    id: android:id/button1
+- extendedWaitUntil:
+    notVisible:
+      id: status-option-low
+    timeout: 15000
+- extendedWaitUntil:
+    notVisible:
+      text: Add to shopping list?
+    timeout: 15000
+- extendedWaitUntil:
+    visible: Low
+    timeout: 15000
+- assertNotVisible: Not added to the shopping list
+- tapOn: Shopping
+# The open section only exists while an open item does: the new linked Milk.
+- extendedWaitUntil:
+    visible:
+      id: shopping-section-open
+    timeout: 15000
+- assertVisible:
+    text: Milk
+    below:
+      id: shopping-section-open
+- assertVisible:
+    text: Rye bread
+    below:
+      id: shopping-section-completed
+- assertNotVisible: Not added to the shopping list
+
+# 5. Out, Not now: nothing is added. Taps: status, option, Not now (3).
+- tapOn: Pantry
+- extendedWaitUntil:
+    visible:
+      id: pantry-screen
+    timeout: 15000
+- tapOn:
+    id: pantry-item-status-.*
+- extendedWaitUntil:
+    visible:
+      id: status-option-out
+    timeout: 15000
+- tapOn:
+    id: status-option-out
+- extendedWaitUntil:
+    visible:
+      text: Add to shopping list?
+    timeout: 15000
+- tapOn:
+    id: android:id/button2
+- extendedWaitUntil:
+    notVisible:
+      id: status-option-out
+    timeout: 15000
+- extendedWaitUntil:
+    notVisible:
+      text: Add to shopping list?
+    timeout: 15000
+- extendedWaitUntil:
+    visible: Out
+    timeout: 15000
+- assertNotVisible: Not added to the shopping list
+
+# 6. Selecting the current status again closes the selector and changes nothing.
+- tapOn:
+    id: pantry-item-status-.*
+- extendedWaitUntil:
+    visible:
+      id: status-option-out
+    timeout: 15000
+- tapOn:
+    id: status-option-out
+- extendedWaitUntil:
+    notVisible:
+      id: status-option-out
+    timeout: 15000
+- assertVisible: Out
+- assertNotVisible: Add to shopping list?
+
+# 7. The content control still opens the edit screen (by the name text: the row's
+# pressable combines several texts into one label).
+- tapOn: Milk
+- extendedWaitUntil:
+    visible:
+      id: edit-item-name
+    timeout: 15000
+- tapOn:
+    id: edit-item-cancel
+- extendedWaitUntil:
+    notVisible:
+      id: edit-item-name
+    timeout: 15000
+- assertVisible:
+    id: pantry-screen
+- assertVisible: Out

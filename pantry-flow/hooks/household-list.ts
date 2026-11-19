@@ -17,6 +17,8 @@ export function useHouseholdList<T extends { id: string; household_id: string }>
   const [loading, setLoading] = useState(true);
   const [loadedScope, setLoadedScope] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Counts accepted full reads; a provider uses it to reconcile its own state.
+  const [loadCount, setLoadCount] = useState(0);
   const generation = useRef(0);
   const mounted = useRef(true);
   const pendingItems = useRef(new Set<string>());
@@ -41,7 +43,7 @@ export function useHouseholdList<T extends { id: string; household_id: string }>
     try {
       const result = await load(supabase, householdId);
       if (isCurrent(scope) && request === generation.current) {
-        setItems(result); setLoadedScope(scope);
+        setItems(result); setLoadedScope(scope); setLoadCount(count => count + 1);
       }
     } catch {
       if (isCurrent(scope) && request === generation.current) setError(loadError);
@@ -60,7 +62,7 @@ export function useHouseholdList<T extends { id: string; household_id: string }>
   // Hide the previous household synchronously, before effects run.
   const visibleItems = householdId ? items.filter(it => it.household_id === householdId) : [];
   return {
-    user, householdId, scope, isCurrent, loadedScope, generation, pendingItems,
+    user, householdId, scope, isCurrent, loadedScope, loadCount, generation, pendingItems,
     setItems, setLoading, setError, visibleItems,
     // The read-side part of each provider's context value.
     view: {

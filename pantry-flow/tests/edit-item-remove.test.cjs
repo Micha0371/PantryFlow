@@ -13,7 +13,7 @@ const shoppingData = load('lib/shopping-data.ts', { './pagination': load('lib/pa
 const pantryShopping = load('lib/pantry-shopping.ts');
 const mutation = load('hooks/useItemMutation.ts', { 'expo-router': { useFocusEffect: () => {} } });
 const t = key => key;
-const item = { id: '1', name: 'Milk', category: 'dairy', location: 'fridge', status: 'in_stock' };
+const item = { id: '1', household_id: 'h', name: 'Milk', category: 'dairy', location: 'fridge', status: 'in_stock' };
 
 function render({ present = true, deleteResult = deferred(), drops = true, update = async () => item } = {}) {
   const state = { present, deleted: [], back: 0, alerts: [] };
@@ -44,6 +44,11 @@ function render({ present = true, deleteResult = deferred(), drops = true, updat
         return deleteResult.promise;
       } }) },
     '@/hooks/useShoppingItems': { useShoppingItems: () => ({ loading: false, items: [], addItem: async () => ({}) }) },
+    '@/hooks/useShoppingPrompt': load('hooks/useShoppingPrompt.ts', { 'react-native': native,
+      '@/hooks/useShoppingItems': { useShoppingItems: () => ({ loading: false, items: [], addItem: async () => ({}) }) },
+      '@/lib/shopping-data': shoppingData, '@/lib/pantry-shopping': pantryShopping,
+      '@/lib/i18n': { useTranslation: () => ({ t }) },
+      '@/hooks/household-scope': { useHouseholdScope: () => ({ householdId: 'h' }) } }),
   });
   act(() => { renderer = create(React.createElement(Screen)); });
   const missingShown = () => renderer.root.findAll(n =>

@@ -17,7 +17,14 @@ const inlineError = load('components/InlineError.tsx', { 'react-native': { Text:
 const shared = { 'react-native': native, '@/lib/theme': theme,
   '@/lib/i18n': { useTranslation: () => ({ t }) }, '@/components/Button': { Button: 'Button' },
   '@/hooks/useErrorAnnouncement': announcement, '@/components/InlineError': inlineError,
-  '@/hooks/useFormError': load('hooks/useFormError.ts'), };
+  '@/hooks/useFormError': load('hooks/useFormError.ts'),
+  // UX-01B list wiring: modules the pantry list imports, inert in these tests.
+  '@/components/StatusSelector': { StatusSelector: 'StatusSelector' },
+  '@/hooks/useShoppingPrompt': { useShoppingPrompt: () => ({ prompting: false, offer: () => {}, invalidate: () => {} }), notice: () => {} },
+  '@/lib/pantry-data': load('lib/pantry-data.ts', { './constants': load('lib/constants.ts'), './pagination': load('lib/pagination.ts') }),
+  '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'),
+  '@/lib/accessibility': { announce: () => {} },
+  '@/hooks/useItemMutation': load('hooks/useItemMutation.ts', { 'expo-router': { useFocusEffect: callback => React.useEffect(callback, [callback]) } }), };
 const politeRegions = renderer => renderer.root.findAll(n => n.type === 'View' && n.props.accessibilityLiveRegion === 'polite');
 // The real single-open hook runs with the same router stub; the list stays focused.
 const routerStubs = push => {
@@ -61,7 +68,7 @@ test('empty pantry offers add navigation and populated pantry opens the selected
     ...routerStubs(route => navigation.push(route)),
     '@expo/vector-icons': { Ionicons: 'Icon' },
     '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/PantryItem': { PantryItem: 'Item' },
-    '@/hooks/usePantryItems': { usePantryItems: () => ({ items, loading: false, error: null }) },
+    '@/hooks/usePantryItems': { usePantryItems: () => ({ items, loading: false, error: null, isUnconfirmed: () => false }) },
   });
   // The add action and the rows share one lock (KAN-38). The list never blurs
   // here, so the one-second fallback releases it before the row tap. The
@@ -89,7 +96,7 @@ test('fast repeated pantry row taps open one edit screen, even on different rows
     ...routerStubs(route => navigation.push(route)),
     '@expo/vector-icons': { Ionicons: 'Icon' },
     '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/PantryItem': { PantryItem: 'Item' },
-    '@/hooks/usePantryItems': { usePantryItems: () => ({ items, loading: false, error: null }) },
+    '@/hooks/usePantryItems': { usePantryItems: () => ({ items, loading: false, error: null, isUnconfirmed: () => false }) },
   });
   let renderer;
   act(() => { renderer = create(React.createElement(Screen)); });
@@ -107,7 +114,7 @@ test('fast repeated add taps open one add screen (KAN-38)', () => {
     ...routerStubs(route => navigation.push(route)),
     '@expo/vector-icons': { Ionicons: 'Icon' },
     '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/PantryItem': { PantryItem: 'Item' },
-    '@/hooks/usePantryItems': { usePantryItems: () => ({ items, loading: false, error: null }) },
+    '@/hooks/usePantryItems': { usePantryItems: () => ({ items, loading: false, error: null, isUnconfirmed: () => false }) },
   });
   let renderer;
   act(() => { renderer = create(React.createElement(Screen)); });
@@ -195,7 +202,7 @@ for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit
       useFocusEffect: callback => React.useEffect(callback, [callback]),
     } });
     let navigations = 0;
-    const existing = { id: '1', name: 'Oat milk', category: 'dairy', location: 'fridge', status: 'in_stock' };
+    const existing = { id: '1', household_id: 'h', name: 'Oat milk', category: 'dairy', location: 'fridge', status: 'in_stock' };
     const duplicate = async () => { throw { code: '23505' }; };
     const { default: Screen } = load(file, { ...shared,
       'expo-router': { useRouter: () => ({ back: () => navigations++ }), useLocalSearchParams: () => ({ id: '1' }) },
@@ -206,6 +213,11 @@ for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit
       '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
       '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
       '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'),
+      '@/hooks/useShoppingPrompt': load('hooks/useShoppingPrompt.ts', { 'react-native': native,
+        '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
+        '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
+        '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'), '@/lib/i18n': { useTranslation: () => ({ t }) },
+        '@/hooks/household-scope': { useHouseholdScope: () => ({ householdId: 'h' }) } }),
       '@/hooks/usePantryItems': { usePantryItems: () => ({ householdId: 'h', loading: false, error: null,
         addItem: duplicate, updateItem: duplicate, getItem: () => existing }) },
     });
@@ -319,7 +331,7 @@ for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit
       '@/lib/theme': theme, './InlineError': inlineError,
       '@/lib/accessibility': load('lib/accessibility.ts', { 'react-native': { Platform: { OS: 'android' },
         AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } } }) });
-    const existing = { id: '1', name: 'Oat milk', category: 'dairy', location: 'fridge', status: 'in_stock' };
+    const existing = { id: '1', household_id: 'h', name: 'Oat milk', category: 'dairy', location: 'fridge', status: 'in_stock' };
     const { default: Screen } = load(file, { ...shared,
       'expo-router': { useRouter: () => ({ back: () => {} }), useLocalSearchParams: () => ({ id: '1' }),
         useFocusEffect: callback => React.useEffect(callback, [callback]) },
@@ -332,6 +344,11 @@ for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit
       '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
       '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
       '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'),
+      '@/hooks/useShoppingPrompt': load('hooks/useShoppingPrompt.ts', { 'react-native': native,
+        '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
+        '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
+        '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'), '@/lib/i18n': { useTranslation: () => ({ t }) },
+        '@/hooks/household-scope': { useHouseholdScope: () => ({ householdId: 'h' }) } }),
       '@/hooks/usePantryItems': { usePantryItems: () => ({ householdId: 'h', loading: false, error: null,
         addItem: async () => ({}), updateItem: async () => ({}), getItem: () => existing }) },
     });
@@ -393,6 +410,11 @@ test('the Edit Item screen announces a missing item or failed load as an alert (
     '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
     '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
     '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'),
+    '@/hooks/useShoppingPrompt': load('hooks/useShoppingPrompt.ts', { 'react-native': native,
+      '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
+      '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
+      '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'), '@/lib/i18n': { useTranslation: () => ({ t }) },
+      '@/hooks/household-scope': { useHouseholdScope: () => ({ householdId: 'h' }) } }),
     '@/hooks/usePantryItems': { usePantryItems: () => ({ householdId: 'h', loading: false, error: 'err_load_items',
       retry: () => {}, updateItem: async () => ({}), deleteItem: async () => {}, getItem: () => undefined }) },
   });

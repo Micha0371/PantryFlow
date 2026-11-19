@@ -22,7 +22,7 @@ export function useSingleOpen() {
     clearTimer();
     return () => { blurred.current = true; };
   }, [clearTimer]));
-  return useCallback((route: Href) => {
+  const open = useCallback((route: Href) => {
     if (locked.current) return;
     locked.current = true;
     blurred.current = false;
@@ -33,4 +33,6 @@ export function useSingleOpen() {
       if (!blurred.current) locked.current = false;
     }, FALLBACK_MS);
   }, [router, clearTimer]);
+  // Lets other controls on the screen (the status badge) honor the same lock.
+  return Object.assign(open, { isLocked: () => locked.current });
 }
