@@ -194,7 +194,7 @@ Each issue below gets a dated comment pointing here; descriptions stay unchanged
 - **Sign-out evidence (corrected after the Codex review of v0.6, V6-1):**
   - All devices count as signed out only on an HTTP **204** from a global logout made with a live session.
   - `session_not_found` proves only that the presented session is gone.
-  - **Disposition of that case, proposed as OD-A11 and recommended by the Codex review of v0.7; awaiting owner confirmation:**
+  - **Disposition of that case, OD-A11: accepted by the owner as specified on 2026-11-19** (recommended by the Codex review of v0.7):
     - the user signs in again with **the same account** (the returned user id must match the pending operation);
     - a logout of all *other* sessions from the new session must return 204;
     - the user then stays signed in on that fresh, ordinary password session;
