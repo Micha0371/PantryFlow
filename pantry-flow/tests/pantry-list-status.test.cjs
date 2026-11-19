@@ -22,7 +22,7 @@ function render({ items: initial = [mk('1', 'Milk', 'in_stock')], addItem } = {}
   const set = fn => act(() => { fn(); store.force(); });
   store.commit = (id, status) => { store.items = store.items.map(i => (i.id === id ? { ...i, status } : i)); store.force(); };
 
-  const native = { Text: 'Text', View: 'View', ActivityIndicator: 'Spinner', Pressable: 'Pressable', Modal: 'Modal',
+  const native = { Keyboard: { dismiss: () => {} }, Text: 'Text', View: 'View', ActivityIndicator: 'Spinner', Pressable: 'Pressable', Modal: 'Modal',
     Platform: { OS: 'android' }, StyleSheet: { create: s => s, absoluteFill: {} },
     useWindowDimensions: () => ({ width: 400, height: 800 }),
     AccessibilityInfo: { setAccessibilityFocus: () => {} }, findNodeHandle: () => null,
@@ -56,6 +56,7 @@ function render({ items: initial = [mk('1', 'Milk', 'in_stock')], addItem } = {}
     '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/Button': { Button: 'Button' },
     '@/components/PantryItem': row, '@/components/StatusSelector': selector,
     '@/hooks/useItemMutation': mutation, '@/hooks/useShoppingPrompt': prompt,
+    '@/hooks/useKeyboardOverlap': { useKeyboardOverlap: () => 0 },
     '@/hooks/useSingleOpen': { useSingleOpen: () => {
       const go = path => { log.nav.push(path); log.navLocked = true; };
       go.isLocked = () => Boolean(log.navLocked);
@@ -65,6 +66,7 @@ function render({ items: initial = [mk('1', 'Milk', 'in_stock')], addItem } = {}
     '@/lib/accessibility': { announce: m => log.announced.push(m) },
     '@/lib/pantry-data': pantryData, '@/lib/pantry-shopping': pantryShopping,
     '@/lib/status-menu': statusMenu,
+    '@/components/SearchField': { SearchField: 'SearchField' }, '@/lib/pantry-search': { filterItemsByName: items => items },
     '@/hooks/usePantryItems': { usePantryItems: () => {
       const [, bump] = React.useState(0);
       store.force = () => bump(n => n + 1);
