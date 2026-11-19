@@ -1,5 +1,19 @@
 # Password policy, recovery and session lifecycle — technical specification
 
+**Version 0.5, 2026-11-19, responding to the Codex review of `f1028869` (`docs/reviews/2026-11-19/specs-v0.4-review.md`).**
+
+**Changes in 0.5** (Codex N3, N4, N7, the `ab83b0f` delta, and the auth-operation race):
+- **Session transition after any password update, confirmed or reconciled (N3 + N4):**
+  1. a fresh password sign-in through the isolated client;
+  2. adopt that session;
+  3. `signOut({ scope: 'others' })` from it.
+
+  "Confirmed" then claims only what is proven: this password authenticates, and every other session, **including the recovery session**, is revoked server-side. It never claims "the update completed". This replaces the literal "current session continues" rule [Owner OD-A10] (§3.3, §4.1, §4.3).
+- **Uncertainty is preserved:** a failed sign-in after an unknown update is "not confirmed", never "not changed" (§3.3).
+- **Announcements (N7):** visual feedback is separate from a controlled announcement channel (§2.6).
+- **Error mapping (delta):** `validation_failed` means "too long" only with matching input context, and unknown outcomes never claim "not changed" (§2.6).
+- **App-level auth-operation lock:** for exchange, sign-in and sign-out (§3.4).
+
 **Version 0.4, 2026-11-19, for the focused Codex follow-up review.** Implementation is not authorized.
 
 **Changes in 0.4** (owner requirement, 2026-11-19): inline password-validation feedback for registration, reset and change (section 2.6), with tests P08–P16.
@@ -156,7 +170,7 @@ The value is evaluated exactly as given: never trimmed, normalized or truncated.
 | Server authoritative | A server rejection (422 `weak_password`, 400 too long, `pwned`, or any rule the client doesn't mirror) shows the matching localized message even when the client evaluation passed. The client never treats its own pass as success. |
 | Visibility toggle | A "Show password" / "Hide password" button with role button, `accessibilityState` reflecting the state, and a 48 dp target. It toggles `secureTextEntry` without clearing or changing the value; on Android the cursor stays at the end. |
 | Password managers and autofill | New-password fields use `autoComplete="new-password"` and `textContentType="newPassword"`. Current-password and sign-in fields use `current-password` / `password`. Paste is never blocked. `autoCorrect` and `autoCapitalize` are off. |
-| Accessibility | The policy line is the field's accessibility hint. The status line sits in a polite live region, but only **state changes** are announced: entering "more needed", reaching the minimum, becoming too long, and back. A remaining-count announcement happens at most once, after 1 second without input, never per keystroke. Submit errors are announced with the existing form-error mechanism (KAN-84 `announceKey`). |
+| Accessibility | The policy line is the field's accessibility hint. **Visual feedback and announcements are separate (N7):**<ul><li>The visible status line updates every keystroke and is **not** a live region.</li><li>Announcements go through one controlled call, `announce()` (`AccessibilityInfo.announceForAccessibility`), and only on **state changes**: entering "more needed", reaching the minimum, becoming too long, and back.</li><li>A remaining-count announcement happens at most once, after 1 second without input.</li><li>Deleting characters or pasting triggers only the state-change rule.</li></ul>Submit errors use the existing form-error mechanism (KAN-84 `announceKey`). Real TalkBack behaviour is verified on the phone (P13b). |
 | Localization | All strings come from `lib/i18n` (English now; German listed for KAN-60, not longer than the English). |
 
 **Server error mapping** (owner clarification, 2026-11-19; added after review baseline `f1028869`):
@@ -168,15 +182,18 @@ The value is evaluated exactly as given: never trimmed, normalized or truncated.
 | 422 `weak_password`, reason `length` | "Use at least 15 characters." |
 | 422 `weak_password`, reason `characters` (only if a composition rule were ever configured; not planned) | "This password doesn't meet the requirements." |
 | 422 `weak_password`, reason `pwned` | "This password has appeared in a data breach. Choose a different one." |
-| 400 `validation_failed` (longer than 72 bytes) | The §2.6 too-long message |
+| 400 `validation_failed` **and** the submitted value's UTF-8 length exceeds 72 bytes (client-side context) | The §2.6 too-long message |
+| 400 `validation_failed` without that context | "This password can't be used. Check the requirements above." |
 | 422 `same_password` | "Choose a password different from your current one." |
 | `current_password_required`, `current_password_invalid`, `current_password_mismatch` | "Current password is incorrect." |
 | `reauthentication_needed` (recovery) | "This reset session has expired. Request a new link." |
 | 429 or `over_request_rate_limit` | "Too many attempts. Wait a moment and try again." |
-| Network error or 5xx | "We couldn't reach the service. Check your connection and try again." Never "changed" or "saved". |
-| Any other or unknown code | "Something went wrong. Your password was not changed." The code goes to a scrubbed diagnostic only; no message text, password or token. |
+| Network error, timeout or 5xx **after the request was sent** | Treated as UpdateUnknown: "We couldn't confirm whether your password was changed." Never "changed", "saved" or "not changed". |
+| Network error before sending | "We couldn't reach the service. Check your connection and try again." |
+| Any other 4xx code (a definitive rejection) | "Something went wrong. Your password was not changed." |
+| Any other or unknown outcome where a commit can't be excluded | The UpdateUnknown message, never "not changed". The code goes to a scrubbed diagnostic only; no message text, password or token. |
 
-Unit test P17 checks the mapping for every row, including an unknown code.
+Unit test P17 checks the mapping for every row. It covers raw provider fixtures **and** the SDK-normalized errors (`AuthWeakPasswordError` with its `reasons`, `AuthApiError.code`, `AuthRetryableFetchError`), multiple weakness reasons at once, and the ambiguous cases (5xx or timeout after send, an unknown 4xx, `validation_failed` with and without the over-72-byte context).
 
 **Replaces the current hint.** Today both the sign-in and registration password fields show the placeholder "At least 6 characters" (`auth_password_placeholder`). Registration also blocks submit with `password.length < 6`, which counts UTF-16 units. Those match today's server minimum of 6 but not this policy:
 - a placeholder disappears on the first keystroke;
@@ -234,11 +251,15 @@ stateDiagram-v2
     RecoveryPending --> UpdatePending: submit a valid new password
     RecoveryPending --> SignedOut: Cancel, recovery session signed out
     UpdatePending --> RecoveryPending: confirmed rejection, weak or too long
-    UpdatePending --> Confirmed: 200
+    UpdatePending --> Transition: 200
     UpdatePending --> UpdateUnknown: no response
-    UpdateUnknown --> Confirmed: isolated sign-in with the intended password succeeds
-    UpdateUnknown --> RecoveryPending: isolated sign-in rejected, so not committed; or app closed
-    Confirmed --> SignedIn: current session continues
+    UpdateUnknown --> Transition: user taps Check, isolated sign-in with the intended password succeeds
+    UpdateUnknown --> UpdateUnknown: sign-in rejected or failed, not confirmed and may still be pending
+    UpdateUnknown --> UpdatePending: user resubmits the same in-memory value
+    Transition --> Confirmed: password session adopted, signOut others 204
+    Transition --> TransitionIncomplete: adoption or signOut others failed
+    TransitionIncomplete --> Confirmed: retry signOut others 204, idempotent, no password
+    Confirmed --> SignedIn: new password session
 ```
 
 ### 3.3 State details
@@ -254,27 +275,31 @@ stateDiagram-v2
 | **ExchangeUnknown** | The SDK already removed the verifier, so a retry is impossible: "We couldn't complete the reset. Request a new link." If a session was in fact saved, the cold-start rule below applies. |
 | **RecoveryPending** | The screen shows "Set a new password for {email}", with no tab access. **Cold start:** with a stored session whose `amr` includes `recovery` and whose `session_id` differs from the stored marker `pf.recovery.completed`, the app opens this screen instead of the tabs. The marker is not secret; it relaxes gating only after a confirmed success. **Cancel:** `signOut({ scope: 'local' })` revokes the recovery session server-side; the password is unchanged. |
 | **UpdatePending** | `updateUser({ password })`. Confirmed rejections: 422 `weak_password` gives the policy message; 400 too long gives the length message; 422 `same_password` gives "Choose a password different from your current one"; `reauthentication_needed` gives "This reset session has expired. Request a new link." and signs out. `same_password` is only ever a rejection. It is never read as proof that an earlier request succeeded, because it would equally match an old password the user happened to re-enter. |
-| **UpdateUnknown** | No response, so the password may or may not have been committed. Set `pf.recovery.uncertain = session_id` (not secret). The typed value stays in component memory only while the screen is mounted, is never persisted, and is never resent automatically. "We couldn't confirm the change. Tap Check." **Reconciliation by explicit authentication** (see the table below). |
+| **UpdateUnknown** | No response, so the password may or may not have been committed, **or may still commit later**. Set `pf.recovery.uncertain = session_id` (not secret). The typed value stays in component memory only while the screen is mounted, is never persisted, and is never resent automatically. "We couldn't confirm whether your password was changed. Tap Check." |
+| **Transition** (N3 + N4) | Entered after a 200 or a successful Check:<ol><li>Sign in with the intended password through the **isolated, non-persisting** client and assert the same user id.</li><li>Adopt that fresh password session into the shared client (`setSession`).</li><li>From the adopted session, call `signOut({ scope: 'others' })`. That revokes **every other session server-side, including the recovery session** that carried the current-password exemption, whether or not the update itself revoked them.</li></ol> |
+| **TransitionIncomplete** | Adoption or `signOut others` failed (network). "Your new password works, but other devices may still be signed in. Tap Retry." Retrying `signOut({ scope: 'others' })` is idempotent and needs no password. Until it succeeds, `pf.recovery.completed` is **not** set, so cold start returns here. |
+| **Confirmed** | Only after `signOut others` returns 204. Set `pf.recovery.completed`, clear `pf.recovery.uncertain`, announce, open the tabs. **What it claims:**<ul><li>"Your password is now the one you entered."</li><li>"Other devices are signed out."</li></ul>**What it never claims:** that a particular update request completed. If the entered password equalled the old one and its `same_password` rejection was lost, the claims are still true: that password authenticates, and other sessions were revoked by the explicit sign-out (N3 counterexample). |
 
-**UpdateUnknown reconciliation.** On a user tap, the app signs in with the intended password through an isolated, non-persisting client (memory storage, `persistSession: false`, `autoRefreshToken: false`, `detectSessionInUrl: false`), never through the shared client.
+**Check (UpdateUnknown reconciliation).** This is the same isolated sign-in as step 1 of Transition, on a user tap:
 
-| Result of the isolated sign-in | Meaning | Next step |
+| Isolated sign-in result | Meaning | Next step |
 |---|---|---|
-| Success, for the same user id | The intended password is current | Sign the temporary session out at once (`signOut({ scope: 'local' })`, which revokes it server-side); **Confirmed** |
-| `invalid_credentials` | The intended password is not current, so the update did not commit | Back to RecoveryPending with "Your password was not changed. Try again." The user submits again by choice |
+| Success, same user id | The intended password authenticates now | Continue with Transition steps 2–3 |
+| `invalid_credentials` | Not confirmed. The update may not have committed **or may still be pending** | Stay in UpdateUnknown: "We couldn't confirm the change yet." Offer **Check again** and **Resubmit**, which resends the same in-memory value by user choice. It never says "not changed" |
 | Rate limit, network error or 5xx | Still unknown | Stay in UpdateUnknown |
 
-- **After a restart:** the value is gone. With `pf.recovery.uncertain` set, RecoveryPending asks for the password. The app first runs the same isolated sign-in check with what was typed. If it succeeds, the state is Confirmed without an update; otherwise it is a normal update.
-- **If the temporary session cannot be signed out** (network): its tokens exist only in memory and are discarded. The server row is a residual orphan session until the provider's session limits remove it, and it is documented.
-- **Cost:** each check consumes one sign-in against the token rate limit.
-- The same reconciliation applies to the in-app change (section 4.3), without the recovery markers. |
-| **Confirmed** | Set `pf.recovery.completed = session_id`, clear `pf.recovery.uncertain`, announce, open the tabs. The current session continues. Every other session was deleted in the same transaction as the hash write (section 4.1). |
+- **Resubmitting** reuses the same in-memory value. Changing the value while an earlier update might still be pending is allowed, but it is a new attempt: the final state is whatever value a later Check confirms. A late-committing earlier update can only make that Check fail, never produce a false "Confirmed" (test R10c).
+- **After a restart:** the value is gone. With `pf.recovery.uncertain` set, RecoveryPending asks for the password and runs Check with what was typed. Success goes to Transition; otherwise it is a normal update.
+- **Temporary sessions:** the isolated client's session *becomes* the adopted session in Transition, so no extra session is created. If the app dies between steps 1 and 2, the isolated session is an in-memory orphan. That residual is documented, and the next `signOut others` revokes it.
+- **Cost:** each Check or Transition consumes one sign-in against the token rate limit.
+- The same Transition and Check apply to the in-app change (section 4.3), without the recovery markers.
 
 ### 3.4 Further cases
 
 - **Overlapping requests.** auth-js 2.119.0 keeps verifiers per flow, and the native app passes no `flowId`. [Feasibility FV-A3]: establish whether an older link still works after a newer request on React Native. The specified outcome is either "the older link works" or LinkInvalid with the most-recent-email message. Experimental flow-id options are not used without review.
 - **Another installation or device:** the verifier is missing, so LinkInvalid applies. PKCE is never disabled to make such links work.
 - **Background or kill:** before exchange, the link is processed again on resume if the OS redelivers it. Otherwise the user opens it again. After exchange, the cold-start rule restores RecoveryPending.
+- **Auth-operation lock:** the app runs at most one auth operation at a time (exchange, sign-in, sign-out, Transition, Check) through a single app-level async lock, in addition to the SDK's own lock. A recovery link that arrives while another auth operation is running waits for it, then re-evaluates the ActiveSessionBlock rule. A late exchange can therefore never overwrite a session selected in the meantime (test R17).
 - **Wrong-purpose links** (signup confirmation, email change) arriving at `auth/reset`: there is no recovery mark, so the link is classified as NotRecovery and follows the existing confirmation behavior, including its active-session rejection. Recovery UI never appears.
 
 ## 4. Password update and session contract
@@ -285,18 +310,15 @@ stateDiagram-v2
 
 | Event | Current session | Other sessions (refresh) | Outstanding access JWTs |
 |---|---|---|---|
-| Recovery update confirmed | Continues (same `session_id`) | Deleted in the same transaction as the password write | Still accepted by PostgREST until `exp` (≤ 3600 s with the local default). Rejected by Auth endpoints (`session_not_found`). |
-| In-app change confirmed | Continues | Deleted in the same transaction | Same |
+| Recovery update confirmed | **Replaced** by a fresh password session (Transition, [OD-A10]). The recovery session is revoked by `signOut others` | Deleted in the update transaction **and** again by `signOut others` | Still accepted by PostgREST until `exp` (≤ 3600 s with the local default). Rejected by Auth endpoints (`session_not_found`). |
+| In-app change confirmed | Replaced by a fresh password session (Transition) | Same | Same |
 | Update rejected | Unchanged | Unchanged | Unchanged |
-| Update outcome unknown | Continues either way (the provider never deletes the calling session) | Deleted if and only if the password was committed | Same |
+| Update outcome unknown | Continues until Check succeeds and Transition runs | Deleted if the password was committed; always deleted by Transition's `signOut others` once confirmed | Same |
 
 **Consequences:**
 - Codex F2's "password committed but revocation failed" cannot occur on v2.197.0 when the request carries a session id: both happen in one transaction.
 - "Revocation response lost" is the same event as "update response lost", handled by UpdateUnknown.
-- No separate revocation call is required.
-- **Fallback, kept in the design but not called on v2.197.0:**
-  - If a future provider version stops revoking in the same transaction (FV-A6 re-run on every Auth upgrade), the app calls `signOut({ scope: 'others' })` after a confirmed update.
-  - That call is idempotent and needs no password, so it can be retried until confirmed.
+- **The app never relies on the update's own revocation for its claims (N3).** Transition always calls `signOut({ scope: 'others' })` from the fresh password session. That is idempotent, needs no password, and is retried until it returns 204. The provider's atomic revocation remains a defence in depth.
 - **Residual window:** another device's already-issued JWT can still read and write pantry data through PostgREST until it expires. This is documented, not hidden. [Owner OD-A8]: keep the 3600 s default (recommended) or shorten `jwt_expiry`.
 
 ### 4.2 Identifying the current session
@@ -311,7 +333,14 @@ stateDiagram-v2
 **Recovery exemption: can an ordinary session exploit it?** In v2.197.0 the exemption applies when *any* `amr` entry of the calling session is `recovery`, `otp` or `magiclink` (`Session.IsRecovery`).
 - **Who can create such an entry:** only the flows that create a new session: recovery link, email OTP or magic link. Each requires control of the account's mailbox.
 - **Who cannot:** an ordinary password session cannot add such an entry to itself. Token refresh adds no `amr` entry (`tokens/service.go` refresh path), and adding a claim happens only when a session is issued.
-- **Conclusion:** the exemption is reachable only with mailbox control, which already allows a full reset and is out of scope in the threat model.
+- **Conclusion for creation:** a *new* exempt session needs mailbox control, which already allows a full reset and is out of scope in the threat model.
+- **Theft of an existing recovery session (Codex N4):**
+  - `IsRecovery()` has no freshness condition, and the recovery `amr` persists through refresh and password update (FV-A4). Under the v0.4 "current session continues" rule, a stolen copy of a completed recovery session could have changed the password again without the current password.
+  - **v0.5 removes that:** Transition replaces the recovery session with a fresh password session and revokes it server-side with `signOut others` before Confirmed [OD-A10].
+  - **Residuals, explicit for owner disposition:**
+    - theft *during* RecoveryPending, before completion, which is equivalent to mailbox compromise;
+    - TransitionIncomplete while offline: the recovery session lives until `signOut others` succeeds, and the app keeps retrying and shows the warning.
+  - Test R15b checks this directly against the API.
 - **Residual:** the provider's email OTP and magic-link sign-in can't be disabled separately from email sign-in. That is equivalent to recovery and documented.
 - **Verification:** [Feasibility FV-A5] covers both the setting and the exemption (tests R15).
 
@@ -377,8 +406,13 @@ Destructive or concurrency tests run only in a disposable stack, never against t
 | R07 | Active A, own link | Same block plus the Change password pointer | Comp |
 | R08 | Overlap and missing verifier | Per FV-A3 outcome; another installation gives LinkInvalid | Native |
 | R09 | Interruption | Background or kill before submit restores RecoveryPending; nothing routes to the tabs | Native |
-| R10 | Lost update response | (a) Fault proxy drops the 200 after commit → UpdateUnknown → isolated sign-in with the intended password succeeds → Confirmed, and the temporary session is revoked (its refresh fails). (b) The proxy drops the request before Auth → isolated sign-in gets `invalid_credentials` → "not changed". No automatic resend; no password in storage, checked by dumping AsyncStorage keys | Auth + Comp |
-| R11 | Session effects | With two other sessions plus the recovery session: after Confirmed, the others' refresh fails and the recovery session refreshes. Other sessions' JWTs: Auth `GET /user` gives 403 `session_not_found`; PostgREST still serves until `exp` (documents the window) | Auth |
+| R10b | `same_password` ambiguity | With three other sessions, the user submits the **existing** password; the 422 is dropped by the fault proxy → UpdateUnknown → Check succeeds → Transition → Confirmed. Assert: the UI claims only "this password works / others signed out", and the other sessions are revoked by `signOut others`. No "update completed" claim | Auth + Comp |
+| R10c | Delayed successful update | The update is held server-side past the client timeout. Check fails (`invalid_credentials`) → stays UpdateUnknown with no "not changed". Release the update, then Check again → Transition → Confirmed. Resubmitting the same value converges | Auth + Comp |
+| R15b | Stolen continuing recovery session | Copy the recovery session's refresh token before Confirmed. After Transition: the copy's refresh fails and its access token gets `session_not_found` at Auth, so it can no longer change the password. A copy taken *before* completion can (documented residual) | Auth |
+| R17 | Auth-operation race | Pause an exchange, attempt a competing sign-in or sign-out, then release: operations serialize through the app lock; the selected session is never silently overwritten; ActiveSessionBlock is re-evaluated | Comp + Native |
+| P13b | TalkBack on the phone | Typing, pausing, deleting, pasting, crossing 15 and crossing 72 bytes: announcements only on state changes plus at most one paused count; no per-keystroke speech; the cursor and autofill behave natively | Native (owner) |
+| R10 | Lost update response | (a) The fault proxy drops the 200 after commit → UpdateUnknown → Check succeeds → Transition (the isolated session is adopted; `signOut others` returns 204) → Confirmed. (b) The proxy drops the request before Auth → Check gets `invalid_credentials` → stays UpdateUnknown with "couldn't confirm yet", never "not changed". No automatic resend; no password in storage, checked by dumping AsyncStorage keys | Auth + Comp |
+| R11 | Session effects | With two other sessions plus the recovery session: after Confirmed, the others' **and the recovery session's** refresh fail, and only the adopted fresh password session refreshes. Revoked sessions' JWTs: Auth `GET /user` gives 403 `session_not_found`; PostgREST still serves until `exp` (documents the window). TransitionIncomplete → retrying `signOut others` → the same end state | Auth |
 | R12 | Rejection keeps sessions | Weak or too-long update leaves all sessions able to refresh | Auth |
 | R13 | In-app change | With OD-A4 enabled: a missing or wrong current password is rejected; correct current password plus a valid new one is accepted; other sessions are revoked | Auth + Comp |
 | R15 | Recovery exemption | With `update_password_require_current_password` on: a password session updating without the current password → `current_password_required`; after a refresh → still required; a recovery session → accepted; a session that only refreshed, never via recovery or OTP → required | Auth |

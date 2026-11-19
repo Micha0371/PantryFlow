@@ -7,3 +7,4 @@ The independent Codex reviews that the account-lifecycle specifications (`docs/p
 - `decision-record-reviewed.md`: Codex's frozen copy of the decision record it reviewed. It is identical to `docs/planning/2026-11-19-slice-3-decision-record.md` as merged.
 
 The reports mention material "beside this report" (a source archive and Jira JSON snapshots). That material is deliberately not committed; the repository history and Jira hold the originals.
+- `specs-v0.4-review.md`: the Codex review of baseline `f1028869` (v0.4) plus the `ab83b0f` delta. Verdict NO-GO, with findings N1–N8; version 0.5 of the specifications responds to it.

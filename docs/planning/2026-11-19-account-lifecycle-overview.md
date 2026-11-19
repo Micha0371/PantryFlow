@@ -1,6 +1,31 @@
 # Account lifecycle — overview, threat model and decisions
 
-**Version 0.3, 2026-11-19, for the focused Codex follow-up review.** 0.2 recorded the owner decisions of 2026-11-19 (section 4). 0.3 adds the runtime results from the [feasibility evidence](../testing/2026-11-19-account-lifecycle-feasibility.md) (section 3) and the new decisions OD-A9 and OD-B7.
+**Version 0.5, 2026-11-19.** This version responds to the Codex review of baseline `f1028869` (`docs/reviews/2026-11-19/specs-v0.4-review.md`), whose verdict was NO-GO with five High findings, N1–N5.
+
+- 0.5 corrects N1–N8 and the `ab83b0f` delta:
+  - deletion guard without expiry;
+  - fence-then-lookup quiescence;
+  - the session transition after password updates;
+  - a crash-safe intent/outcome ledger;
+  - the external-request challenge;
+  - controlled announcements;
+  - one temporary-session lifecycle.
+- It adds owner decisions OD-A10 and OD-B8, and updates OD-B6.
+- 0.2 recorded the owner decisions; 0.3 added the runtime results from the [feasibility evidence](../testing/2026-11-19-account-lifecycle-feasibility.md).
+
+**Codex findings N1–N8, where 0.5 addresses them:**
+
+| Codex finding | 0.5 correction | Where |
+|---|---|---|
+| N1 (High) expiry disables the guard | No time condition: `pending` is always guarded, `fenced` is refused, and only users who never had a row are unguarded | Deletion §2, §4.2; D17, D21 |
+| N2 (High) "user exists" isn't a rollback proof | FENCE(U) waits for a mid-commit delete (FOR SHARE vs UPDATE) before the lookup; the status request does app reconciliation; `GET /user` 200 is never terminal | Deletion §5.1, §5.2; D11, D20 |
+| N3 (High) authentication doesn't prove update or revocation | Transition: an isolated password sign-in, adoption, then an explicit `signOut others`. Confirmed claims only "this password works, others are signed out"; failed checks stay unknown | Password §3.3, §4.1; R10, R10b, R10c, R11 |
+| N4 (High) a stolen continuing recovery session | Transition revokes the recovery session server-side before Confirmed. Residuals (theft during RecoveryPending; offline TransitionIncomplete) go to the owner as [OD-A10] | Password §4.3; R15b |
+| N5 (High) the ledger crash gap | Intent before dispatch (no intent, no dispatch), outcome after, Resend idempotency keys; unresolved intents block restoration [OD-B8] | Deletion §7; D19, V02 |
+| N6 (Medium) external identity | A 128-bit, single-use, 7-day challenge sent to the account address; forged-sender and replay rejection | Deletion §7; V03 |
+| N7 (Medium) live region versus announcement limits | A visual line without a live region, plus a controlled `announce()` on state changes; phone TalkBack check | Password §2.6; P13, P13b |
+| N8 (Low) temporary-session contradiction | One lifecycle: in memory until a terminal result; orphan on app death documented | Deletion §3, §5.2; D23 |
+| Delta `ab83b0f` | `validation_failed` means "too long" only with the over-72-byte context; unknown or post-send failures never say "not changed"; P17 covers SDK-normalized errors | Password §2.6 |
 
 This page connects the two technical specifications:
 - [password policy, recovery and sessions](2026-11-19-password-recovery-session-spec.md) ("password spec", items marked A);
@@ -41,12 +66,12 @@ Codex review: original findings H1–H5 and M1–M3; follow-up findings F1–F3.
 | Finding | Disposition | Where | Status |
 |---|---|---|---|
 | H1 Freshness has no server-verifiable contract | Two mechanisms specified. B (fresh sign-in, `amr` password ≤ 300 s, live session, caller-bound, no target field) is recommended over A (password in the function), because of A's shared rate-limit bucket | Deletion §3 | Specified; OD-B1, FV-B4 |
-| H2 Household safety and transaction boundary | Exact graph G1–G4; `BEFORE DELETE` guard on `auth.users` with row locks inside Auth's deletion transaction, active only for self-service requests; lock-order rule for privileged writers | Deletion §4 | Specified; OD-B2, FV-B1, FV-B2 |
+| H2 Household safety and transaction boundary | G1–G4 with row locks inside Auth's deletion transaction. 0.5: no expiry (N1) and fencing (N2), so a self-service deletion is always guarded | Deletion §2, §4, §5.1 | Specified (Codex 0.4: partial); FV-B1 hosted, D20/D21 to prove |
 | H3 Fifteen characters is version-dependent; byte maximum | Code points for the minimum and 72 UTF-8 bytes for the maximum; v2.198.0 or later required (v2.197.0 counts bytes); full boundary table | Password §2 | Blocked on OD-A1, FV-A1, FV-A2 |
 | H4 Recovery purpose, active account, restart | State machine; trusted purpose = local recovery verifier plus `amr`; no exchange while signed in; cold-start rule via `amr` and a completion marker | Password §3 | Specified; OD-A3, FV-A3, FV-A4 |
-| H5 Uncertain outcomes | Password update: UpdateUnknown reconciled by an explicit isolated sign-in with the intended password (`same_password` is never evidence); no automatic resend, no persistence. Deletion: UUID-bound, function-side read-only reconciliation, app Reconciling via `user_not_found` | Password §3.3; deletion §5 | Specified; FV-B5 |
-| M1 Session effects | Provider deletes other sessions in the password transaction; the current one continues; outstanding JWT window documented (≤ `jwt_expiry`) | Password §4.1 | Specified; FV-A6, OD-A8 |
-| M2 Retention and restoration | Inventory R-1 to R-8 with no invented periods; isolated restore plus out-of-band ledger; external request runbook | Deletion §7 | Specified; OD-B4, OD-B5; periods unverified |
+| H5 Uncertain outcomes | 0.5:<ul><li>**Password:** Transition and Check, where a failed check stays unknown (N3).</li><li>**Deletion:** fence-then-lookup and the status request, never a bare lookup (N2).</li></ul>No automatic destructive or credential resend | Password §3.3; deletion §5 | Specified (Codex 0.4: not resolved); R10b, R10c, D20 |
+| M1 Session effects | Atomic provider revocation as defence in depth; Transition's explicit `signOut others` is the guarantee; the recovery session is revoked (N4); the outstanding-JWT window is documented | Password §4.1, §4.3 | Specified; OD-A10, R11, R15b |
+| M2 Retention and restoration | Inventory R-1 to R-8; crash-safe intent/outcome ledger with blocking unresolved intents (N5); external challenge (N6) | Deletion §7 | Specified; periods unresolved (OD-B4); OD-B8 |
 | M3 Abuse controls and failure UX | Provider versus app enforcement table; neutral recovery for 200 and 429; generic wrong-password errors; one disclosure plus password for deletion | Password §5; deletion §5.2 | Specified; OD-A7 |
 | F1 64 characters versus byte maximum | At least 64 ASCII; 18 code points guaranteed for any script; minimum in code points, never silently bytes | Password §2.1, §2.3 | Blocked on OD-A1 |
 | F2 Update and revocation failure semantics | Shown atomic in v2.197.0 when the request carries a session id; lost response = UpdateUnknown; `signOut({ scope: 'others' })` kept as an idempotent fallback if a future version changes this | Password §4.1 | Specified; FV-A6 |
@@ -56,7 +81,19 @@ Codex review: original findings H1–H5 and M1–M3; follow-up findings F1–F3.
 
 Each needs separate authorization, in an isolated disposable environment unless it is a hosted read.
 
-Status after the 2026-11-19 experiments: **done** A2 (Auth behavior), A4, A5 (local), A6, A7, B1 (local), B2, B3 (local), B4 (Auth), B5. **Open:** A1 (hosted read, awaiting authorization), A2 (project suites on CLI 3.x), A3 (phone), B1 and B3 on hosted, B4 at the Edge gateway, B6.
+Status after the 2026-11-19 experiments: **done** A2 (Auth behavior), A4, A5 (local), A6, A7, B1 (local), B2, B3 (local), B4 (Auth), B5. **Open:** A1 (hosted read, awaiting authorization), A2 (project suites on CLI 3.x, including a fresh Android regression), A3 (phone), B1 and B3 on hosted (the hosted-read request excludes SQL, so this needs its own scope), B4 at the Edge gateway, B6, and new B7 (Resend idempotency) and B8 (fence lock-timeout inside a function).
+
+**Experiments the Codex review asked for**, proposals only, not run:
+- **Guard lifetime:** late delivery with an eligibility change (D21).
+- **Delayed-mutation reconciliation:** a held delete against the fence (D20).
+- **Password reconciliation:** a lost `same_password`, and a delayed update (R10b, R10c).
+- **Ledger crash boundaries** (V02).
+- **Auth-operation race** (R17).
+- **Admin-path concurrency** beyond B2's direct SQL: membership moves, owner changes, attribution updates (D07, D08).
+
+**Scope of the existing evidence, per Codex:**
+- B2 proves direct-SQL lock behaviour for three patterns, not the full Auth/API/function protocol.
+- B4 proves Auth's timestamp behaviour, not Edge validation.
 
 | ID | Assumption | Why it matters |
 |---|---|---|
@@ -91,9 +128,11 @@ Status after the 2026-11-19 experiments: **done** A2 (Auth behavior), A4, A5 (lo
 | OD-B3 | Request limits | 5 per user per 24 h; 5-minute in-flight window | Open |
 | OD-B4 | Auth audit-log and support-record retention | Owner and legal to set periods; until then "retained, period undecided" in the privacy notice | Open |
 | OD-B5 | Restore ledger | UUID-plus-time notification per deletion to the owner mailbox, kept longer than backups | **Requirement approved**; ledger design in deletion spec §7 for review; OD-B5a: how often to check for `ledger_failed` |
-| OD-A9 | Signup enumeration (FV-A7: the API reveals existing confirmed accounts) | Accept for Slice 3 and document; revisit with OD-A7 | Open |
+| OD-A9 | Signup enumeration (FV-A7: the API reveals existing confirmed accounts) | Accept for Slice 3 and document; keep it explicit and separate from neutral UI wording; revisit with OD-A7 | Open |
+| OD-A10 | Session transition after a password update (Codex N3/N4) | Replace the literal "current session continues" with: the device stays signed in under a **fresh password session**, and all other sessions, the recovery session included, are revoked with `signOut others` before Confirmed. Accept the residuals: theft during RecoveryPending (equivalent to mailbox compromise), and an offline TransitionIncomplete with the warning and retry | **New, open** |
+| OD-B8 | Unresolved ledger intents at restore (Codex N5) | Restoration stays blocked per unresolved intent. Resolve from production if available; otherwise default to completing the deletion the user requested, with the owner's confirmation | **New, open** |
 | OD-B7 | Orphaned `auth.flow_state` rows after deletion (FV-B3) | Accept until provider expiry is verified; otherwise delete them in the function after a confirmed deletion | Open |
-| OD-B6 | Maintenance pause for self-service deletion | A flag row checked by the function (returns 503); used during privileged repairs | Open |
+| OD-B6 | Maintenance pause for self-service deletion | Pause plus **drain**: reject new requests (503), fence every `pending` row, and repair only when none remains (Codex: a pause must cover in-flight operations) | Open |
 
 ## 5. Implementation sequence
 
