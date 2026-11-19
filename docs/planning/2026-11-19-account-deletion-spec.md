@@ -1,6 +1,11 @@
 # Account deletion, retention and privileged boundary — technical specification
 
-**Version 0.2, 2026-11-19, for the focused Codex follow-up review.** Implementation, migrations, Edge Function deployment and destructive tests are not authorized.
+**Version 0.3, 2026-11-19, for the focused Codex follow-up review.** Implementation, migrations, Edge Function deployment and destructive tests are not authorized.
+
+**Changes in 0.3:** runtime results from the [feasibility evidence](../testing/2026-11-19-account-lifecycle-feasibility.md) are folded in.
+- FV-B1, B2, B3 and B4: confirmed.
+- FV-B5: supabase-js hides the guard's error, so the function reconciles after *any* non-200 response (section 5.1).
+- FV-B3: `auth.flow_state` rows stay behind after deletion (sections 6 and 7).
 
 **Changes in 0.2** (owner decisions of 2026-11-19):
 - OD-B1 conditionally approved: exact claim checks, temporary-session behavior, and verification of the rate-limit advantage (section 3).
@@ -233,8 +238,9 @@ BEFORE DELETE ON auth.users, row OLD:
    | Auth response | Function response |
    |---|---|
    | 200 | 200 `deleted` (the request row is gone with U) |
-   | Auth JSON error (4xx/5xx with an Auth error body) | The transaction rolled back. Set `state = 'idle'`. If the error is the guard's exception, return 409 `ineligible_changed`; otherwise 500 `not_deleted`. If FV-B5 shows the Admin API hides the guard's text, the function re-runs the section 4.1 check after the rollback: ineligible now → 409 `ineligible_changed`, else 500 `not_deleted`. |
-   | Timeout, connection reset, or a gateway 5xx without an Auth body | Reconcile once with `admin.getUserById(U)`: 404 → 200 `deleted`; found → set `idle` and return 500 `not_deleted`; reconciliation failed → 503 `unknown` |
+   | Any non-200: Auth error, timeout, connection reset or gateway 5xx | Reconcile once with `admin.getUserById(U)`. **404** → 200 `deleted`. **Found** → the transaction rolled back: set `idle`, re-run the section 4.1 check, and return 409 `ineligible_changed` if it is now ineligible, else 500 `not_deleted`. **Reconciliation failed** → 503 `unknown`. |
+
+   Why every error is reconciled (FV-B5): the raw Admin REST body of a guard rejection is `{"code":"P0001","message":"PF_DELETION_INELIGIBLE: <code>"}`, but supabase-js 2.119.0 surfaces it as `AuthRetryableFetchError` 500 "Database error deleting user". A bug in the guard produces the same 500 and fails closed. The function therefore never trusts error text. It makes exactly one delete call, with no SDK retry, and decides only by the read-only lookup.
 
    Reconciliation is read-only. The function never resends the delete.
 
@@ -286,7 +292,7 @@ All of this happens in Auth's single deletion transaction, after the guard passe
 |---|---|---|
 | `auth.users` (U) | Deleted | D05 |
 | `auth.identities`, `auth.sessions`, `auth.refresh_tokens`, `auth.mfa_factors`, `auth.mfa_amr_claims`, `auth.one_time_tokens` | Removed by Auth's FK cascades. [Feasibility FV-B3]: confirm each FK in the deployed auth schema. | D05, D12 |
-| `auth.flow_state` rows of U | [FV-B3]: confirm FK or expiry behavior | D05 |
+| `auth.flow_state` rows of U | **Not deleted** (no FK; FV-B3 observed the row surviving a hard delete). They hold U's id and PKCE flow data, not pantry content. See retention R-2b. | D05 |
 | `auth.audit_log_entries` | **Retained.** Earlier entries plus the new `user_deleted` entry with user id, email and phone. There is no FK. See the retention table. | Retention R-2 |
 | `public.profiles` (U) | Cascade-deleted | D05 |
 | `public.pantry_households` (H) | Cascade-deleted | D05 |
@@ -309,6 +315,7 @@ No periods are invented. "Unverified" means it needs a plan or settings read (au
 |---|---|---|---|---|---|---|---|
 | R-1 | Live application data | Profile, household, pantry, shopping | PantryFlow (controller); Supabase (processor) | Until account deletion | Section 6 | Service | Specified |
 | R-2 | Auth audit log | User id, email, phone, IP, actions | Same | Unverified: in-database table with no automatic expiry known; platform log retention by plan | None today. [Owner OD-B4]: periodic purge of entries older than N days, or keep | Security investigation | Unverified, owner decision |
+| R-2b | Auth PKCE flow states | User id, flow type and timestamps of past confirmation and recovery flows | Same | Unverified: no FK, so they survive deletion. Whether Auth expires them is unverified | [Owner OD-B7]: accept until provider cleanup is verified, or have the function delete U's `auth.flow_state` rows after a confirmed deletion (needs a reviewed privileged statement) | Flow integrity | Unverified, owner decision |
 | R-3 | Supabase platform logs (API, Auth, function) | Request metadata, IPs, no bodies | Supabase (processor) | Unverified (plan-dependent) | Expiry | Operations | Unverified |
 | R-4 | Database backups / PITR | Everything in R-1 and R-2 at backup time | Supabase (processor) | Unverified (plan-dependent) | Expiry; restore procedure below | Disaster recovery | Unverified |
 | R-5 | Resend delivery records | Recipient email, subject, delivery events | Resend (processor) | Unverified (Resend plan) | Expiry or Resend deletion request | Delivery troubleshooting | Unverified, legal review |
@@ -392,11 +399,11 @@ These are proposed tests, not a claim that any currently passes. Destructive and
 
 | ID | What it checks |
 |---|---|
-| FV-B1 | A `BEFORE DELETE` trigger on `auth.users` works locally and is permitted on hosted Supabase, and its exception surfaces through the Admin API as described. |
-| FV-B2 | The lock semantics in section 4.3 (D07, D08). |
-| FV-B3 | The auth-schema FK cascades of the deployed version. |
-| FV-B4 | The `amr` password timestamp on a fresh isolated sign-in, its retention across refresh, and the Edge gateway's JWT verification exposing `amr` to the function. |
-| FV-B5 | How the Admin API reports the guard exception (status and body), for the step 5 mapping. |
+| FV-B1 | **Local: done.** Trigger creation as `postgres` works; it fires for Auth's deletes; ineligible deletions roll back fully, including the audit entry; rows older than 5 minutes don't activate it; clients are denied the request table. **Hosted permission:** open (FV-A1 scope or a separate check). |
+| FV-B2 | **Done:** all six interleavings (three patterns, each in both orders) proven blocking through `pg_locks` and `pg_blocking_pids`, with the expected outcomes. Caveat: T1 was a direct SQL delete, while Auth's own path was exercised in FV-B1. |
+| FV-B3 | **Done (local v2.198.0):** cascades confirmed, plus `flow_state` without an FK. Hosted schema parity: open. |
+| FV-B4 | **Done for Auth:** `iat` changes on refresh while the password timestamp stays, and a new sign-in creates a new timestamp. **Open:** the Edge gateway exposing verified claims, checked when the function is built. |
+| FV-B5 | **Done:** raw REST 500 with `P0001 PF_DELETION_INELIGIBLE: <code>`; supabase-js hides it, hence reconcile-always (§5.1). |
 | FV-B6 | Rate-limit keying for direct sign-ins compared with sign-ins sent from a function (disposable stack). Hosted keying is recorded as a provider assumption. |
 
 ## 9. Slice 4 compatibility

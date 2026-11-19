@@ -1,6 +1,11 @@
 # Password policy, recovery and session lifecycle — technical specification
 
-**Version 0.2, 2026-11-19, for the focused Codex follow-up review.** Implementation is not authorized.
+**Version 0.3, 2026-11-19, for the focused Codex follow-up review.** Implementation is not authorized.
+
+**Changes in 0.3:** runtime results from the [feasibility evidence](../testing/2026-11-19-account-lifecycle-feasibility.md) (disposable stack, Auth v2.198.0) are folded in.
+- FV-A2, A4 and A6: confirmed.
+- FV-A5: the local setting is `[auth.email] require_current_password`; a wrong current password returns `current_password_invalid`.
+- FV-A7: signup reveals existing confirmed accounts, so OD-A9 is added.
 
 **Changes in 0.2** (owner decisions of 2026-11-19):
 - OD-A1 direction approved (section 2.2).
@@ -44,6 +49,7 @@ These were verified by reading the versioned source. Execution behavior is not v
 | SDK `resetPasswordForEmail` stores a PKCE verifier marked as recovery. `exchangeCodeForSession` reads the local verifier, **saves the resulting session as the current session**, emits `PASSWORD_RECOVERY` only when the local verifier carried the recovery mark, returns `redirectType`, and removes the verifier on success and on error. | auth-js 2.119.0 `GoTrueClient.ts` lines 2018–2092, 4530–4556 |
 | SDK `signOut` (any scope that removes the local session) calls `_removeSession`, which deletes **all** stored PKCE verifiers. | `GoTrueClient.ts` lines 4094–4125, 5327–5345 |
 | Rate limits: `/recover` has its own limiter. `/token` (password sign-in and refresh) shares the token limiter (`GOTRUE_RATE_LIMIT_TOKEN_REFRESH`, default 150). `PUT /user` has a user limiter. The limiters key on the client address or the configured `RATE_LIMIT_HEADER`. There is no per-account lockout. | `api/api.go` lines 255–283; `api/token.go` line 45; `apilimiter.go`; `middleware.go` line 73 |
+| **Runtime, Auth v2.198.0** ([feasibility evidence](../testing/2026-11-19-account-lifecycle-feasibility.md)): the §2.3 table was reproduced row for row; there is no truncation or trimming; the password update deletes all other sessions, including the signup session; an outstanding JWT still reads `profiles` through PostgREST; the recovery `amr` persists through refresh and password update; `require_current_password` enforces the check and recovery sessions are exempt. | FV-A2, A4, A5, A6 |
 | Compromised-password checks (HaveIBeenPwned) exist with a fail-open/fail-closed setting. Supabase documents them as Pro plan and above. | `password.go`; [Supabase password security](https://supabase.com/docs/guides/auth/password-security) |
 
 ## 2. Password policy
@@ -244,7 +250,8 @@ stateDiagram-v2
   - Local CLI and hosted configurability is [Feasibility FV-A5].
   - The hosted change needs separate authorization.
 - **Outcomes** follow UpdatePending and UpdateUnknown, without the recovery markers.
-- **Wrong current password:** `current_password_mismatch` gives a generic "Current password is incorrect".
+- **Wrong current password:** `current_password_invalid` (observed on v2.198.0; v2.197.0 source names it `current_password_mismatch`, so the app maps both) gives a generic "Current password is incorrect".
+- **Configuration key:** locally `[auth.email] require_current_password = true` (CLI 3.2.0), which sets `GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_CURRENT_PASSWORD`. The hosted equivalent is part of FV-A1.
 
 ## 5. Abuse controls
 
@@ -252,7 +259,7 @@ stateDiagram-v2
 |---|---|---|---|
 | Recovery email flooding | `/recover` limiter; project email-send rate limit; per-address minimum interval | 60 s client cooldown (feedback only) | Values must be read back (FV-A1) |
 | Account enumeration via recovery | Unknown email returns 200 `{}` | Same neutral message for 200 and 429 | 5xx and timing differ for known addresses; not claimed constant-time |
-| Enumeration via signup | Confirmation-enabled signup does not reveal existing confirmed accounts (to verify in FV-A7) | Neutral signup copy, as today | — |
+| Enumeration via signup | **Observed (FV-A7, v2.198.0, confirmations on):** an existing confirmed address gets 422 `user_already_exists`; a new address gets 200 | The app cannot hide a difference the API exposes | Signup is enumerable at the API, so neutral recovery replies alone do not prevent enumeration. [Owner OD-A9]: accept the residual for Slice 3 and document it (recommended), or add CAPTCHA (OD-A7) |
 | Password guessing | `/token` limiter per client address (shared with refresh); optional CAPTCHA (off) | None; the 15-code-point minimum reduces guessability | No per-account lockout. [Owner OD-A7]: CAPTCHA not in Slice 3 (recommended) |
 | Stolen session changes password | `update_password_require_current_password` | Always send the current password | Until enabled (OD-A4), a stolen session can take over the account |
 | Auth outage | — | Explicit "couldn't reach the service" for network errors and 5xx; never "sent" or "changed" without a 200 | — |
@@ -300,9 +307,9 @@ Destructive or concurrency tests run only in a disposable stack, never against t
 | ID | What it checks |
 |---|---|
 | FV-A1 | Hosted Auth version and settings read-back: minimum length, HIBP entitlement, rate limits, JWT expiry. |
-| FV-A2 | CLI v3.2.0 (bundling Auth v2.198.0) in a disposable stack: P01–P04 against it. Whether the project's config, migrations and test suites work on CLI 3.x is recorded as a separate compatibility item. |
+| FV-A2 | **Done for Auth behavior:** the §2.3 table was confirmed on CLI v3.2.0 / Auth v2.198.0. **Open:** whether the project's config, migrations and test suites work on CLI 3.x (the project migrations applied cleanly in the disposable stack; the suites were not run). |
 | FV-A3 | Overlapping recovery requests on React Native with auth-js 2.119.0. |
-| FV-A4 | The `amr` `recovery` entry is present after the exchange, after a refresh and after a password update. |
-| FV-A5 | `update_password_require_current_password` is available in CLI `config.toml` and the hosted dashboard. |
-| FV-A6 | Other-session revocation and the outstanding-JWT window (R11). |
-| FV-A7 | Signup enumeration behavior. |
+| FV-A4 | **Done:** confirmed. |
+| FV-A5 | **Local: done** (`[auth.email] require_current_password`; exemption confirmed). Hosted: part of FV-A1. |
+| FV-A6 | **Done:** confirmed; re-run on every Auth upgrade. |
+| FV-A7 | **Done:** signup is enumerable (see §5). |

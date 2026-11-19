@@ -1,6 +1,6 @@
 # Account lifecycle — overview, threat model and decisions
 
-**Version 0.2, 2026-11-19, for the focused Codex follow-up review.** 0.2 records the owner decisions of 2026-11-19 (section 4).
+**Version 0.3, 2026-11-19, for the focused Codex follow-up review.** 0.2 recorded the owner decisions of 2026-11-19 (section 4). 0.3 adds the runtime results from the [feasibility evidence](../testing/2026-11-19-account-lifecycle-feasibility.md) (section 3) and the new decisions OD-A9 and OD-B7.
 
 This page connects the two technical specifications:
 - [password policy, recovery and sessions](2026-11-19-password-recovery-session-spec.md) ("password spec", items marked A);
@@ -56,6 +56,8 @@ Codex review: original findings H1–H5 and M1–M3; follow-up findings F1–F3.
 
 Each needs separate authorization, in an isolated disposable environment unless it is a hosted read.
 
+Status after the 2026-11-19 experiments: **done** A2 (Auth behavior), A4, A5 (local), A6, A7, B1 (local), B2, B3 (local), B4 (Auth), B5. **Open:** A1 (hosted read, awaiting authorization), A2 (project suites on CLI 3.x), A3 (phone), B1 and B3 on hosted, B4 at the Edge gateway, B6.
+
 | ID | Assumption | Why it matters |
 |---|---|---|
 | FV-A1 | Hosted Auth version and settings (minimum, requirements, HIBP entitlement, rate limits, `jwt_expiry`, current-password setting) | Policy enforcement and parity. **Hosted read.** |
@@ -89,6 +91,8 @@ Each needs separate authorization, in an isolated disposable environment unless 
 | OD-B3 | Request limits | 5 per user per 24 h; 5-minute in-flight window | Open |
 | OD-B4 | Auth audit-log and support-record retention | Owner and legal to set periods; until then "retained, period undecided" in the privacy notice | Open |
 | OD-B5 | Restore ledger | UUID-plus-time notification per deletion to the owner mailbox, kept longer than backups | **Requirement approved**; ledger design in deletion spec §7 for review; OD-B5a: how often to check for `ledger_failed` |
+| OD-A9 | Signup enumeration (FV-A7: the API reveals existing confirmed accounts) | Accept for Slice 3 and document; revisit with OD-A7 | Open |
+| OD-B7 | Orphaned `auth.flow_state` rows after deletion (FV-B3) | Accept until provider expiry is verified; otherwise delete them in the function after a confirmed deletion | Open |
 | OD-B6 | Maintenance pause for self-service deletion | A flag row checked by the function (returns 503); used during privileged repairs | Open |
 
 ## 5. Implementation sequence
