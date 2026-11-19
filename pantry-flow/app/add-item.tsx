@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button } from '@/components/Button';
+import { FormFooter } from '@/components/FormFooter';
+import { useKeyboardOverlap } from '@/hooks/useKeyboardOverlap';
 import { Input } from '@/components/Input';
 import { OptionChips } from '@/components/OptionChips';
 import { AuthGate } from '@/components/AuthGate';
@@ -34,6 +36,12 @@ function AddItemModalContent() {
   const { t } = useTranslation();
   const router = useRouter();
   const { householdId, loading, error: loadError, retry, addItem } = usePantryItems();
+  // Edge-to-edge Android does not resize for the keyboard, so the footer lifts by
+  // the measured overlap. iOS keeps KeyboardAvoidingView padding and needs none.
+  const screenRef = useRef<React.ComponentRef<typeof View>>(null);
+  const keyboardOverlap = useKeyboardOverlap(screenRef);
+  const overlap = Platform.OS === 'android' ? keyboardOverlap : 0;
+  const [footerHeight, setFooterHeight] = useState(0);
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState<string>(DEFAULT_CATEGORY);
@@ -64,12 +72,13 @@ function AddItemModalContent() {
   };
 
   return (
+    <View ref={screenRef} style={styles.safe}>
     <KeyboardAvoidingView
       style={styles.safe}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[styles.container, { paddingBottom: spacing.xl + footerHeight + overlap }]}
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.title}>{t('item_add_title')}</Text>
@@ -109,27 +118,27 @@ function AddItemModalContent() {
           testIDPrefix="add-item-location"
         />
 
-        <View style={styles.actions}>
-          <Button
-            label={t('common_cancel')}
-            onPress={() => router.back()}
-            variant="secondary"
-            disabled={busy}
-            style={{ flex: 1 }}
-            testID="add-item-cancel"
-          />
-          <View style={{ width: spacing.md }} />
-          <Button
-            label={t('item_add_button')}
-            onPress={onSave}
-            loading={busy}
-            disabled={loading || !householdId || !!loadError}
-            style={{ flex: 1 }}
-            testID="add-item-save"
-          />
-        </View>
       </ScrollView>
+      <FormFooter overlap={overlap} onLayoutHeight={setFooterHeight}>
+        <Button
+          label={t('common_cancel')}
+          onPress={() => router.back()}
+          variant="secondary"
+          disabled={busy}
+          style={{ flex: 1 }}
+          testID="add-item-cancel"
+        />
+        <Button
+          label={t('item_add_button')}
+          onPress={onSave}
+          loading={busy}
+          disabled={loading || !householdId || !!loadError}
+          style={{ flex: 1 }}
+          testID="add-item-save"
+        />
+      </FormFooter>
     </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -145,9 +154,5 @@ const styles = StyleSheet.create({
     ...typography.label,
     color: colors.textMuted,
     marginBottom: spacing.xs,
-  },
-  actions: {
-    flexDirection: 'row',
-    marginTop: spacing.xl,
   },
 });

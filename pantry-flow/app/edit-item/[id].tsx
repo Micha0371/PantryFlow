@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button } from '@/components/Button';
+import { FormFooter } from '@/components/FormFooter';
+import { useKeyboardOverlap } from '@/hooks/useKeyboardOverlap';
 import { Input } from '@/components/Input';
 import { OptionChips } from '@/components/OptionChips';
 import { AuthGate } from '@/components/AuthGate';
@@ -36,6 +38,12 @@ function EditItemModalContent() {
   const { t } = useTranslation();
   const { loading, error: loadError, retry, updateItem, deleteItem, getItem } = usePantryItems();
   const { prompting, offer } = useShoppingPrompt();
+  // Edge-to-edge Android does not resize for the keyboard, so the footer lifts by
+  // the measured overlap. iOS keeps KeyboardAvoidingView padding and needs none.
+  const screenRef = useRef<React.ComponentRef<typeof View>>(null);
+  const keyboardOverlap = useKeyboardOverlap(screenRef);
+  const overlap = Platform.OS === 'android' ? keyboardOverlap : 0;
+  const [footerHeight, setFooterHeight] = useState(0);
 
   const item = id ? getItem(id) : null;
 
@@ -132,12 +140,13 @@ function EditItemModalContent() {
   };
 
   return (
+    <View ref={screenRef} style={styles.safe}>
     <KeyboardAvoidingView
       style={styles.safe}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[styles.container, { paddingBottom: spacing.xl + footerHeight + overlap }]}
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.title}>{t('item_edit_title')}</Text>
@@ -199,25 +208,6 @@ function EditItemModalContent() {
           testIDPrefix="edit-item-location"
         />
 
-        <View style={styles.actions}>
-          <Button
-            label={t('common_cancel')}
-            onPress={() => router.back()}
-            variant="secondary"
-            disabled={busy && !prompting}
-            style={{ flex: 1 }}
-            testID="edit-item-cancel"
-          />
-          <View style={{ width: spacing.md }} />
-          <Button
-            label={t('item_save_button')}
-            onPress={onSave}
-            loading={busy}
-            style={{ flex: 1 }}
-            testID="edit-item-save"
-          />
-        </View>
-
         <Button
           label={t('item_delete')}
           onPress={onDelete}
@@ -227,7 +217,25 @@ function EditItemModalContent() {
           testID="edit-item-delete"
         />
       </ScrollView>
+      <FormFooter overlap={overlap} onLayoutHeight={setFooterHeight}>
+        <Button
+          label={t('common_cancel')}
+          onPress={() => router.back()}
+          variant="secondary"
+          disabled={busy && !prompting}
+          style={{ flex: 1 }}
+          testID="edit-item-cancel"
+        />
+        <Button
+          label={t('item_save_button')}
+          onPress={onSave}
+          loading={busy}
+          style={{ flex: 1 }}
+          testID="edit-item-save"
+        />
+      </FormFooter>
     </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -261,6 +269,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statusText: { ...typography.label, fontWeight: '600' },
-  actions: { flexDirection: 'row', marginTop: spacing.xl },
   errorText: { ...typography.body, color: colors.danger, textAlign: 'center' },
 });
