@@ -14,7 +14,7 @@
 
 **Sources:**
 - the [Slice 3 decision record](2026-11-19-slice-3-decision-record.md), section 6 (KAN-57, option B);
-- the Codex account-lifecycle review (H1, H2, H5, M1, M2, M3) and its follow-up, held in ignored `.verification/account-spec-review-20261119/`;
+- the Codex account-lifecycle review (H1, H2, H5, M1, M2, M3) and its follow-up, in [`docs/reviews/2026-11-19/`](../reviews/2026-11-19/);
 - [the account-lifecycle overview](2026-11-19-account-lifecycle-overview.md), which holds the threat model, dispositions, provider assumptions, owner decisions and sequence.
 
 **Tickets:**
