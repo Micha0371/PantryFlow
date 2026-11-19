@@ -1,5 +1,16 @@
 # Account deletion, retention and privileged boundary — technical specification
 
+**Version 0.6, 2026-11-19.** This version responds to the Codex review of v0.5 (V5-1, V5-5 to V5-8) and to owner decision **OD-B9 (option X)**, recorded as Amendment 1 to the decision record.
+
+**Changes in 0.6:**
+- **Deletion runs in one service-only database function bound to the request id (OD-B9, V5-1).** The Auth Admin API is no longer the self-service path. An old or delayed call carries a stale `request_id` and is refused (§2, §4, §5).
+- **Atomic admission:**
+  - A new request needs a password sign-in newer than the last fence, so a delayed invocation is refused at admission (V5-1).
+  - Admission and execution take the maintenance barrier, so a pause excludes requests that aren't admitted yet (V5-6).
+- **Restore selection by operation lifetime (V5-5).** Unresolved intents block restoration at any age. When an outcome is missing after a deletion, the operator resolves it (V5-7) (§7).
+- **Real revocation evidence:** temporary sessions are revoked with a raw logout call that requires an HTTP 204, using the token held in memory (V5-8) (§3).
+- **Resend:** bounded retries, immutable payloads and the 24-hour idempotency window (§7).
+
 **Version 0.5, 2026-11-19, responding to the Codex review of `f1028869` (`docs/reviews/2026-11-19/specs-v0.4-review.md`).**
 
 **Changes in 0.5** (Codex N1, N2, N5, N6, N8, OD-B6):
@@ -56,73 +67,66 @@ These were verified by reading the source. Execution is not verified.
 
 ## 2. Architecture
 
-**[Settled]:**
+**[Settled]** (unchanged):
 - one narrow Supabase Edge Function, `delete-account`;
-- the supported Auth Admin API with hard delete;
+- hard deletion;
 - no general backend;
 - the service-role key only in the function's environment.
 
-**[Specified], two small database additions** in one migration, written after feasibility verification:
+**[Amended, OD-B9 option X, decision record Amendment 1]:** the destructive step is **one service-only database function**, not the Auth Admin API.
+- **Why:** the Admin API receives only the user id. The database can't tell an old, delayed Admin request from a new one, so neither fencing nor guards can be bound to a single operation (Codex V5-1).
+- **The function receives the `request_id`.** Every check and the delete run in one transaction against that exact request generation.
 
-1. **`public.account_deletion_requests`**
+**Database objects (one migration, written after feasibility verification):**
+
+1. **`public.account_deletion_requests`**, one row per user:
    - Columns:
      - `user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE`;
      - `state text NOT NULL CHECK (state IN ('pending','fenced'))`;
-     - `request_id uuid NOT NULL`;
+     - `request_id uuid NOT NULL`, the current generation;
      - `started_at timestamptz NOT NULL`;
+     - `fenced_at timestamptz`;
      - `attempts_window_start timestamptz`;
      - `attempts int`.
-   - Row level security is on with no policies. Grants go only to `service_role`; there is no access for `anon` or `authenticated`.
-   - **Rows are never deleted by the function.** A row disappears only with the user, through the cascade in the committed deletion. Removing one otherwise is an owner-approved maintenance action.
-   - Purpose:
-     - **guard activation**, without any time component;
-     - **fencing**;
-     - **serialization**;
-     - **per-user attempt limiting**.
-2. **Guard trigger `pf_guard_account_deletion`**
-   - `BEFORE DELETE ON auth.users FOR EACH ROW`.
-   - Function: `private.guard_account_deletion()`, `SECURITY DEFINER`, `SET search_path = ''`, owned by `postgres`, `EXECUTE` revoked from all client roles.
-   - Behaviour by row state:
+   - Row level security on, with no policies; grants only to `service_role`.
+   - Rows are never deleted by application code. They disappear only through the committed deletion's cascade.
+2. **`public.account_deletion_admission`**: a single row `(id = 1, paused boolean NOT NULL DEFAULT false)`, with RLS on and `service_role` only. It is the **maintenance barrier**: admission and execution read it `FOR SHARE`, and pausing updates it.
+3. **`private.delete_own_account(p_user uuid, p_request uuid) RETURNS text`:**
+   - `SECURITY DEFINER`, `SET search_path = ''`, owned by `postgres`;
+   - `EXECUTE` granted **only** to `service_role`, revoked from `PUBLIC`, `anon` and `authenticated`;
+   - not exposed through any client grant.
 
-     | Request row for OLD.id | Guard behaviour |
-     |---|---|
-     | `pending` | Lock the row `FOR SHARE`, then lock and check the graph (section 4). On failure, raise `PF_DELETION_INELIGIBLE`. |
-     | `fenced` | Raise `PF_DELETION_FENCED`: deletion refused. |
-     | None | Unguarded, existing semantics: the administrative and test path of §2.1. |
+   One transaction (§4.2):
+   - barrier;
+   - request row `FOR UPDATE` with `state = 'pending' AND request_id = p_request`;
+   - user row lock;
+   - graph lock and G1–G4;
+   - `set_config('pf.deletion_request', p_request::text, true)`;
+   - `DELETE FROM auth.users WHERE id = p_user`, whose cascades remove sessions, refresh tokens, identities, factors, profile, household, membership, items and the request row (§6);
+   - returns `'deleted'`.
 
-   - **No time condition exists.** A `pending` request delayed by any amount stays guarded, and a fenced one stays refused (N1).
-   - The `FOR SHARE` lock on a `pending` row is what lets fencing wait for a deletion that is mid-commit (§5.1).
-   - Placing a trigger on `auth.users` in hosted Supabase is [Feasibility FV-B1]. The project already has an `AFTER INSERT` trigger there (`on_auth_user_created`).
+   Hosted permission for a `postgres`-owned function to delete from `auth.users` is [Feasibility FV-B9].
+4. **Trigger `pf_guard_account_deletion`** (`BEFORE DELETE ON auth.users`). It is the backstop for every **other** deletion path (dashboard, Admin API, SQL):
 
-### 2.1 Trusted activation context
+   | Request row for OLD.id | Behaviour |
+   |---|---|
+   | None | Unguarded, existing semantics: the administrative and test path, §2.1 |
+   | Exists, and `current_setting('pf.deletion_request', true)` equals its `request_id` with `state = 'pending'` | Allowed. This is the function's own delete, already checked |
+   | Exists, otherwise | Raise `PF_DELETION_USE_FUNCTION`. A user who ever requested deletion can only be deleted through the function |
 
-**[Conditionally approved, OD-B2, 2026-11-19].**
+   The setting is transaction-local and can only be set inside the deleting transaction, which needs privileged SQL access anyway. [Feasibility FV-B1] covers this on hosted.
 
-**How the context reaches Auth's transaction:**
-1. The function, holding the service-role key, commits the `pending` row in its own short transaction **before** it calls the Admin API.
-2. Auth's deletion transaction then runs the trigger, which reads that committed row (READ COMMITTED) inside the same transaction that deletes the user.
-3. No request parameter, header, claim or session setting is used. The Admin API offers no way to pass context into its transaction, and none is needed.
+**Costs of option X (accepted with OD-B9):**
+- Auth's Admin handler, with its `user_deleted` audit entry, is bypassed. The ledger (§7) and the function's own minimal log are the deletion audit.
+- Any future Auth-side deletion hooks would not run; none are used today.
+- The deletion relies on the auth-schema foreign keys verified in FV-B3 (cascades for sessions, refresh tokens, identities, factors and AMR claims; `flow_state` not cascaded, R-2b).
 
-**Why ordinary callers can't forge or bypass it:**
-- `anon` and `authenticated` have no grants on `account_deletion_requests`, and row level security is enabled with no policies. A client can neither create nor delete a row: verified by tests D16 and D17.
-- Clients cannot delete `auth.users` at all, because they have no SQL grants and the Admin API requires the service-role key. So "bypassing" the guard means deleting a user **who never had a request row**, which only a privileged operator can do. A self-service request can never lose its row except by its own committed deletion. Therefore a self-service operation can never fall onto the unguarded path, whether it is delayed, expired or unresolved (N1).
-- Activation can only make a deletion stricter. A forged row, if one could exist, would block the deletion, never permit it.
+### 2.1 Administrative and test paths
 
-**Explicitly exempted operations** (guard inactive, existing semantics; each is privileged):
-
-| Operation | Who | Rule |
-|---|---|---|
-| Disposable or local test fixtures and their cleanup (`local-stack.ts`, `e2e-fixtures.ts`, the existing author-deletion tests) | Test harness with the local service key | Local and disposable environments only |
-| Operator deletion through the dashboard or Admin API of a user with **no** request row | Owner or operator | **Not used for user-requested deletions.** User-requested and external requests always insert a `pending` row first (section 7). Allowed only for test or legacy accounts, with an owner-approved, recorded reason. A user who has ever had a row can only be deleted through the guarded path |
-| Database maintenance as `postgres` or `supabase_admin` | Owner or operator | Follows the lock-order rule (section 4.3) or the maintenance pause (OD-B6) |
-
-**Why the guard sits in the database and is conditional:**
-- An eligibility check in the function followed by a separate `admin.deleteUser` is not atomic.
-- Locks taken in one RPC end with that RPC.
-- The guard therefore runs inside the very transaction that deletes the user.
-- It activates only for self-service requests, so the Slice 1–2 database semantics that existing tests pin stay intact.
-- An unconditional guard would also be possible. It would turn every author-deletion test and fixture cleanup with an unusual graph into a failure, and it is listed under OD-B2.
-- The alternative of a direct SQL function (deleting `auth.users` from a service-role-only RPC, with the check in the same transaction) bypasses Auth's audit entry and lifecycle. It stays an alternative only if FV-B1 fails.
+- **Unguarded:** only users who **never** had a request row, such as disposable or local test fixtures, the existing author-deletion tests, and owner-approved test or legacy accounts. Self-service and external requests always create a row first. A row is removed only by the committed deletion, so no self-service operation can reach the unguarded path, whether delayed, fenced or unresolved.
+- **Users with a row:** they can only be deleted through `private.delete_own_account` with a current `pending` generation; the trigger refuses everything else. External requests (§7) use the same function, executed by the operator.
+- **Maintenance:** privileged writers touching ownership, membership or attribution run only after pause-and-drain (§4.3), or follow the lock order.
+- **No forgery:** clients have no grants on the tables, the function or `auth.users`. A forged row or setting would only *block* deletions.
 
 ## 3. Caller identity and fresh authentication
 
@@ -160,10 +164,17 @@ These were verified by reading the source. Execution is not verified.
 
 | Situation | Behavior |
 |---|---|
-| Cancel during or after FreshAuth, before dispatch | The app signs the fresh session out (`signOut({ scope: 'local' })` on the isolated client), which revokes it server-side |
+| Cancel during or after FreshAuth, before dispatch | Raw logout of the fresh session (below), which revokes it server-side |
 | Confirmed rejection | Same; the main session stays the active one |
 | Confirmed deletion | Every session, the fresh one included, is gone with the user |
-| Unknown (the single lifecycle; §5.2 uses the same) | The isolated client stays **in memory** until Reconciling reaches a terminal result. On `not_deleted`, the app signs the fresh session out (server revocation needs a connection; while offline it stays pending in memory). On `deleted`, nothing remains. If the app is closed or killed first, the fresh session is an orphan: its tokens existed only in memory, and the server row remains until the provider's session limits remove it. This residual is documented and covered by test D23. |
+| Unknown (the single lifecycle; §5.2 uses the same) | The fresh session's **access and refresh tokens stay in memory** until Reconciling reaches a terminal result. On `deleted`, nothing remains. On `not_deleted` or a confirmed rejection, they're revoked by **raw logout**. If the app is closed or killed first, the fresh session is an orphan: its tokens existed only in memory, and the server row remains until the provider's session limits remove it. This residual is documented (D23). |
+
+**Raw logout** (V5-8; supersedes the SDK sign-out here, because the SDK clears the session *before* the server call and suppresses some 401, 403 and 404 errors):
+- **Request:** `POST /auth/v1/logout?scope=local` with the in-memory access token.
+- **Revoked:** **204**, or **403 `session_not_found`**, meaning the session no longer exists.
+- **401 (expired access token):** refresh with the in-memory refresh token, then retry. A refresh failing with `refresh_token_not_found` means the session is gone.
+- **Anything else** (network, 5xx, other 4xx): revocation is pending, and the tokens stay in memory for a retry.
+- **Never inferred from an SDK `{ error: null }`.**
 
 **Rate-limit advantage and residual risk** [Feasibility FV-B6]:
 - **Claim:**
@@ -199,94 +210,107 @@ These were verified by reading the source. Execution is not verified.
   - The user then retries.
 - In today's app these graphs arise only from privileged fixtures or legacy data.
 
-### 4.2 Guard algorithm
+### 4.2 The deletion function
 
 ```text
-BEFORE DELETE ON auth.users, row OLD:
-  -- OLD's auth.users row is already locked (FOR UPDATE-strength) by the DELETE before row triggers run
-  SELECT state FROM public.account_deletion_requests WHERE user_id = OLD.id FOR SHARE   -- waits for a concurrent fence
-  if no row: return OLD                                         -- administrative/test path, unchanged semantics
-  if state = 'fenced': RAISE EXCEPTION 'PF_DELETION_FENCED'
-  -- state = 'pending': guarded, regardless of age
-  lock: SELECT id FROM public.pantry_households WHERE owner_id = OLD.id ORDER BY id FOR UPDATE
+private.delete_own_account(p_user, p_request)   -- one transaction, called once per request by the Edge Function
+  SELECT paused FROM public.account_deletion_admission WHERE id = 1 FOR SHARE      -- maintenance barrier
+  if paused: RAISE 'PF_DELETION_PAUSED'
+  SELECT state, request_id FROM public.account_deletion_requests WHERE user_id = p_user FOR UPDATE
+  if no row or state <> 'pending' or request_id <> p_request: RAISE 'PF_DELETION_STALE'   -- fenced or older generation
+  SELECT 1 FROM auth.users WHERE id = p_user FOR UPDATE; if none: RAISE 'PF_DELETION_GONE'
+  lock: SELECT id FROM public.pantry_households WHERE owner_id = p_user ORDER BY id FOR UPDATE
   lock: SELECT id FROM public.pantry_household_members
-          WHERE household_id IN (those ids) OR user_id = OLD.id ORDER BY id FOR UPDATE
-  evaluate G1–G4 with fresh statements (READ COMMITTED: each sees rows committed before its lock wait ended)
-  if any fails: RAISE EXCEPTION 'PF_DELETION_INELIGIBLE' USING DETAIL = <code>
-  return OLD                                                   -- cascades (including the request row) follow in the same transaction
+          WHERE household_id IN (those ids) OR user_id = p_user ORDER BY id FOR UPDATE
+  evaluate G1–G4 with fresh statements; on failure RAISE 'PF_DELETION_INELIGIBLE' USING DETAIL = <code>
+  PERFORM set_config('pf.deletion_request', p_request::text, true)
+  DELETE FROM auth.users WHERE id = p_user        -- trigger allows exactly this; cascades follow
+  RETURN 'deleted'
 ```
+
+Errors are raised with SQLSTATE `P0001` and a stable message prefix. PostgREST's RPC returns them as `{code, message}` to the service-role caller (FV-B10), unlike the Admin API's opaque 500.
 
 ### 4.3 Concurrency argument
 
-[Feasibility FV-B2] must prove each of the following with deterministic interleavings.
+[Feasibility FV-B2] and the D20–D22 tests must prove each case with deterministic interleavings **through the real function**, not only direct SQL (Codex: the B2 evidence covers direct SQL for three patterns).
 
-| Competing operation | Lock it needs | Interaction | Outcome |
-|---|---|---|---|
-| Insert a membership into H for another user V | `KEY SHARE` on H (FK check) | Conflicts with the guard's `FOR UPDATE` on H | Committed before the guard's lock: the guard sees it and aborts (`extra_members`). Started after: it waits, then fails its FK because H was deleted. |
-| Move V's membership into H (`UPDATE … SET household_id = H`) | `KEY SHARE` on H | Same | Same |
-| Change H's owner | Row lock on H | Conflicts | Serialized; the guard re-evaluates after the wait |
-| Create a second household owned by U | `KEY SHARE` on U's `auth.users` row | Conflicts with the DELETE's row lock | Committed first: the guard sees two households and aborts. Otherwise it waits, then fails its FK. |
-| Insert an item or shopping row elsewhere with `created_by = U` | `KEY SHARE` on U's row | Same | Committed first: `foreign_attribution` aborts. Otherwise it waits, then fails its FK. |
-| Concurrent self-service deletion for U, or a fence | The fencing `UPDATE … SET state = 'fenced'` conflicts with the guard's `FOR SHARE` on the request row | A fence waits until a deletion that is mid-commit ends. A deletion that reaches the guard after the fence sees `fenced` and is refused | At most one deletion commits, and after a fence nothing can commit until a new request sets `pending` (D20) |
+| Competing operation | Locks | Outcome |
+|---|---|---|
+| Membership inserted or moved into H for another user V | `KEY SHARE` on H vs the function's `FOR UPDATE` on H | Committed before the lock: G2 fails and the call aborts. After: it waits, then fails its FK |
+| H's owner changed | Row lock on H | Serialized; G1/G2 re-evaluated after the wait |
+| Second household for U; item or shopping row with `created_by = U` elsewhere | `KEY SHARE` on U's row vs the function's `FOR UPDATE` on U | Committed first: G1/G4 abort. Otherwise it waits, then fails its FK |
+| **Old or delayed call of an earlier generation** | The request row `FOR UPDATE` | Its `p_request` no longer matches (a newer request or a fence changed it): **refused** with `PF_DELETION_STALE` (V5-1) |
+| **Fence during a call** | The fence's `UPDATE` vs the function's `FOR UPDATE` on the request row | The fence waits until the call commits (user gone) or rolls back. After it, every older generation is refused |
+| **Maintenance pause during admission or a call** | The pause's `UPDATE` on the barrier vs `FOR SHARE` in admission and in the function | The pause waits for in-flight admissions and calls. After it, none can start (V5-6) |
 
 **Further rules:**
-- **Isolation assumption:** Auth's default READ COMMITTED. Under REPEATABLE READ a lock conflict can raise a serialization failure, which is a confirmed rejection.
-- **Deadlocks:**
-  - The guard's lock order is user row → households (by id) → memberships (by id).
-  - A privileged writer locking in another order can deadlock. PostgreSQL then aborts one transaction. If the guard's transaction is aborted, the deletion is a confirmed rejection and the user may retry.
-  - **Maintenance rule:** privileged writers touching ownership, membership or attribution lock in the same order, or run while self-service deletion is **paused and drained** [Owner OD-B6]:
-    1. Set the pause flag; the function then rejects new requests with 503 `maintenance`.
-    2. **Drain** by fencing every `pending` row (§5.1). Each fence waits for any deletion that is mid-commit.
-    3. Start repairs only once no `pending` row remains.
+- **Isolation:** READ COMMITTED. Serialization or deadlock aborts are confirmed rejections.
+- **Lock order:** barrier → request row → user row → households (by id) → memberships (by id). Privileged writers follow it, or run only after pause-and-drain.
+- **Pause and drain [OD-B6, accepted]:**
+  1. `UPDATE account_deletion_admission SET paused = true`. This waits for in-flight admissions and calls, and no new admission or call can start afterwards.
+  2. Fence every `pending` row.
+  3. Start repairs.
+  4. Resume with `paused = false`.
 
-    Rejecting new requests alone is not enough, because an already dispatched deletion could still commit (D22).
-- **Rollback:** the exception aborts the whole Auth transaction, including the audit entry. Cascades already applied inside it are undone.
-- **A count-only check is insufficient** without these row locks. That is why the guard locks before counting.
+  "No pending rows" is no longer the only proof, because the barrier excludes not-yet-admitted requests too (D22).
+- **Rollback:** any raise aborts the whole transaction. Nothing is deleted.
 
 ## 5. Request protocol and state machine
 
 ### 5.1 Function steps
 
-**Fence-then-lookup (the quiescence protocol, N2).** A terminal "not deleted" is only ever reported after this sequence:
+**FENCE(U), the quiescence protocol.** It is used after errors, by the status request, by maintenance and before a takeover:
 
 ```text
 FENCE(U):
   BEGIN; SET LOCAL lock_timeout = '5s';
-    UPDATE public.account_deletion_requests SET state = 'fenced' WHERE user_id = U AND state = 'pending';
-    -- waits while a deletion holds FOR SHARE on the row (mid-commit); lock_timeout → abort FENCE, result "unknown"
+    INSERT INTO public.account_deletion_requests (user_id, state, request_id, started_at, fenced_at)
+      VALUES (U, 'fenced', gen_random_uuid(), now(), now())
+    ON CONFLICT (user_id) DO UPDATE SET state = 'fenced', request_id = gen_random_uuid(), fenced_at = now();
+    -- waits while delete_own_account holds the row FOR UPDATE; FK violation ⇒ U already deleted; lock_timeout ⇒ "unknown"
   COMMIT;
-  lookup admin.getUserById(U):  404 → "deleted"   |   found → "not_deleted" (terminal)   |   error → "unknown"
+  lookup admin.getUserById(U): 404 → "deleted" | found → "not_deleted" (terminal) | error → "unknown"
 ```
 
-**Why it is terminal:**
-- After the fence commits, any deletion that was mid-commit has finished: it either committed, so the user is gone, or rolled back.
-- Any deletion that reaches the guard later sees `fenced` and is refused.
-- So a positive lookup *after* the fence proves that no earlier mutation can still delete the account.
-- A lookup *without* a prior fence is never terminal.
+**Why "not_deleted" after FENCE is terminal**, covering both of Codex's counterexamples:
+1. **A call in flight:** the fence waits for it, because the call holds the row `FOR UPDATE`.
+2. **An earlier call that hasn't reached the database yet:** its `request_id` was replaced, so it fails `PF_DELETION_STALE`.
+3. **An invocation that hasn't been admitted yet:** admission requires a password sign-in **newer than `fenced_at`** (below), so a delayed invocation authenticated before the fence is refused. The fence **inserts** the row if none existed, so a zero-row fence can't happen.
 
-**Delete request** (fresh authentication, empty body):
-1. Verify the caller and freshness (section 3); a failure returns 401.
-2. **Serialize:**
-   - Attempt limit: reset the window after 24 h; return 429 `rate_limited` when `attempts ≥ 5` [OD-B3].
-   - Row `pending` with `started_at > now() − 2 min`: return 409 `in_progress`. This window is UX only, so two devices don't race; it never affects safety.
-   - Row `pending` and older: run FENCE(U). If the result is `deleted`, return 410 `already_deleted`. If `unknown`, return 503 `unknown`. If `not_deleted`, continue.
-   - Set the row to `pending` with a new `request_id`, `started_at = now()` and `attempts + 1`, inserting the row if none exists.
-3. **Ledger intent (N5):** send the intent message (§7) with idempotency key `intent-<request_id>`. If Resend's acceptance isn't confirmed, run FENCE(U) and return 503 `try_later`, so no dispatch happens without an intent record.
-4. Eligibility pre-check (section 4.1) with service privileges, for a clear error. If ineligible: run FENCE(U), send outcome `not_deleted`, return 409 with the code. The trigger re-checks at commit anyway.
-5. Call `admin.deleteUser(U)` exactly once, a hard delete with no SDK retry.
+   **Clock caveat:** `amr` timestamps come from Auth's clock, while `fenced_at` comes from the database clock. A skew of a few seconds can make a legitimate sign-in right after a fence fail with `reauthenticate` (the user signs in again), or let an invocation authenticated within the skew window before the fence pass admission. [Feasibility FV-B11] measures the skew. If it isn't negligible, `fenced_at` is compared with a safety margin of the measured skew plus 5 s, favouring `reauthenticate`.
+
+A positive lookup *without* a prior fence is never terminal.
+
+**Delete request** (fresh authentication, §3, and an empty body):
+1. Verify the caller and freshness; a failure returns 401. Record the token's `amr` password timestamp as `auth_at`.
+2. **Atomic admission**, one transaction:
+   - `SELECT paused … FOR SHARE` on the barrier; if paused, 503 `maintenance`.
+   - Attempt limit: 429 `rate_limited` at ≥ 5 in 24 h [OD-B3].
+   - Upsert the request row to `pending` with a **new `request_id`**, but only when:
+     - no row exists; or
+     - the row is `fenced` and `fenced_at < auth_at`.
+   - If the row is `pending`:
+     - within 2 minutes (UX only): 409 `in_progress`;
+     - older: **takeover in the same transaction.**
+       1. The row is already held `FOR UPDATE`, which waits for any in-flight `delete_own_account` call of the old generation. If that call deleted the user, the FK or user lookup fails, so return 410 `already_deleted`.
+       2. Otherwise replace `request_id` with the new generation and set `started_at = now()`. `fenced_at` is not touched.
+       3. The superseded generation can never commit (any late call fails `STALE`), so after commit the function sends its outcome `not_deleted`.
+   - If the row is `fenced` with `fenced_at ≥ auth_at`: 401 `reauthenticate`. The fence is newer than the password sign-in, so a fresh sign-in is needed.
+3. **Ledger intent:** send the intent message (§7) with idempotency key `intent-<request_id>`. If acceptance isn't confirmed after the bounded retries: FENCE(U), 503 `try_later`. Nothing is dispatched without an intent.
+4. Eligibility pre-check (§4.1), for a clear error. If ineligible: FENCE(U), outcome `not_deleted`, 409 with the code. The function re-checks at commit.
+5. Call `rpc('delete_own_account', { p_user: U, p_request: request_id })` **exactly once**, with no client retry.
 6. Map the result:
 
-   | Admin response | Function response |
+   | RPC result | Function response |
    |---|---|
-   | 200 | 200 `deleted`; send outcome `deleted` |
-   | Any non-200 (Auth error, timeout, reset, gateway 5xx) | FENCE(U): `deleted` → 200 `deleted` plus outcome `deleted`; `not_deleted` → re-run the §4.1 check and return 409 `ineligible_changed` or 500 `not_deleted`, plus outcome `not_deleted`; `unknown` → 503 `unknown`, the row stays `pending` (still guarded), and no outcome is sent |
+   | `'deleted'` | 200 `deleted`, plus outcome `deleted` |
+   | `P0001` with a known prefix (`INELIGIBLE`, `STALE`, `PAUSED`, `GONE`) | A definitive rollback (`GONE` means already deleted, so 200 `deleted`). FENCE(U), then 409, 503 or 500 by prefix, plus outcome `not_deleted` |
+   | Anything else (timeout, reset, 5xx, unparsable) | FENCE(U): `deleted` → 200 plus outcome `deleted`; `not_deleted` → 500 plus outcome `not_deleted`; `unknown` → 503 `unknown`, no outcome (the row keeps its generation, so a late call can still only commit as that request, and the intent stays open) |
 
-   - **Error text is never used** (FV-B5): supabase-js surfaces the guard's `P0001` as a generic retryable 500, and a guard bug fails closed the same way.
-
-**Status request** (normal authentication, no fresh password; used by app reconciliation):
-- If the caller's token is rejected with `user_not_found`, the account is gone; Auth answers before the function runs.
-- Otherwise the function runs FENCE(U) and returns `deleted`, `not_deleted` or `unknown`, sending the matching outcome if the intent is still open.
-- The status call can only **stop** a pending deletion, never cause one, so fresh authentication isn't needed. It shares the request rate limit.
+**Status request** (normal authentication; used by app reconciliation):
+- Auth rejecting the caller's token with `user_not_found` means deleted. The app learns this, but the function can't run, so the ledger outcome is left to the **operator** (§7, V5-7).
+- Otherwise: FENCE(U), then `deleted`, `not_deleted` or `unknown`. If a terminal result is reached and an intent for the replaced generation is open, the function sends that outcome. It knows the generation because FENCE returns the previous `request_id`.
+- The status call can only stop a deletion, never cause one. It shares the request rate limit.
 
 ### 5.2 App state machine
 
@@ -315,7 +339,7 @@ stateDiagram-v2
 | **Confirming** | One disclosure, then the password field and a destructive **Delete account** button. The disclosure says what is deleted (account, household, pantry and shopping lists), that it is permanent, that other signed-in devices lose access within an hour and keep any offline copy until they reconnect, and what remains in operational records (section 7). Cancel sends nothing. There is no typed confirmation phrase. |
 | **FreshAuth** | Isolated client sign-in (section 3). It asserts that the fresh session's user id equals the main session's user id; otherwise it aborts and signs the fresh session out. |
 | **Dispatched** | The button is disabled and there is no cancel, because a dispatched request cannot be recalled. One request per tap. |
-| **Rejected** | Nothing changed. The app signs out the temporary session (`signOut({ scope: 'local' })` on the isolated client). Messages by code: `not_fresh` ("Please enter your password again"), `in_progress`, `rate_limited`, ineligible ("Contact support"), `not_deleted` ("Nothing was deleted. Try again later."), `try_later`, `already_deleted` (treated as Deleted). |
+| **Rejected** | Nothing changed. The app signs out the temporary session (`signOut({ scope: 'local' })` on the isolated client). Messages by code: `not_fresh` ("Please enter your password again"), `in_progress`, `rate_limited`, ineligible ("Contact support"), `not_deleted` ("Nothing was deleted. Try again later."), `try_later`, `already_deleted` (treated as Deleted), `reauthenticate` ("Please enter your password again"). |
 | **Unknown** | Persist `pf.deletion.unknown = {user_id, at}` (not secret). The temporary session follows the single lifecycle in §3: it stays in memory until a terminal result. Show "We couldn't confirm whether your account was deleted." It is never retried automatically. Starting a new deletion requires Reconciling to reach a **terminal** result first. |
 | **Reconciling** | The **status request** (§5.1) with the main session. `deleted`, or Auth's `user_not_found` → Deleted. `not_deleted` → SignedIn ("Your account was not deleted"), clear the flag, sign the temporary session out. `unknown`, offline or `session_not_found` → stay Unknown, offering "Check again" and the support contact. A plain `GET /user` returning 200 is **not** terminal and never clears the flag (N2). It runs again on every app start while the flag exists. |
 | **CleanedUp** | `signOut({ scope: 'local' })` on the main client; it tolerates errors, because the server already removed the sessions. Remove the PantryFlow AsyncStorage keys (session, verifiers, markers, unknown flag; the language preference may stay), reset the providers' in-memory household lists, and route to "Your account was deleted". Late in-flight responses are dropped by the existing scope guards (`isCurrent`). |
@@ -337,7 +361,7 @@ All of this happens in Auth's single deletion transaction, after the guard passe
 | `auth.users` (U) | Deleted | D05 |
 | `auth.identities`, `auth.sessions`, `auth.refresh_tokens`, `auth.mfa_factors`, `auth.mfa_amr_claims`, `auth.one_time_tokens` | Removed by Auth's FK cascades. [Feasibility FV-B3]: confirm each FK in the deployed auth schema. | D05, D12 |
 | `auth.flow_state` rows of U | **Not deleted** (no FK; FV-B3 observed the row surviving a hard delete). They hold U's id and PKCE flow data, not pantry content. See retention R-2b. | D05 |
-| `auth.audit_log_entries` | **Retained.** Earlier entries plus the new `user_deleted` entry with user id, email and phone. There is no FK. See the retention table. | Retention R-2 |
+| `auth.audit_log_entries` | **Retained:** earlier entries only. With option X no `user_deleted` entry is written, because Auth's handler is bypassed. The ledger and the function's minimal log are the deletion audit. There is no FK. | Retention R-2 |
 | `public.profiles` (U) | Cascade-deleted | D05 |
 | `public.pantry_households` (H) | Cascade-deleted | D05 |
 | `public.pantry_household_members` (U's, the only row of H) | Cascade-deleted | D05 |
@@ -377,36 +401,50 @@ Requirement: a restored backup never silently brings deleted accounts back into 
 | Platform logs | Only within their (plan-dependent, unverified) retention | None | Fallback only |
 | **One notification per completed deletion to the owner's mailbox, sent through the existing Resend account** | Yes: stored outside the database | None (Resend already sends Auth email) | **Proposed** |
 
-**Proposed ledger: intent and outcome (N5).**
-- **Messages:** two kinds, both sent to the owner's mailbox through the existing Resend account, containing only the account UUID, the `request_id`, the kind and the UTC time. No email address or name.
-  - **intent:** sent in step 3 of §5.1, **before** the Admin delete is dispatched. If Resend doesn't confirm acceptance, the request is fenced and nothing is dispatched. So no deletion can commit without a durable intent record.
-  - **outcome:** `deleted` or `not_deleted`, sent once a terminal result is known (§5.1 and the status request).
-- **Idempotency:** each message uses a Resend idempotency key (`intent-<request_id>`, `outcome-<request_id>`), so retries don't duplicate. Resend's key retention window is [Feasibility FV-B7]. Test D19's oracle is **at most one** message per `(request_id, kind)` and **exactly one** intent before any dispatch.
+**Ledger: intent and outcome** (N5; v0.6 adds V5-5, V5-7 and the Resend specifics).
+- **Messages:** sent through the existing Resend account to the owner's mailbox, containing only:
+  - the UUID;
+  - the `request_id`;
+  - the kind (`intent`, `deleted` or `not_deleted`);
+  - one UTC timestamp, captured **once** and reused unchanged on every retry, because Resend rejects a changed payload under the same key.
+- **Intent:** sent before the RPC (§5.1 step 3). No intent means no dispatch.
+- **Outcome:** sent when the function or the status request reaches a terminal result.
+- **Idempotency:** keys `intent-<request_id>` and `outcome-<request_id>`, with at most 3 attempts per request.
+  - Resend's idempotency window is **24 hours** [FV-B7]. Later resolutions use distinct keys (`outcome-<request_id>-op-<n>`).
+  - Duplicate messages are tolerated: restoration deduplicates by `request_id`, taking the latest outcome.
 - **Crash boundaries:**
 
   | Crash point | Effect |
   |---|---|
-  | Before the intent | Nothing dispatched; no record needed |
-  | After the intent, before dispatch | The row stays `pending` and the intent is unresolved. The next status call or request fences it and sends `not_deleted` |
-  | After the commit, before the outcome | The intent is unresolved, and the status call resolves it to `deleted` |
+  | Before the intent | No dispatch |
+  | After the intent, before the RPC | The row stays `pending`; the next status call or request fences it and records `not_deleted` |
+  | After the commit, before the outcome | The status call sees `user_not_found` and can't run, so the intent stays **unresolved** until the operator resolves it |
 
-  In every case, either an outcome is eventually recorded or an **unresolved intent remains visible**. Unlike v0.3, no case is invisible.
-- **Durability, access and retention:**
-  - Independent of the Supabase database and its backups.
-  - Owner mailbox only.
-  - Kept for at least the longest backup or PITR retention plus 30 days.
-  - The UUID is pseudonymous personal data kept as a minimal fulfilment record, under legal review, and mentioned in the privacy notice (KAN-72).
+- **Operator reconciliation** (V5-7; frequency per OD-B5a): list intents without an outcome, older than one hour. For each:
+  1. Look the UUID up with `getUserById`.
+  2. Read its request row, if it still exists.
+  3. If deleted: send `deleted`.
+  4. If it exists with a `fenced` row: send `not_deleted`.
+  5. If it exists with the same `pending` generation: FENCE, then the same steps.
+  6. Record the action in the support log.
+
+  No automatic completion is claimed for this case.
+- **Retention:** an intent and its outcome are kept for the longest backup or PITR retention plus 30 days **after the outcome**. Unresolved intents are kept until resolved. An intent is never discarded while its operation could still execute.
+- **Durability, access, privacy:** independent of the Supabase database and its backups; owner mailbox only; the UUID is pseudonymous personal data kept as a minimal fulfilment record (legal review; privacy notice, KAN-72).
 
 **Restore procedure** (operations runbook, owner-executed):
-1. Restore only into an **isolated** project.
-2. Note the recovery-point timestamp T.
-3. Collect every ledger **intent** with time ≥ T − 24 h, with its outcome if any.
-4. Resolve each UUID still present in the restored `auth.users`:
-   - outcome `deleted`: re-apply the deletion;
-   - outcome `not_deleted`: skip;
-   - **no outcome (unresolved):** restoration stays **blocked** until it's resolved. Check production if it's still available (user exists? request row state?). Otherwise the owner decides. The default is to complete the deletion, because the user requested it [Owner OD-B8].
-5. Re-apply a deletion by inserting a `pending` request row and running the Admin delete (guarded). An ineligible graph goes through the support repair procedure.
-6. Open access only when every intent is resolved and verified.
+1. Restore into an **isolated** project and note the recovery point T.
+2. **Selection by operation lifetime (V5-5):**
+   - every intent **without an outcome, regardless of age**;
+   - every intent whose `deleted` outcome time is ≥ T − 24 h, **regardless of the intent's age**.
+3. Resolve each selected UUID still present in the restored `auth.users`:
+   - outcome `deleted`: re-apply;
+   - unresolved: restoration stays **blocked** for it. Check production if it's still available.
+4. **Default completion [OD-B8, accepted; Codex conditions]:** applies only when production can't answer, and only with the owner's explicit approval per UUID. Requirements:
+   - a **request-validity check**: a genuine function-sent intent with a `request_id`, no later `not_deleted` outcome, and a UUID that matches the restored user;
+   - an **auditable resolution record** in the support log: date, operator, UUID, `request_id`, evidence and decision.
+5. Re-apply a deletion by creating a new `pending` generation for the UUID, sending a new intent, then running `private.delete_own_account` as the operator, guarded. An ineligible graph goes through the support repair procedure.
+6. Open access only when every selected intent is resolved and verified.
 
 **External deletion requests** (no app access) **[Specified, N6]:**
 - **Request channel:** the support email published under KAN-72, which is also the web deletion route Google Play requires.
@@ -418,7 +456,7 @@ Requirement: a restored backup never silently brings deleted accounts back into 
 - **Verification:** the requester returns the exact code. A sender address or subject line alone is never accepted.
   - A mismatched, expired or already-used code is rejected, and a new challenge can be issued.
   - Forged senders and replays are rejected (V03).
-- **Execution:** set a `pending` request row, send the intent, run the Admin delete (guarded), then record date, UUID and outcome (R-8) and send the outcome message.
+- **Execution:** create a `pending` generation, send the intent, run `private.delete_own_account` (guarded), then record date, UUID and outcome (R-8) and send the outcome message.
 - **Timing:** a reply within the period stated in the privacy notice (KAN-72, legal review).
 
 **Technical guarantees versus legal requirements:**
@@ -437,9 +475,9 @@ These are proposed tests, not a claim that any currently passes. Destructive and
 | D02 | Stolen or refreshed bearer without a fresh password | Token whose `amr` password entry is older than 300 s → 401 `not_fresh`; a client flag in the body → 400 | Function + Auth |
 | D03 | Wrong password or Auth outage | App sign-in fails; the function is never called; no temporary session leaks | Comp + Auth |
 | D04 | A targets B | Body `{user_id: B}` → 400; B's graph unchanged byte for byte | Function + DB |
-| D05 | Eligible hard delete | Every section 6 row matches; B's data unchanged; U's refresh fails; `getUserById(U)` → 404 | Real Auth + DB |
+| D05 | Eligible hard delete through the function | `rpc('delete_own_account')` with the current generation → `'deleted'`; every section 6 row matches (including the FV-B3 auth cascades); B's data unchanged; U's refresh fails; `getUserById(U)` → 404 | Real Auth + DB |
 | D06 | Ineligible graphs | Each G1–G4 failure → 409 with its code; nothing deleted (all rows and the audit table unchanged) | Fixture graphs + function |
-| D07 | Membership race | Deterministic interleavings with two DB connections and `pg_locks` polling: (a) T2 inserts a membership into H and holds it; T1's guarded DELETE blocks; T2 commits; T1 aborts `extra_members`; full rollback. (b) T1's guarded DELETE holds its locks; T2's insert blocks; T1 commits; T2 fails its FK. | DB, plus one Admin API end-to-end |
+| D07 | Membership race | Deterministic interleavings with two DB connections and `pg_locks` polling: (a) T2 inserts a membership into H and holds it; T1's `delete_own_account` call blocks; T2 commits; T1 aborts `extra_members`; full rollback. (b) T1's `delete_own_account` call holds its locks; T2's insert blocks; T1 commits; T2 fails its FK. | DB, plus one Admin API end-to-end |
 | D08 | Ownership, second household and foreign attribution races; deadlock | The same method for each section 4.3 row; a forced deadlock aborts one side without a partial state | DB |
 | D09 | Duplicate and replay | Concurrent calls within 2 min: one proceeds, the other 409. A later second request fences the first before proceeding. Replay after deletion → 401. At most one commit in every order | Function + DB |
 | D10 | Failure before commit | Guard exception, or an injected FK failure → 500/409; full graph intact | DB + function |
@@ -449,14 +487,17 @@ These are proposed tests, not a claim that any currently passes. Destructive and
 | D14 | UX | Cancel before dispatch has no effect; no cancel after; errors announced; English and German; TalkBack | Comp + Native |
 | D15 | Unguarded paths unchanged | The existing author-deletion tests (`database.test.cjs`, `shopping.test.sql`, `behavior.integration.ts`) and fixture cleanup pass unmodified | Existing suites |
 | D16 | Request table unreachable by clients | As `anon` and `authenticated`: insert, update, delete and select on `account_deletion_requests` are all denied | pgTAP |
-| D17 | Guard activation never expires | No row → existing semantics (D15); `pending` of **any** age (including > 1 day) → guarded; `fenced` → refused with `PF_DELETION_FENCED` | pgTAP + DB |
+| D17 | Activation never expires; generations bind | No row → existing semantics (D15). A row in any state with deletion outside the function → `PF_DELETION_USE_FUNCTION`. A function call with a fenced or older generation → `PF_DELETION_STALE`. The current `pending` generation of **any** age (including > 1 day) → G1–G4 checked at commit | pgTAP + DB |
 | D18 | Freshness claims | Tokens with a `password` entry at 301 s → 401; `recovery`, `otp` or `magiclink` entries only → 401; refreshed token of a 10-minute-old password session → 401; wrong `aud`, `role` or `iss`, anonymous, or missing `session_id` → 401 | Function + Auth |
 | D19 | Ledger | Exactly one intent before any dispatch (key `intent-<request_id>`); intent not accepted → fenced, no dispatch, 503 `try_later`; at most one outcome per request; retries reuse the keys; messages contain only UUID, `request_id`, kind and time | Function |
-| D20 | Fence and quiescence | A real guarded delete is held before commit (deterministic barrier); a concurrent fence **waits**; after release, the fence result is terminal and matches the database. A delete reaching the guard after the fence is refused. No premature `not_deleted`; exactly one destructive dispatch per `request_id` | DB + Function |
-| D21 | Late delivery | A dispatch delayed far beyond any window, with an eligibility change injected meanwhile: the deletion stays guarded and aborts; the other member's graph is intact | DB + Function |
-| D22 | Maintenance drain | With the pause set: new requests → 503; a `pending` request in flight is fenced and drained before repairs; no deletion commits during the repair | DB + Function |
-| D23 | Temporary-session lifecycle | Unknown keeps the isolated client in memory; `not_deleted` → the fresh session is revoked (its refresh fails); app killed in Unknown → orphan documented, no fresh token persisted | Comp + Auth |
+| D24 | Other deletion paths are refused | Admin API, dashboard or SQL deletion of a user **with** a request row → `PF_DELETION_USE_FUNCTION`, nothing deleted; a user without a row → existing semantics (D15) | DB + Admin API |
+| D25 | RPC error mapping | Each `P0001` prefix (`INELIGIBLE`, `STALE`, `PAUSED`, `GONE`) arrives at the service-role caller with code and message intact; an unparsable or 5xx result goes through FENCE | Function + DB |
+| D20 | Fence and quiescence | Three cases, each a deterministic barrier through the real function:<ol><li>A call held inside the function before commit: a concurrent fence **waits**, and its result is terminal and matches the database.</li><li>**Pre-admission (V5-1):** an invocation paused before admission; a status fence runs (inserting a row); release, and admission is refused with `reauthenticate` because `fenced_at ≥ auth_at`.</li><li>**Reactivation (V5-1):** an old RPC delayed before the database; a status fence and a **new** request with a new generation; release the old call, which is refused with `PF_DELETION_STALE`.</li></ol>At most one deletion commits, matching the current generation | DB + Function |
+| D21 | Late delivery | An RPC delayed far beyond any window with an eligibility change injected meanwhile (same generation): G1–G4 re-checked at commit and the call aborts; the other member's graph is intact. With a newer generation it is refused as `STALE` | DB + Function |
+| D22 | Maintenance admission barrier (V5-6) | A request paused **between its maintenance check and its upsert** while the pause is set: the pause waits for it or it fails `PAUSED`; it never becomes executable during repairs. An RPC in flight finishes before the pause commits; later RPCs fail `PAUSED`; drain fences every `pending` row | DB + Function |
+| D23 | Temporary-session lifecycle (V5-8) | The fresh tokens stay in memory through Unknown. A first raw logout fails (network); after connectivity returns, a retry gets **204** and the fresh session's refresh then fails. An injected 403 other than `session_not_found` leaves revocation pending. App killed → orphan documented, no fresh token persisted | Comp + Auth |
 | V01 | Diagnostics | Function logs and crash payloads contain no password, token, authorization header or email | Review + test |
+| V02b | Old intent across the recovery point (V5-5) | Intent created two days before T; backup at T; deletion committed after T, with or without its outcome mail; restore → the UUID is selected, and access stays blocked until the deletion is re-applied or resolved | Operational exercise |
 | V02 | Restore rehearsal and crash boundaries | Terminate the function before the intent, after the intent, after the commit, and after the outcome send. The disposable restore then either re-applies the deletion (outcome `deleted`), skips it (`not_deleted`), or **stays blocked** on the unresolved intent until it's resolved. Never silently reopens a deleted account | Operational exercise |
 | V03 | External request | The runbook is executed on a fixture account. A correct code is accepted. A forged sender without the code, a wrong code, an expired code and a replayed (used) code are each rejected. Another user is unaffected | Manual |
 | G01 | Regression | Signup, confirmation, login, CRUD and household-isolation suites green | Existing suites |
@@ -469,7 +510,10 @@ These are proposed tests, not a claim that any currently passes. Destructive and
 | FV-B2 | **Done:** all six interleavings (three patterns, each in both orders) proven blocking through `pg_locks` and `pg_blocking_pids`, with the expected outcomes. Caveat: T1 was a direct SQL delete, while Auth's own path was exercised in FV-B1. |
 | FV-B3 | **Done (local v2.198.0):** cascades confirmed, plus `flow_state` without an FK. Hosted schema parity: open. |
 | FV-B4 | **Done for Auth:** `iat` changes on refresh while the password timestamp stays, and a new sign-in creates a new timestamp. **Open:** the Edge gateway exposing verified claims, checked when the function is built. |
-| FV-B5 | **Done:** raw REST 500 with `P0001 PF_DELETION_INELIGIBLE: <code>`; supabase-js hides it, hence reconcile-always (§5.1). |
+| FV-B5 | **Done (Admin API path, now superseded by option X):** raw REST 500 with `P0001 PF_DELETION_INELIGIBLE: <code>`; supabase-js hides it. Relevant only to the trigger's backstop (D24). |
+| FV-B9 | A `postgres`-owned `SECURITY DEFINER` function may delete from `auth.users` locally and on hosted; the cascades match FV-B3; `set_config` with local scope reaches the trigger in the same transaction. |
+| FV-B10 | PostgREST RPC returns the function's `P0001` code and message to the service-role caller (supabase-js `rpc` error shape). |
+| FV-B11 | Clock skew between Auth's `amr` timestamps and the database's `now()` (local and hosted), for the admission rule. |
 | FV-B6 | Rate-limit keying for direct sign-ins compared with sign-ins sent from a function (disposable stack). Hosted keying is recorded as a provider assumption. |
 | FV-B7 | Resend idempotency-key behaviour and retention window for the ledger messages (sandbox or test domain only). |
 | FV-B8 | Fence lock-timeout behaviour inside an Edge Function invocation (time budget, connection pooling) against a held guarded delete. |

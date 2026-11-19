@@ -80,6 +80,8 @@ Requirements:
 
 ## 5. KAN-81 — Password policy (approved with change, option C)
 
+> **Amended 2026-11-19:** the session rule for password recovery and uncertain outcomes; see Amendment 1, A1.
+
 **Rules:**
 - A minimum of 15 characters.
 - Passwords of at least 64 characters are supported. The actual server behavior and any byte-length limit (for example bcrypt's 72-byte input) are verified, including multi-byte characters.
@@ -106,6 +108,8 @@ Requirements:
 - Hosted configuration inspection and changes require separate authorization.
 
 ## 6. KAN-57 — Account deletion (recommendation changed to option B)
+
+> **Amended 2026-11-19:** the deletion execution path; see Amendment 1, A2.
 
 The preferred design is a narrowly scoped Supabase Edge Function that uses the supported Auth Admin API. It is not a general-purpose custom backend. A direct database function remains an alternative only with a documented technical advantage.
 
@@ -173,3 +177,58 @@ Each issue below gets a dated comment pointing here; descriptions stay unchanged
    - KAN-81, with KAN-80 and KAN-42;
    - KAN-57, with KAN-43.
 3. The OPS-01 comparison note, then the owner's confirmation.
+
+## Amendment 1 — 2026-11-19 (after the Codex reviews of the account-lifecycle specifications)
+
+**Status:** decided by the owner on 2026-11-19 and recorded here for approval through PR #50.
+- **Basis:** the Codex reviews in `docs/reviews/2026-11-19/`, which found counterexamples N3/N4 and V5-1 to V5-4.
+- **Specifications:** the specs at v0.6 implement this amendment.
+- **Authorization:** none for implementation, hosted changes or deployment.
+
+### A1. Session after password recovery or an uncertain outcome (OD-A10); amends §5
+
+- **Replaced:** §5's "after a password change or recovery, the current valid session continues and other sessions are revoked", for **recovery** and for **uncertain outcomes**.
+- **Recovery:** a reset ends with sign-out on **every** device, including the current one. The user then signs in with the new password.
+- **Uncertain outcome** (no response) in either flow: sign out everywhere, and the sign-in screen decides. The app claims neither "changed" nor "not changed".
+- **Confirmed in-app change:** §5 stands. The current session continues, and other sessions are revoked by the update's own transaction.
+- **Sign-out evidence:** only an HTTP 204 from the logout endpoint, or 403 `session_not_found`.
+- **Why:** this meets §5's condition "no reopening without a demonstrated provider incompatibility":
+  - the provider's recovery exemption from the current-password check has no freshness limit, and the recovery session keeps it through refresh and password update (verified in source and in FV-A4);
+  - a continuing recovery session would therefore keep reset capability (Codex N4);
+  - the SDK's sign-out result can't prove revocation (Codex V5-4).
+- **Residuals accepted:**
+  - a recovery credential stolen before completion grants reset capability until the session ends;
+  - an earlier update request that outlives its client timeout may still commit (bounded by the provider's request lifetime, to be verified).
+
+### A2. Deletion execution path (OD-B9, option X); amends §6
+
+- **Replaced:** §6's preference for "a narrowly scoped Supabase Edge Function that uses the supported Auth Admin API".
+- **Now:** the Edge Function stays narrow, and the destructive step is **one service-only database function**, `private.delete_own_account(user, request_id)`. In a single transaction it:
+  - checks the maintenance barrier and the current request generation;
+  - locks and checks the household graph;
+  - hard-deletes the `auth.users` row, whose cascades remove sessions, refresh tokens, identities and app data.
+- **Why:** this is the "documented technical advantage" §6 requires. The Admin API receives only the user id, so an old or delayed request can't be distinguished from a new one, and fencing can't be bound to one operation (Codex V5-1). The database function receives the request id.
+- **Unchanged:**
+  - fresh authentication;
+  - caller-only targeting;
+  - no service credentials in the app;
+  - hard deletion;
+  - fail-closed eligibility;
+  - the external request path, which now also uses the function.
+- **Accepted costs:**
+  - Auth's own deletion audit entry is not written; the ledger and the function log are the audit;
+  - hosted permission for the function to delete from `auth.users` must be verified (FV-B9).
+
+### A3. Restore ledger (OD-B8) and maintenance pause (OD-B6)
+
+- **Restoration:** stays blocked for every unresolved deletion intent.
+- **Default completion** of a requested deletion, when production can't answer, needs:
+  - the owner's explicit approval per account;
+  - a request-validity check;
+  - an auditable resolution record.
+- **Maintenance:** it pauses and **drains** self-service deletion through an admission barrier before privileged repairs.
+
+### Records to update after approval
+
+Corrective comments on **KAN-81** (session rule) and **KAN-57** (execution path), previewed before posting.
+
