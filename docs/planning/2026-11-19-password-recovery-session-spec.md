@@ -159,6 +159,25 @@ The value is evaluated exactly as given: never trimmed, normalized or truncated.
 | Accessibility | The policy line is the field's accessibility hint. The status line sits in a polite live region, but only **state changes** are announced: entering "more needed", reaching the minimum, becoming too long, and back. A remaining-count announcement happens at most once, after 1 second without input, never per keystroke. Submit errors are announced with the existing form-error mechanism (KAN-84 `announceKey`). |
 | Localization | All strings come from `lib/i18n` (English now; German listed for KAN-60, not longer than the English). |
 
+**Server error mapping** (owner clarification, 2026-11-19; added after review baseline `f1028869`):
+- Server-side validation failures always map to understandable, localized messages. Raw provider text is never shown.
+- The mapping is keyed on the provider's `error_code` and `weak_password.reasons`, never on message text.
+
+| Provider response | Message (English; German listed for KAN-60) |
+|---|---|
+| 422 `weak_password`, reason `length` | "Use at least 15 characters." |
+| 422 `weak_password`, reason `characters` (only if a composition rule were ever configured; not planned) | "This password doesn't meet the requirements." |
+| 422 `weak_password`, reason `pwned` | "This password has appeared in a data breach. Choose a different one." |
+| 400 `validation_failed` (longer than 72 bytes) | The §2.6 too-long message |
+| 422 `same_password` | "Choose a password different from your current one." |
+| `current_password_required`, `current_password_invalid`, `current_password_mismatch` | "Current password is incorrect." |
+| `reauthentication_needed` (recovery) | "This reset session has expired. Request a new link." |
+| 429 or `over_request_rate_limit` | "Too many attempts. Wait a moment and try again." |
+| Network error or 5xx | "We couldn't reach the service. Check your connection and try again." Never "changed" or "saved". |
+| Any other or unknown code | "Something went wrong. Your password was not changed." The code goes to a scrubbed diagnostic only; no message text, password or token. |
+
+Unit test P17 checks the mapping for every row, including an unknown code.
+
 **Replaces the current hint.** Today both the sign-in and registration password fields show the placeholder "At least 6 characters" (`auth_password_placeholder`). Registration also blocks submit with `password.length < 6`, which counts UTF-16 units. Those match today's server minimum of 6 but not this policy:
 - a placeholder disappears on the first keystroke;
 - the sign-in screen must not show a new-password rule;
@@ -348,6 +367,7 @@ Destructive or concurrency tests run only in a disposable stack, never against t
 | P14 | One shared evaluator | The three screens import `evaluateNewPassword`; no other length computation exists in their sources (static check); the evaluator's unit tests cover the §2.3 rows | Unit + static |
 | P15 | Not on login or re-authentication | Sign-in, deletion FreshAuth, the current-password field and the UpdateUnknown check show no policy or length feedback and submit a 6-character legacy password unchanged | Comp |
 | P16 | Server authoritative | A client-valid password rejected by the server (`weak_password`, `pwned`, too long) shows the server-mapped message and is not treated as success; a client-invalid password sends no request | Comp + Auth |
+| P17 | Server error mapping | Each row of the §2.6 mapping table produces its localized message; an unknown code gives the generic message; no provider message text appears in the UI | Unit |
 | R01 | Neutral request | Known and unknown addresses give the same UI state; Mailpit receives mail only for the known one | Auth + Comp |
 | R02 | Throttle and outage | 429 shows the neutral message; network error and 5xx show the failure message; the cooldown works | Comp |
 | R03 | Warm and cold recovery | Valid link → RecoveryPending → Confirmed; kill after the exchange → restart opens RecoveryPending | Native |
