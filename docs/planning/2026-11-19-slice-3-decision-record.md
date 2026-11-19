@@ -194,7 +194,11 @@ Each issue below gets a dated comment pointing here; descriptions stay unchanged
 - **Sign-out evidence (corrected after the Codex review of v0.6, V6-1):**
   - All devices count as signed out only on an HTTP **204** from a global logout made with a live session.
   - `session_not_found` proves only that the presented session is gone.
-  - **Disposition of that case, proposed as OD-A11 and awaiting owner confirmation:** the user signs in again, and a logout of all *other* sessions from the new session must return 204. The user then stays signed in on that fresh, ordinary password session.
+  - **Disposition of that case, proposed as OD-A11 and recommended by the Codex review of v0.7; awaiting owner confirmation:**
+    - the user signs in again with **the same account** (the returned user id must match the pending operation);
+    - a logout of all *other* sessions from the new session must return 204;
+    - the user then stays signed in on that fresh, ordinary password session;
+    - if the replacement session is lost before that, another same-account sign-in is required.
 - **Why:** this meets §5's condition "no reopening without a demonstrated provider incompatibility":
   - the provider's recovery exemption from the current-password check has no freshness limit, and the recovery session keeps it through refresh and password update (verified in source and in FV-A4);
   - a continuing recovery session would therefore keep reset capability (Codex N4);

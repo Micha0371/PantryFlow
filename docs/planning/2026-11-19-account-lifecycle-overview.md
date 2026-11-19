@@ -1,5 +1,14 @@
 # Account lifecycle — overview, threat model and decisions
 
+**Version 0.8, 2026-11-19.** This version responds to the Codex review of v0.7 (`1c0225e`; `docs/reviews/2026-11-19/specs-v0.7-review.md`, verdict "request changes"):
+
+- **V7-1 (High):** same-account binding of the replacement sign-in.
+- **V7-2 (Medium):** recovery when the replacement session is lost.
+- **V7-3 (Low):** completion wording.
+- **Tests:** R19, R20 and D20 extended; FV-B9 privileges detailed.
+
+Codex: no further deletion-architecture redesign or product-policy decision is indicated. OD-A11 is recommended with the same-account binding, and it remains the owner's decision.
+
 **Version 0.7, 2026-11-19.** This version responds to the Codex review of v0.6 (`4c71e12`; `docs/reviews/2026-11-19/specs-v0.6-review.md`): three High findings and two Medium. Codex judged that the request-bound deletion architecture and the restore selection need no redesign.
 
 | Codex v0.6 finding | 0.7 correction | Where |
@@ -169,7 +178,7 @@ Status after the 2026-11-19 experiments: **done** A2 (Auth behavior), A4, A5 (lo
 | OD-A10 | Session after a password reset or an uncertain outcome | **Close the session:** a proven global logout, then sign-in with the new password; a confirmed in-app change keeps this device signed in | **Accepted 2026-11-19** (decision record Amendment 1) |
 | OD-B8 | Unresolved ledger intents at restore | Restoration blocked per unresolved intent. Default completion only with explicit owner approval per UUID, after a request-validity check, with an auditable resolution record | **Accepted 2026-11-19** (Codex conditions included) |
 | OD-B9 | Deletion execution path (Codex V5-1) | **Option X:** one service-only database function bound to the request id, instead of the Auth Admin API | **Accepted 2026-11-19** (decision record Amendment 1) |
-| OD-A11 | Current session gone before global logout is proven (Codex V6-1, A1 disposition) | Sign in again, then `logout?scope=others` from the new session must return 204; stay signed in on that fresh password session; no tabs until then | **New, proposed** |
+| OD-A11 | Current session gone before global logout is proven (Codex V6-1, A1 disposition) | A **same-account** sign-in, then `logout?scope=others` from the new session must return 204; stay signed in on that fresh password session; if the replacement is lost, sign in again; no tabs until it's done | **Proposed; recommended by Claude and by the Codex review of v0.7; awaiting owner** |
 | OD-B7 | Orphaned `auth.flow_state` rows after deletion (FV-B3) | Accept until provider expiry is verified; otherwise delete them in the function after a confirmed deletion | Open |
 | OD-B6 | Maintenance pause for self-service deletion | Pause plus drain through the admission barrier (deletion §4.3) | **Accepted 2026-11-19** (the requirement; the mechanism is part of v0.6 review) |
 

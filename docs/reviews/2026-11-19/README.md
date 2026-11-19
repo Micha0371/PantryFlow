@@ -9,3 +9,4 @@ The independent Codex reviews that the account-lifecycle specifications (`docs/p
 The reports mention material "beside this report" (a source archive and Jira JSON snapshots). That material is deliberately not committed; the repository history and Jira hold the originals.
 - `specs-v0.4-review.md`: the Codex review of baseline `f1028869` (v0.4) plus the `ab83b0f` delta. Verdict NO-GO, with findings N1–N8; version 0.5 of the specifications responds to it.
 - `specs-v0.6-review.md`: the Codex review of v0.6 (`ef89b30..4c71e12`), with findings V6-1 to V6-5; version 0.7 responds to it. The intermediate review of v0.5 (V5-1 to V5-8) was delivered to the owner directly and is summarised in the overview.
+- `specs-v0.7-review.md`: the Codex review of v0.7 (`4c71e12..1c0225e`), verdict "request changes", with findings V7-1 to V7-3; version 0.8 responds to it.
