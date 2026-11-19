@@ -23,7 +23,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: radii.pill,
-    alignSelf: 'flex-start',
   },
   dot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
   text: { ...typography.small, fontWeight: '600' },

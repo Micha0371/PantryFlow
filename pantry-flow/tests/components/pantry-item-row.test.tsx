@@ -91,3 +91,14 @@ test('editDisabled disables only the content control', async () => {
   await fireEvent.press(screen.getByTestId('pantry-item-i1'));
   expect(onPress).not.toHaveBeenCalled();
 });
+
+test('status badge is vertically centred in the status control, not pinned to its top', async () => {
+  await setup();
+  const status = screen.getByTestId('pantry-item-status-i1');
+  expect(StyleSheet.flatten(status.props.style).alignItems).toBe('center');
+  // The badge is the View holding the status label; it must not override the centring.
+  let badge = screen.getByText('Low').parent;
+  while (badge && StyleSheet.flatten(badge.props.style)?.borderRadius === undefined) badge = badge.parent;
+  expect(badge).toBeTruthy();
+  expect(StyleSheet.flatten(badge!.props.style).alignSelf).toBeUndefined();
+});
