@@ -49,7 +49,7 @@ export default function ConfirmationCallback() {
         {phase === 'invalid' && <Text style={styles.message}>{t('auth_confirmation_recovery')}</Text>}
         <Button testID="confirmation-recover" label={t(phase === 'already' ? 'nav_pantry' : 'auth_resend_confirmation')}
           onPress={() => router.replace(phase === 'already' ? '/(tabs)' : '/(auth)/confirm-email')} />
-        <Button testID="confirmation-login" label={t('auth_go_to_login')} onPress={() => router.replace('/(auth)/login')} />
+        <Button testID="confirmation-login" variant="secondary" label={t('auth_go_to_login')} onPress={() => router.replace('/(auth)/login')} />
       </>}
     </View>
   </SafeAreaView>;
