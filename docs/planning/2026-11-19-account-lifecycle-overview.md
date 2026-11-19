@@ -1,5 +1,10 @@
 # Account lifecycle — overview, threat model and decisions
 
+**Version 0.11.2, 2026-11-19.** This version adds the [round-3 evidence](../testing/2026-11-19-account-lifecycle-feasibility-round3.md) for deletion spec v0.11.1, in a disposable local stack:
+- **Confirmed locally:** all 11 cases. Both missing-row orders, paused draining, stale versus newer, competing resolvers, ambiguous-then-gone, every D25 prefix, the commit-order-logged D20.7 (0 violations, not exhaustive), V02c selection logic, and the round-2 regression.
+- **Folded in:** seven clarifications (deletion spec v0.11.2), none a policy change.
+- **Next:** a Codex evidence review of round 3. The hosted, toolchain, phone, Edge-integration and operational gates stay open.
+
 **Version 0.11, 2026-11-19.** This version responds to the Codex review of v0.10 (`0ecad1e`):
 - **High:** the fences skip the maintenance barrier, so draining works while paused.
 - **Medium:** one authoritative generation-outcome rule (`committed` or `not_committed`), separate from the account-level `account_deleted`, with timestamp-free identical payloads.
