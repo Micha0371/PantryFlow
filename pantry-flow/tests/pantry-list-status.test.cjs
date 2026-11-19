@@ -56,6 +56,7 @@ function render({ items: initial = [mk('1', 'Milk', 'in_stock')], addItem } = {}
     '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/Button': { Button: 'Button' },
     '@/components/PantryItem': row, '@/components/StatusSelector': selector,
     '@/hooks/useItemMutation': mutation, '@/hooks/useShoppingPrompt': prompt,
+    '@/hooks/useKeyboardOverlap': { useKeyboardOverlap: () => 0 },
     '@/hooks/useSingleOpen': { useSingleOpen: () => {
       const go = path => { log.nav.push(path); log.navLocked = true; };
       go.isLocked = () => Boolean(log.navLocked);

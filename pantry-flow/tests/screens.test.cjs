@@ -32,7 +32,7 @@ const politeRegions = renderer => renderer.root.findAll(n => n.type === 'View' &
 // The real single-open hook runs with the same router stub; the list stays focused.
 const routerStubs = push => {
   const expoRouter = { useRouter: () => ({ push }), useFocusEffect: callback => React.useEffect(callback, [callback]) };
-  return { 'expo-router': expoRouter, '@/hooks/useSingleOpen': load('hooks/useSingleOpen.ts', { 'expo-router': expoRouter }) };
+  return { 'expo-router': expoRouter, '@/hooks/useKeyboardOverlap': { useKeyboardOverlap: () => 0 }, '@/hooks/useSingleOpen': load('hooks/useSingleOpen.ts', { 'expo-router': expoRouter }) };
 };
 
 test('initial inventory loading shows progress without claiming an empty pantry', () => {

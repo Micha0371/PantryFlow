@@ -17,10 +17,12 @@ const NODE = { measureInWindow: cb => cb(10, 20, 30, 40) };
 const mk = (id, name, status = 'in_stock') => ({ id, household_id: 'h', name, category: 'dairy', location: 'fridge', status });
 
 function render(initial) {
-  const log = { writes: [], announced: [], nav: [], dismissed: 0 };
+  const log = { writes: [], announced: [], nav: [], dismissed: 0, listeners: [], removed: 0,
+    emit: (name, e) => log.listeners.filter(l => l.name === name).forEach(l => l.cb(e)) };
   const store = { items: initial, household: 'h', force: () => {} };
   const native = { Text: 'Text', View: 'View', TextInput: 'TextInput', ActivityIndicator: 'Spinner', Pressable: 'Pressable', Modal: 'Modal',
-    Platform: { OS: 'android' }, Keyboard: { dismiss: () => { log.dismissed += 1; } }, StyleSheet: { create: s => s, absoluteFill: {} },
+    Platform: { OS: 'android' }, Keyboard: { dismiss: () => { log.dismissed += 1; },
+      addListener: (name, cb) => { const l = { name, cb }; log.listeners.push(l); return { remove: () => { log.removed += 1; log.listeners.splice(log.listeners.indexOf(l), 1); } }; } }, StyleSheet: { create: s => s, absoluteFill: {} },
     useWindowDimensions: () => ({ width: 400, height: 800 }),
     AccessibilityInfo: { setAccessibilityFocus: () => {} }, findNodeHandle: () => null,
     FlatList: props => React.createElement('FlatList', props, props.data.map(item =>
@@ -41,6 +43,7 @@ function render(initial) {
     '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/Button': { Button: 'Button' },
     '@/components/PantryItem': row, '@/components/StatusSelector': selector, '@/components/SearchField': field,
     '@/hooks/useItemMutation': mutation,
+    '@/hooks/useKeyboardOverlap': load('hooks/useKeyboardOverlap.ts', { 'react-native': native }),
     '@/hooks/useShoppingPrompt': { useShoppingPrompt: () => prompt, notice: () => {} },
     '@/hooks/useSingleOpen': { useSingleOpen: () => { const go = p => log.nav.push(p); go.isLocked = () => false; return go; } },
     '@/hooks/useErrorAnnouncement': { useFocusedErrorAnnouncement: () => {} },
@@ -237,4 +240,40 @@ test('an emptied pantry drops the stale query so a later add shows the full list
     assert.equal(h.has('pantry-search-no-match'), false);
     assert.equal(h.by('pantry-search').props.value, '');
   } finally { h.unmount(); }
+});
+
+const flat = style => Object.assign({}, ...[style].flat(Infinity).filter(Boolean));
+const fabBottom = h => flat(h.by('pantry-fab-add').props.style({ pressed: false })).bottom;
+const listPad = h => flat(h.renderer.root.findByType('FlatList').props.contentContainerStyle).paddingBottom;
+
+test('the add button and list clear the keyboard and return when it hides (KAN-92)', () => {
+  const h = render(base());
+  try {
+    const normalFab = fabBottom(h);
+    const normalPad = listPad(h);
+    assert.equal(normalFab, theme.spacing.xl);
+    // The screen is stubbed at window y 20..60; a keyboard top at 10 overlaps it by 50.
+    act(() => h.log.emit('keyboardDidShow', { endCoordinates: { height: 300, screenY: 10 } }));
+    assert.equal(fabBottom(h), theme.spacing.xl + 50);
+    assert.equal(listPad(h), normalPad + 50);
+    act(() => h.log.emit('keyboardDidHide', {}));
+    assert.equal(fabBottom(h), normalFab);
+    assert.equal(listPad(h), normalPad);
+  } finally { h.unmount(); }
+});
+
+test('a keyboard below the screen bottom (tab bar area only) does not lift anything', () => {
+  const h = render(base());
+  try {
+    act(() => h.log.emit('keyboardDidShow', { endCoordinates: { height: 300, screenY: 500 } }));
+    assert.equal(fabBottom(h), theme.spacing.xl);
+  } finally { h.unmount(); }
+});
+
+test('keyboard listeners are removed on unmount', () => {
+  const h = render(base());
+  assert.equal(h.log.listeners.length, 2);
+  h.unmount();
+  assert.equal(h.log.listeners.length, 0);
+  assert.equal(h.log.removed, 2);
 });

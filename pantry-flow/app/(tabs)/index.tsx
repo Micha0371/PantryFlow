@@ -24,6 +24,7 @@ import { offersShoppingAdd } from '@/lib/pantry-shopping';
 import type { Frame } from '@/lib/status-menu';
 import type { StatusKey } from '@/lib/theme';
 import { usePantryItems } from '@/hooks/usePantryItems';
+import { useKeyboardOverlap } from '@/hooks/useKeyboardOverlap';
 import { useSingleOpen } from '@/hooks/useSingleOpen';
 import { useTranslation } from '@/lib/i18n';
 import { colors, radii, spacing, typography } from '@/lib/theme';
@@ -32,6 +33,8 @@ import { useFocusedErrorAnnouncement } from '@/hooks/useErrorAnnouncement';
 export default function PantryScreen() {
   // One lock for rows and add actions: a tap burst opens one screen (KAN-33, KAN-38).
   const openScreen = useSingleOpen();
+  const screenRef = useRef<React.ComponentRef<typeof View>>(null);
+  const keyboardOverlap = useKeyboardOverlap(screenRef);
   const { t } = useTranslation();
   const { householdId, items, loading, error, retry, setItemStatus, isUnconfirmed } = usePantryItems();
   const { busy, run } = useItemMutation();
@@ -132,7 +135,7 @@ export default function PantryScreen() {
   }
 
   return (
-    <View style={styles.container} testID="pantry-screen">
+    <View ref={screenRef} style={styles.container} testID="pantry-screen">
       {items.length === 0 ? (
         <EmptyState
           title={t('empty_pantry_title')}
@@ -177,7 +180,7 @@ export default function PantryScreen() {
                   statusExpanded={open?.id === item.id}
                 />
               )}
-              contentContainerStyle={styles.list}
+              contentContainerStyle={[styles.list, { paddingBottom: styles.list.paddingBottom + keyboardOverlap }]}
             />
           )}
         </>
@@ -196,7 +199,7 @@ export default function PantryScreen() {
 
       <Pressable
         onPress={() => { Keyboard.dismiss(); openScreen('/add-item'); }}
-        style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+        style={({ pressed }) => [styles.fab, { bottom: spacing.xl + keyboardOverlap }, pressed && styles.fabPressed]}
         accessibilityRole="button"
         accessibilityLabel={t('item_add_button')}
         testID="pantry-fab-add"
