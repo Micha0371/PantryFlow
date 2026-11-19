@@ -1,5 +1,15 @@
 # Account lifecycle — overview, threat model and decisions
 
+**Version 0.11.4, 2026-11-19.** This version adds the [round-3b evidence](../testing/2026-11-19-account-lifecycle-feasibility-round3b.md) in a disposable local stack. All four cases were confirmed:
+- the full-precision commit-order check (0 violations, 1 tie on independent users, not exhaustive);
+- FENCE_ALL's pending-only return;
+- lookup failure after a proven fence;
+- the `23503` constraint name.
+
+Deletion spec v0.11.4 replaces message matching with a dedicated prefix, `PF_DELETION_ACCOUNT_GONE`. That's specified, not yet verified, and goes to the implementation's D25.
+
+**Next:** a Codex evidence review of round 3b. The hosted, toolchain, phone, Edge/provider and operational gates stay open.
+
 **Version 0.11.3, 2026-11-19.** This version responds to the Codex evidence review of round 3 (`231e294`). There were three Medium findings, with no redesign or policy decision:
 - the commit-order replay isn't an exact check yet;
 - FENCE_ALL's pending-only return is untested;
