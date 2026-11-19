@@ -1,5 +1,7 @@
 # Password policy, recovery and session lifecycle — technical specification
 
+**Version 0.9, 2026-11-19.** This version folds in the [round-2 evidence](../testing/2026-11-19-account-lifecycle-feasibility-round2.md): R18 and R20 server facts confirmed locally (204, `session_not_found`, expired = 403 `bad_jwt`, `scope=others` bound to the caller's account, SDK `{ error: null }` in the revoked and expired cases); FV-A9 with local configuration bounds and demonstrated behaviour.
+
 **Version 0.8.1, 2026-11-19.** Codex review of v0.8 (`916b28f`): V7-1 to V7-3 are resolved in design. This adds the clarification for a restart in `reauth_cleanup` with no stored session (restart rules, R19).
 
 **Version 0.8, 2026-11-19.** This version responds to the Codex review of v0.7 (`docs/reviews/2026-11-19/specs-v0.7-review.md`).
@@ -462,4 +464,4 @@ Destructive or concurrency tests run only in a disposable stack, never against t
 | FV-A5 | **Local: done** (`[auth.email] require_current_password`; exemption confirmed). Hosted: part of FV-A1. |
 | FV-A6 | **Done:** confirmed; re-run on every Auth upgrade. |
 | FV-A7 | **Done:** signup is enumerable (see §5). |
-| FV-A9 | Provider and configuration bound on how long an update request can still commit after the client gave up: Auth server and request timeouts, database statement timeout, and whether a client disconnect cancels the database work (context cancellation), locally and on hosted. |
+| FV-A9 | **Local (round 2):**<ul><li>**Configuration bound:** Auth's `MaxRequestDuration` defaults to **10 s** (`GOTRUE_API_MAX_REQUEST_DURATION`). It cancels the request context and returns 504 `request_timeout`. Auth's database role has no `statement_timeout`.</li><li>**Demonstrated:** a client disconnect cancels Auth's database work for a request blocked before its UPDATE (through the gateway and directly). No late commit in 5, 10 or 60 s holds.</li><li>**Not shown:** a statement already running, or a transaction past its last cancellation point. A finite observation doesn't prove a maximum.</li></ul>**Hosted: open** (FV-A1). |

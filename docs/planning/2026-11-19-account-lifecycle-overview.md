@@ -1,5 +1,12 @@
 # Account lifecycle — overview, threat model and decisions
 
+**Version 0.9, 2026-11-19.** This version adds the [round-2 evidence](../testing/2026-11-19-account-lifecycle-feasibility-round2.md) in a disposable local stack (CLI 3.2.0, Auth v2.198.0):
+
+- **Confirmed locally:** FV-B9, FV-B10, D17, D20.1–D20.7, D21, D22, D24, D25, and the R18 and R20 server facts.
+- **FV-A9:** a local configuration bound (Auth's maximum request duration of 10 s) and demonstrated disconnect cancellation, with stated limits.
+- **Folded in:** the eight spec clarifications it found. FENCE reads the previous generation; `GONE` is unreachable; one error-prefix table; explicit privileges; PostgREST role timeouts; the `auth.users` trigger can't be disabled; the D24 oracle uses the raw body; D20's replay code.
+- **Hosted:** all hosted verification remains open.
+
 **Version 0.8, 2026-11-19.** This version responds to the Codex review of v0.7 (`1c0225e`; `docs/reviews/2026-11-19/specs-v0.7-review.md`, verdict "request changes"):
 
 - **V7-1 (High):** same-account binding of the replacement sign-in.
