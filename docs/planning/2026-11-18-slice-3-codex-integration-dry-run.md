@@ -428,6 +428,10 @@ Only four items are new.
 
 ## G. Updated gate criteria
 
+> **Update 2026-11-19:** the beta, Slice 3 GO and public-release gates are amended in section 7 of the
+> [Slice 3 decision record](2026-11-19-slice-3-decision-record.md). PantryFlow 1.0 now includes Slice 4 basic sharing,
+> and the supervised beta waits for English and German. The table below is the original and is not edited.
+
 | Gate | Criteria |
 |---|---|
 | **Slice 3 implementation authorization** | Slice 2 accepted and tagged (done 2026-11-18). KAN-51 scope decisions recorded (roadmap S3-Q3, D5 S3-Q4). Both backlog operations applied and read back. The owner authorizes implementation of named packages; each package states its risk tier (GOV-01). |
