@@ -3,6 +3,37 @@
 > **Source of Truth**: Ecosystem Foundation Blueprint (Household_Bundle P0)
 > **Version**: 1.1 MVP (Refined)
 > **Last Updated**: January 2026
+> **Amended**: 2026-11-19 (Amendment 1, below)
+
+---
+
+## Amendment 1 — 2026-11-19 (owner-approved)
+
+Source: [Slice 3 decision record](planning/2026-11-19-slice-3-decision-record.md), decisions S3-Q3 and S3-Q4 / D5. Where this amendment conflicts with the text below, this amendment wins. The original text is kept for traceability and is not edited.
+
+- **Free/premium split superseded.**
+  - PantryFlow 1.0 is a free public application with no premium gating and no monetization-related inventory limit.
+  - Superseded passages:
+    - the section 2 "Free/Premium Split" row;
+    - section 12 (Free vs Premium);
+    - the premium items in section 6 (`premium.tsx`), section 14 (Post-MVP Premium), section 15 (`premium_*` keys) and section 16 (premium events);
+    - the section 17 Phase 4 premium and limit tasks;
+    - the "Free limit reached" and "Member limit reached" rows in section 18.
+  - Premium is a future milestone, started only on validated user demand.
+  - Any operational safety limit is a separate decision.
+- **Shared household moved to Slice 4.**
+  - Basic sharing (sections 2, 8 Flow 6 and 11) is delivered in Slice 4 and is part of PantryFlow 1.0.
+  - Any member limit is decided in the Slice 4 design, not as a premium upgrade.
+  - Slice 3 delivers no sharing.
+- **Dashboard filtering revised.**
+  - Pantry name search, filtering the loaded list locally, is delivered in Slice 3.
+  - Category and location filters and sorting follow the UX-03 evaluation.
+- **Languages.**
+  - English and German are mandatory for launch (sections 2 and 15).
+  - French and Italian are conditional additional languages; Spanish is deferred.
+  - No partially translated language ships.
+  - The display language and regional formatting are separate concepts.
+- **Public text.** Store and website descriptions state only functionality actually delivered.
 
 ---
 

@@ -904,6 +904,10 @@ The main serial chain is: decisions → UX-01A → UX-01B → German (KAN-44) �
 
 ## F. Decisions requiring approval
 
+> **Update 2026-11-19:** S3-Q3, S3-Q4 (D5), S3-Q6 (OPS-01) and S3-Q7 are decided, with amendments, in the
+> [Slice 3 decision record](2026-11-19-slice-3-decision-record.md), which also decides KAN-81 and KAN-57 (S3-Q8).
+> The table below is the original proposal and is not edited.
+
 | ID | Decision | Recommendation | Where it lands |
 |---|---|---|---|
 | S3-Q1 | Approve this dry run, then apply 28 creates and 18 refinements | **Approved 2026-11-18** | This operation |
