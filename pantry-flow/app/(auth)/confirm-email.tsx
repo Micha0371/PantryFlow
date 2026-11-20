@@ -49,7 +49,7 @@ export default function ConfirmEmailScreen() {
       {sent && <Text accessibilityLiveRegion="polite" testID="confirmation-sent" style={styles.message}>{t('auth_confirmation_sent')}</Text>}
       <Button testID="confirmation-resend" label={t(cooldown ? 'auth_confirmation_wait' : 'auth_resend_confirmation')}
         loading={submitting} disabled={!email.trim() || cooldown} onPress={resend} />
-      <Button testID="confirmation-back-login" label={t('auth_go_to_login')} onPress={() => router.replace('/(auth)/login')} />
+      <Button testID="confirmation-back-login" variant="secondary" label={t('auth_go_to_login')} onPress={() => router.replace('/(auth)/login')} />
     </ScrollView>
   </SafeAreaView>;
 }

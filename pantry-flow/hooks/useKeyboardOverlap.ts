@@ -27,11 +27,31 @@ export function useKeyboardOverlap(ref: RefObject<Measurable | null>): number {
       token.current += 1;
       setOverlap(0);
     });
+    // A screen mounted while the keyboard is already up gets no show event, so
+    // seed from the current metrics once the node has laid out (next frame).
+    const metrics = Keyboard.isVisible?.() ? Keyboard.metrics?.() : undefined;
+    const hasRaf = typeof requestAnimationFrame === 'function';
+    const raf = (cb: () => void): number => (hasRaf ? requestAnimationFrame(cb) : (setTimeout(cb, 0) as unknown as number));
+    const caf = (id: number) => (hasRaf ? cancelAnimationFrame(id) : clearTimeout(id));
+    let seed: number | undefined;
+    if (metrics) {
+      const mine = ++token.current;
+      seed = raf(() => {
+        const node = ref.current;
+        if (!node || mine !== token.current) return;
+        node.measureInWindow((_x, y, _w, h) => {
+          if (mine === token.current) setOverlap(Math.max(0, y + h - metrics.screenY));
+        });
+      });
+    }
     // A hide missed while backgrounded must not leave the layout lifted.
     const app = AppState.addEventListener('change', (state) => {
       if (state === 'active') { token.current += 1; setOverlap(0); }
     });
-    return () => { show.remove(); hide.remove(); app.remove(); };
+    return () => {
+      if (seed !== undefined) { caf(seed); }
+      show.remove(); hide.remove(); app.remove();
+    };
   }, [ref]);
   return overlap;
 }

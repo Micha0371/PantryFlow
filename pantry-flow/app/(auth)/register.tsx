@@ -16,11 +16,17 @@ import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { colors, spacing, typography } from '@/lib/theme';
 import { useFormError } from '@/hooks/useFormError';
+import { useKeyboardOverlap } from '@/hooks/useKeyboardOverlap';
 
 export default function RegisterScreen() {
   const { t } = useTranslation();
   const { signUp } = useAuth();
   const router = useRouter();
+  // Edge-to-edge Android does not resize for the keyboard, so the ScrollView pads
+  // by the measured overlap. iOS keeps KeyboardAvoidingView padding and needs none.
+  const screenRef = useRef<React.ComponentRef<typeof SafeAreaView>>(null);
+  const keyboardOverlap = useKeyboardOverlap(screenRef);
+  const overlap = Platform.OS === 'android' ? keyboardOverlap : 0;
 
   const [confirmation, setConfirmation] = useState(false);
   const [name, setName] = useState('');
@@ -48,22 +54,22 @@ export default function RegisterScreen() {
   };
 
   if (confirmation) return <SafeAreaView style={styles.safe}>
-    <View style={styles.container}>
-      <Text style={styles.title}>{t('auth_check_email_title')}</Text>
-      <Text style={styles.switchText}>{t('auth_check_email_message')}</Text>
-      <Button label={t('auth_go_to_login')} onPress={() => router.replace('/(auth)/login')} />
+    <View style={styles.confirmContainer}>
+      <Text style={styles.confirmTitle}>{t('auth_check_email_title')}</Text>
+      <Text style={styles.message}>{t('auth_check_email_message')}</Text>
       <Button testID="register-resend-confirmation" label={t('auth_resend_confirmation')} onPress={() => router.replace('/(auth)/confirm-email')} />
+      <Button variant="secondary" label={t('auth_go_to_login')} onPress={() => router.replace('/(auth)/login')} />
     </View>
   </SafeAreaView>;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView ref={screenRef} style={styles.safe} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
         <ScrollView
-          contentContainerStyle={styles.container}
+          contentContainerStyle={[styles.container, { paddingBottom: spacing.xl + overlap }]}
           keyboardShouldPersistTaps="handled"
         >
           <Text style={styles.title}>{t('auth_register_title')}</Text>
@@ -134,6 +140,10 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: spacing.xl,
   },
+  // The "Check your email" view matches confirm-email.tsx: the gap spaces the stack.
+  confirmContainer: { padding: spacing.xl, paddingTop: spacing.xxl, gap: spacing.md },
+  confirmTitle: { ...typography.title, color: colors.text },
+  message: { ...typography.body, color: colors.textMuted },
   switchRow: {
     flexDirection: 'row',
     justifyContent: 'center',
