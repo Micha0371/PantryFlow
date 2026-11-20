@@ -24,11 +24,13 @@ function render(kind) {
   const FormFooter = load('components/FormFooter.tsx', { 'react-native': native, '@/lib/theme': theme,
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0, left: 0, right: 0, bottom: 0 }) } });
   const mutation = load('hooks/useItemMutation.ts', { 'expo-router': { useFocusEffect: () => {} } });
+  // The real Button, so the assertions see the style it actually renders.
+  const { Button } = load('components/Button.tsx', { 'react-native': native, '@/lib/theme': theme });
   const { default: Screen } = load(SCREENS[kind], {
     'react-native': native, '@/lib/theme': theme, '@/lib/constants': constants,
     '@/lib/i18n': { useTranslation: () => ({ t }) },
     'expo-router': { useRouter: () => ({ back: () => {} }), useLocalSearchParams: () => ({ id: '1' }) },
-    '@/components/Button': { Button: 'Button' }, '@/components/Input': { Input: 'Input' },
+    '@/components/Button': { Button }, '@/components/Input': { Input: 'Input' },
     '@/components/OptionChips': { OptionChips: 'OptionChips' }, '@/components/InlineError': { InlineError: 'InlineError' },
     '@/components/AuthGate': { AuthGate: ({ children }) => children },
     '@/components/FormFooter': FormFooter, '@/hooks/useKeyboardOverlap': useKeyboardOverlap,
@@ -43,26 +45,36 @@ function render(kind) {
   });
   let renderer;
   act(() => { renderer = create(React.createElement(Screen)); });
-  return renderer;
+  return { renderer, Button };
 }
 
 const flat = style => Object.assign({}, ...[style].flat(Infinity).filter(Boolean));
+// Pressable takes a style function; resolve it for the resting (not pressed) state.
+const resolved = style => flat(typeof style === 'function' ? style({ pressed: false }) : style);
 
 for (const kind of ['edit', 'shopping']) {
   test(`${kind}: missing states stack message, Retry and Back with gap 12 and full-width buttons`, () => {
-    const r = render(kind);
+    const { renderer: r, Button } = render(kind);
     try {
       const alert = r.root.findByProps({ accessibilityRole: 'alert' });
       const container = alert.parent;
+      // The message and both buttons are the container's direct children, in this order,
+      // so the gap and stretch below apply to them (not to some wrapper).
+      const kids = container.children.filter(c => typeof c !== 'string');
+      assert.deepEqual(kids.map(c => c.type === Button ? c.props.label : 'alert'),
+        ['alert', 'common_retry', 'common_back']);
       const s = flat(container.props.style);
       assert.equal(s.gap, theme.spacing.md);
       assert.equal(s.gap, 12);
       assert.equal(s.alignItems, 'stretch');
-      const buttons = container.findAllByType('Button');
-      assert.equal(buttons.length, 2);
-      for (const b of buttons) {
-        const bs = flat(b.props.style);
-        assert.notEqual(bs.alignSelf, 'center');
+      // What each Button actually renders: nothing may shrink it or re-add a margin.
+      const pressables = container.findAllByType('Pressable');
+      assert.equal(pressables.length, 2);
+      for (const p of pressables) {
+        const bs = resolved(p.props.style);
+        assert.ok(bs.alignSelf === undefined || bs.alignSelf === 'stretch', `alignSelf ${bs.alignSelf}`);
+        assert.equal(bs.width, undefined);
+        assert.equal(bs.maxWidth, undefined);
         assert.equal(bs.marginTop, undefined);
       }
     } finally { act(() => r.unmount()); }
