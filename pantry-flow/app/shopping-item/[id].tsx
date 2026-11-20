@@ -126,7 +126,7 @@ function EditShoppingItemContent() {
           keyboardShouldPersistTaps="handled"
         >
           <Text style={styles.title}>{t('shopping_edit_title')}</Text>
-  
+
           <Input
             label={t('item_name')}
             maxLength={SHOPPING_NAME_MAX}
@@ -137,7 +137,7 @@ function EditShoppingItemContent() {
             error={error}
             announceKey={failures}
           />
-  
+
           <Button
             label={t('shopping_remove')}
             onPress={onRemove}

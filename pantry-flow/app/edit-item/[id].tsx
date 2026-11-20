@@ -148,7 +148,7 @@ function EditItemModalContent() {
           keyboardShouldPersistTaps="handled"
         >
           <Text style={styles.title}>{t('item_edit_title')}</Text>
-  
+
           <Input
             label={t('item_name')}
             placeholder={t('item_name_placeholder')}
@@ -160,7 +160,7 @@ function EditItemModalContent() {
             error={error}
             announceKey={failures}
           />
-  
+
           <Text style={styles.sectionLabel}>{t('item_status')}</Text>
           <View style={styles.statusRow}>
             {STATUSES.map((s) => {
@@ -185,7 +185,7 @@ function EditItemModalContent() {
               );
             })}
           </View>
-  
+
           <Text style={styles.sectionLabel}>{t('item_category')}</Text>
           <OptionChips
             options={[...CATEGORIES]}
@@ -194,9 +194,9 @@ function EditItemModalContent() {
             labelFor={(k) => t(`cat_${k}`)}
             testIDPrefix="edit-item-category"
           />
-  
+
           <View style={{ height: spacing.md }} />
-  
+
           <Text style={styles.sectionLabel}>{t('item_location')}</Text>
           <OptionChips
             options={[...LOCATIONS]}
@@ -205,7 +205,7 @@ function EditItemModalContent() {
             labelFor={(k) => t(`loc_${k}`)}
             testIDPrefix="edit-item-location"
           />
-  
+
           <Button
             label={t('item_delete')}
             onPress={onDelete}

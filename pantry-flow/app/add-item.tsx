@@ -83,7 +83,7 @@ function AddItemModalContent() {
           <Text style={styles.title}>{t('item_add_title')}</Text>
           <InlineError message={loadError ? t(loadError) : null} />
           {loadError ? <Button label={t('common_retry')} onPress={() => { void retry(); }} /> : null}
-  
+
           <Input
             label={t('item_name')}
             placeholder={t('item_name_placeholder')}
@@ -96,7 +96,7 @@ function AddItemModalContent() {
             error={error}
             announceKey={failures}
           />
-  
+
           <Text style={styles.sectionLabel}>{t('item_category')}</Text>
           <OptionChips
             options={[...CATEGORIES]}
@@ -105,9 +105,9 @@ function AddItemModalContent() {
             labelFor={(k) => t(`cat_${k}`)}
             testIDPrefix="add-item-category"
           />
-  
+
           <View style={{ height: spacing.md }} />
-  
+
           <Text style={styles.sectionLabel}>{t('item_location')}</Text>
           <OptionChips
             options={[...LOCATIONS]}
@@ -116,7 +116,7 @@ function AddItemModalContent() {
             labelFor={(k) => t(`loc_${k}`)}
             testIDPrefix="add-item-location"
           />
-  
+
         </ScrollView>
         <FormFooter overlap={overlap}>
           <Button
