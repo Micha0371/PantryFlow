@@ -198,3 +198,15 @@ test('text typed while a Return save is pending is not cleared when that save su
     assert.match(h.savedText(), /Milk/);
   } finally { h.cleanup(); }
 });
+
+test('a Return save is announced once: the confirmation is not also a live region', async () => {
+  const h = setup();
+  try {
+    h.type('Milk');
+    await act(async () => { h.submit(); });
+    const node = h.renderer.root.findAll(n => n.props.testID === 'add-item-saved' && typeof n.type === 'string')[0];
+    assert.equal(node.props.accessibilityLiveRegion, undefined);
+    assert.match(h.savedText(), /Milk/);
+    assert.deepEqual(h.state.announced, ['Milk, added']);
+  } finally { h.cleanup(); }
+});

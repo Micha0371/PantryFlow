@@ -130,7 +130,6 @@ function AddItemModalContent() {
             announceKey={failures}
           />
           <Text
-            accessibilityLiveRegion="polite"
             style={savedName ? styles.saved : undefined}
             testID="add-item-saved"
           >
