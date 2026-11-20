@@ -3,7 +3,9 @@ name: Slice 3 faster item entry journey
 ---
 # Runs after slice-3-search and search-verify. Starting state: Alice's pantry has
 # Milk (Out), Rice and Rye flour. Return on the name field saves and stays; the
-# keyboard stays open throughout. Return is pressKey Enter; never hideKeyboard
+# flow proves the name field keeps focus (typing lands without a tap). Return is
+# pressKey Enter, a key event that hides the soft keyboard on Android, so keyboard
+# retention is a phone check with the on-screen Return key. Never hideKeyboard
 # (on the owner's phone it may act as Back).
 - runScript: helpers/restore.js
 - launchApp:
@@ -33,7 +35,7 @@ name: Slice 3 faster item entry journey
     id: add-item-saved
 - assertVisible: "e.g. Milk"
 
-# 2. Tea + Return, no taps in between: focus and keyboard were kept.
+# 2. Tea + Return, no taps in between: the name field kept focus.
 - inputText: Tea
 - pressKey: Enter
 - extendedWaitUntil:
@@ -52,7 +54,9 @@ name: Slice 3 faster item entry journey
     text: Rice
 
 # 4. Done closes without a prompt; the list shows both new items.
-- assertVisible: Done
+- assertVisible:
+    id: add-item-cancel
+    text: Done
 - tapOn:
     id: add-item-cancel
 - extendedWaitUntil:

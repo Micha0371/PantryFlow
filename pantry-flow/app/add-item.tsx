@@ -59,6 +59,7 @@ function AddItemModalContent() {
   const onNameChange = (text: string) => {
     nameRef.current = text;
     setName(text);
+    setError(null);
   };
 
   const onSave = async (mode: 'close' | 'next') => {
@@ -95,7 +96,8 @@ function AddItemModalContent() {
       },
       (failure) => {
         setSavedName(null);
-        setError(t(itemSaveErrorKey(failure)));
+        const message = t(itemSaveErrorKey(failure));
+        setError(nameRef.current === submitted ? message : `${trimmed}: ${message}`);
       },
     );
   };

@@ -210,3 +210,54 @@ test('a Return save is announced once: the confirmation is not also a live regio
     assert.deepEqual(h.state.announced, ['Milk, added']);
   } finally { h.cleanup(); }
 });
+
+for (const [label, failure, key] of [['duplicate', { code: '23505' }, 'err_duplicate_item'], ['network', new Error('offline'), 'err_save_item']]) {
+  test(`a ${label} failure after the user typed new text prefixes the error with the submitted name and keeps the new text`, async () => {
+    const pending = deferred();
+    const h = setup({ addItem: () => pending.promise });
+    try {
+      h.type(' Milk ');
+      act(() => { h.submit(); });
+      h.type('Eggs');
+      await act(async () => { pending.reject(failure); });
+      assert.equal(h.input().props.error, `Milk: ${en[key]}`);
+      assert.equal(h.input().props.value, 'Eggs');
+    } finally { h.cleanup(); }
+  });
+}
+
+test('a failure while the field still holds the submitted text shows the unprefixed error', async () => {
+  const pending = deferred();
+  const h = setup({ addItem: () => pending.promise });
+  try {
+    h.type('Milk');
+    act(() => { h.submit(); });
+    await act(async () => { pending.reject(new Error('offline')); });
+    assert.equal(h.input().props.error, en.err_save_item);
+  } finally { h.cleanup(); }
+});
+
+test('a name with surrounding whitespace is saved and confirmed trimmed and the field clears', async () => {
+  const h = setup();
+  try {
+    h.type(' Oats ');
+    await act(async () => { h.submit(); });
+    assert.deepEqual(h.state.added, [{ name: 'Oats', category: 'other', location: 'pantry' }]);
+    assert.equal(h.savedText(), 'Added: Oats');
+    assert.equal(h.input().props.value, '');
+    assert.deepEqual(h.state.announced, ['Oats, added']);
+  } finally { h.cleanup(); }
+});
+
+test('typing clears a stale error', async () => {
+  const h = setup();
+  try {
+    h.type('Milk');
+    await act(async () => { h.submit(); });
+    h.type('milk');
+    await act(async () => { h.submit(); });
+    assert.equal(h.input().props.error, en.err_duplicate_item);
+    h.type('Oat');
+    assert.equal(h.input().props.error, null);
+  } finally { h.cleanup(); }
+});
