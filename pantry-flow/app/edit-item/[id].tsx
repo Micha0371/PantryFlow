@@ -43,7 +43,6 @@ function EditItemModalContent() {
   const screenRef = useRef<React.ComponentRef<typeof View>>(null);
   const keyboardOverlap = useKeyboardOverlap(screenRef);
   const overlap = Platform.OS === 'android' ? keyboardOverlap : 0;
-  const [footerHeight, setFooterHeight] = useState(0);
 
   const item = id ? getItem(id) : null;
 
@@ -140,100 +139,100 @@ function EditItemModalContent() {
 
   return (
     <View ref={screenRef} style={styles.safe}>
-    <KeyboardAvoidingView
-      style={styles.safe}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={[styles.container, { paddingBottom: spacing.xl + footerHeight + overlap }]}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={styles.safe}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <Text style={styles.title}>{t('item_edit_title')}</Text>
-
-        <Input
-          label={t('item_name')}
-          placeholder={t('item_name_placeholder')}
-          maxLength={ITEM_NAME_MAX}
-          editable={!busy}
-          value={name}
-          onChangeText={setName}
-          testID="edit-item-name"
-          error={error}
-          announceKey={failures}
-        />
-
-        <Text style={styles.sectionLabel}>{t('item_status')}</Text>
-        <View style={styles.statusRow}>
-          {STATUSES.map((s) => {
-            const selected = s === status;
-            const color = colors.status[s];
-            const bg = selected ? color : colors.surface;
-            const fg = selected ? colors.primaryOn : color;
-            return (
-              <Pressable
-                key={s}
-                onPress={() => setStatus(s)}
-                testID={`edit-item-status-${s}`}
-                style={[
-                  styles.statusPill,
-                  { backgroundColor: bg, borderColor: color },
-                ]}
-              >
-                <Text style={[styles.statusText, { color: fg }]}>
-                  {t(`status_${s}`)}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        <Text style={styles.sectionLabel}>{t('item_category')}</Text>
-        <OptionChips
-          options={[...CATEGORIES]}
-          value={category}
-          onChange={setCategory}
-          labelFor={(k) => t(`cat_${k}`)}
-          testIDPrefix="edit-item-category"
-        />
-
-        <View style={{ height: spacing.md }} />
-
-        <Text style={styles.sectionLabel}>{t('item_location')}</Text>
-        <OptionChips
-          options={[...LOCATIONS]}
-          value={location}
-          onChange={setLocation}
-          labelFor={(k) => t(`loc_${k}`)}
-          testIDPrefix="edit-item-location"
-        />
-
-        <Button
-          label={t('item_delete')}
-          onPress={onDelete}
-          variant="danger"
-          disabled={busy}
-          style={{ marginTop: spacing.xl }}
-          testID="edit-item-delete"
-        />
-      </ScrollView>
-      <FormFooter overlap={overlap} onLayoutHeight={setFooterHeight}>
-        <Button
-          label={t('common_cancel')}
-          onPress={() => router.back()}
-          variant="secondary"
-          disabled={busy && !prompting}
-          style={{ flex: 1 }}
-          testID="edit-item-cancel"
-        />
-        <Button
-          label={t('item_save_button')}
-          onPress={onSave}
-          loading={busy}
-          style={{ flex: 1 }}
-          testID="edit-item-save"
-        />
-      </FormFooter>
-    </KeyboardAvoidingView>
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Text style={styles.title}>{t('item_edit_title')}</Text>
+  
+          <Input
+            label={t('item_name')}
+            placeholder={t('item_name_placeholder')}
+            maxLength={ITEM_NAME_MAX}
+            editable={!busy}
+            value={name}
+            onChangeText={setName}
+            testID="edit-item-name"
+            error={error}
+            announceKey={failures}
+          />
+  
+          <Text style={styles.sectionLabel}>{t('item_status')}</Text>
+          <View style={styles.statusRow}>
+            {STATUSES.map((s) => {
+              const selected = s === status;
+              const color = colors.status[s];
+              const bg = selected ? color : colors.surface;
+              const fg = selected ? colors.primaryOn : color;
+              return (
+                <Pressable
+                  key={s}
+                  onPress={() => setStatus(s)}
+                  testID={`edit-item-status-${s}`}
+                  style={[
+                    styles.statusPill,
+                    { backgroundColor: bg, borderColor: color },
+                  ]}
+                >
+                  <Text style={[styles.statusText, { color: fg }]}>
+                    {t(`status_${s}`)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+  
+          <Text style={styles.sectionLabel}>{t('item_category')}</Text>
+          <OptionChips
+            options={[...CATEGORIES]}
+            value={category}
+            onChange={setCategory}
+            labelFor={(k) => t(`cat_${k}`)}
+            testIDPrefix="edit-item-category"
+          />
+  
+          <View style={{ height: spacing.md }} />
+  
+          <Text style={styles.sectionLabel}>{t('item_location')}</Text>
+          <OptionChips
+            options={[...LOCATIONS]}
+            value={location}
+            onChange={setLocation}
+            labelFor={(k) => t(`loc_${k}`)}
+            testIDPrefix="edit-item-location"
+          />
+  
+          <Button
+            label={t('item_delete')}
+            onPress={onDelete}
+            variant="danger"
+            disabled={busy}
+            style={{ marginTop: spacing.xl }}
+            testID="edit-item-delete"
+          />
+        </ScrollView>
+        <FormFooter overlap={overlap}>
+          <Button
+            label={t('common_cancel')}
+            onPress={() => router.back()}
+            variant="secondary"
+            disabled={busy && !prompting}
+            style={{ flex: 1 }}
+            testID="edit-item-cancel"
+          />
+          <Button
+            label={t('item_save_button')}
+            onPress={onSave}
+            loading={busy}
+            style={{ flex: 1 }}
+            testID="edit-item-save"
+          />
+        </FormFooter>
+      </KeyboardAvoidingView>
     </View>
   );
 }

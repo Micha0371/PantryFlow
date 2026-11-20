@@ -21,16 +21,17 @@ const SCREENS = {
   shopping: { file: 'app/shopping-item/[id].tsx', save: 'shopping-edit-save', cancel: 'shopping-edit-cancel', destructive: 'shopping-edit-remove' },
 };
 
-function render(kind, os = 'android') {
+function render(kind, os = 'android', opts = {}) {
   const listeners = [];
-  const Keyboard = { addListener: (name, cb) => { const l = { name, cb }; listeners.push(l);
+  const Keyboard = { isVisible: () => !!opts.visible, metrics: () => (opts.visible ? { screenY: 560, height: 240 } : undefined), addListener: (name, cb) => { const l = { name, cb }; listeners.push(l);
     return { remove: () => listeners.splice(listeners.indexOf(l), 1) }; } };
   const AppState = { addEventListener: () => ({ remove: () => {} }) };
   const native = { Text: 'Text', View: 'View', ActivityIndicator: 'Spinner', Pressable: 'Pressable',
     ScrollView: 'ScrollView', KeyboardAvoidingView: 'KeyboardAvoidingView', Platform: { OS: os },
     Alert: { alert: () => {} }, Keyboard, AppState, StyleSheet: { create: s => s, hairlineWidth: 1 } };
   const useKeyboardOverlap = load('hooks/useKeyboardOverlap.ts', { 'react-native': native });
-  const FormFooter = load('components/FormFooter.tsx', { 'react-native': native, '@/lib/theme': theme });
+  const FormFooter = load('components/FormFooter.tsx', { 'react-native': native, '@/lib/theme': theme,
+    'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0, left: 0, right: 0, bottom: opts.inset || 0 }) } });
   const mutation = load('hooks/useItemMutation.ts', { 'expo-router': { useFocusEffect: () => {} } });
   const { default: Screen } = load(SCREENS[kind].file, {
     'react-native': native, '@/lib/theme': theme, '@/lib/constants': constants,
@@ -50,9 +51,13 @@ function render(kind, os = 'android') {
       getItem: () => shoppingItem, renameItem: async () => {}, deleteItem: async () => {} }) },
   });
   let renderer;
+  const rafs = [];
+  global.requestAnimationFrame = cb => { rafs.push(cb); return rafs.length; };
+  global.cancelAnimationFrame = () => {};
   // The root view of the screen measures 800 dp tall from the window top.
   act(() => { renderer = create(React.createElement(Screen),
     { createNodeMock: () => ({ measureInWindow: cb => cb(0, 0, 360, 800) }) }); });
+  const frame = () => act(() => rafs.splice(0).forEach(cb => cb(0)));
   const emit = (name, e) => act(() => listeners.filter(l => l.name === name).forEach(l => l.cb(e)));
   const show = () => emit(os === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', { endCoordinates: { height: 240, screenY: 560 } });
   const hide = () => emit(os === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', {});
@@ -60,7 +65,7 @@ function render(kind, os = 'android') {
   const footer = () => renderer.root.findByProps({ testID: 'form-footer' });
   const inside = (parent, id) => parent.findAll(n => n.props.testID === id).length > 0;
   const flat = style => Object.assign({}, ...[style].flat(Infinity).filter(Boolean));
-  return { renderer, show, hide, scroll, footer, inside, flat, cleanup: () => act(() => renderer.unmount()) };
+  return { renderer, frame, show, hide, scroll, footer, inside, flat, cleanup: () => act(() => renderer.unmount()) };
 }
 
 test('the footer lifts by the keyboard overlap and returns when it hides', () => {
@@ -102,22 +107,50 @@ for (const kind of ['add', 'edit', 'shopping']) {
     } finally { h.cleanup(); }
   });
 
-  test(`${kind}: the ScrollView bottom padding includes the footer height and the overlap`, () => {
+  test(`${kind}: the footer is in-flow (last child of the KeyboardAvoidingView) and the ScrollView keeps its normal bottom padding`, () => {
     const h = render(kind);
     try {
+      const f = h.flat(h.footer().props.style);
+      assert.notEqual(f.position, 'absolute');
+      assert.equal(f.bottom, undefined);
+      assert.equal(h.footer().props.onLayout, undefined);
+      const last = h.renderer.root.findByType('KeyboardAvoidingView').children.at(-1);
+      assert.equal(last.findByProps({ testID: 'form-footer' }), h.footer());
       const pad = () => h.flat(h.scroll().props.contentContainerStyle).paddingBottom;
-      assert.equal(pad(), theme.spacing.xl);
-      act(() => h.footer().props.onLayout({ nativeEvent: { layout: { height: 100 } } }));
-      assert.equal(pad(), theme.spacing.xl + 100);
+      const before = pad();
       h.show();
-      // The footer now measures taller by the lift; only its own height is reserved once.
-      act(() => h.footer().props.onLayout({ nativeEvent: { layout: { height: 340 } } }));
-      assert.equal(pad(), theme.spacing.xl + 100 + 240);
-      h.hide();
-      assert.equal(pad(), theme.spacing.xl + 100);
+      assert.equal(pad(), before);
+    } finally { h.cleanup(); }
+  });
+
+  test(`${kind}: opened while the keyboard is already visible, the footer is lifted`, () => {
+    const h = render(kind, 'android', { visible: true });
+    try {
+      h.frame();
+      assert.equal(h.flat(h.footer().props.style).paddingBottom, theme.spacing.xl + 240);
     } finally { h.cleanup(); }
   });
 }
+
+test('footer paddingBottom adds the bottom safe-area inset when the keyboard is hidden', () => {
+  const h = render('add', 'android', { inset: 48 });
+  try {
+    const f = () => h.flat(h.footer().props.style).paddingBottom;
+    assert.equal(f(), theme.spacing.xl + 48);
+    h.show();
+    assert.equal(f(), theme.spacing.xl + 240);
+    h.hide();
+    assert.equal(f(), theme.spacing.xl + 48);
+  } finally { h.cleanup(); }
+});
+
+test('iOS footer uses the inset, never the overlap', () => {
+  const h = render('add', 'ios', { inset: 34 });
+  try {
+    h.show();
+    assert.equal(h.flat(h.footer().props.style).paddingBottom, theme.spacing.xl + 34);
+  } finally { h.cleanup(); }
+});
 
 for (const kind of ['edit', 'shopping']) {
   test(`${kind}: Delete and Remove stay in the scroll content`, () => {

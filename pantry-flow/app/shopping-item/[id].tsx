@@ -38,7 +38,6 @@ function EditShoppingItemContent() {
   const screenRef = useRef<React.ComponentRef<typeof View>>(null);
   const keyboardOverlap = useKeyboardOverlap(screenRef);
   const overlap = Platform.OS === 'android' ? keyboardOverlap : 0;
-  const [footerHeight, setFooterHeight] = useState(0);
 
   const item = id ? getItem(id) : null;
 
@@ -118,54 +117,54 @@ function EditShoppingItemContent() {
 
   return (
     <View ref={screenRef} style={styles.safe}>
-    <KeyboardAvoidingView
-      style={styles.safe}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={[styles.container, { paddingBottom: spacing.xl + footerHeight + overlap }]}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={styles.safe}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <Text style={styles.title}>{t('shopping_edit_title')}</Text>
-
-        <Input
-          label={t('item_name')}
-          maxLength={SHOPPING_NAME_MAX}
-          editable={!busy}
-          value={name}
-          onChangeText={setName}
-          testID="shopping-edit-name"
-          error={error}
-          announceKey={failures}
-        />
-
-        <Button
-          label={t('shopping_remove')}
-          onPress={onRemove}
-          variant="danger"
-          disabled={busy}
-          style={{ marginTop: spacing.xl }}
-          testID="shopping-edit-remove"
-        />
-      </ScrollView>
-      <FormFooter overlap={overlap} onLayoutHeight={setFooterHeight}>
-        <Button
-          label={t('common_cancel')}
-          onPress={() => router.back()}
-          variant="secondary"
-          disabled={busy}
-          style={{ flex: 1 }}
-          testID="shopping-edit-cancel"
-        />
-        <Button
-          label={t('item_save_button')}
-          onPress={onSave}
-          loading={busy}
-          style={{ flex: 1 }}
-          testID="shopping-edit-save"
-        />
-      </FormFooter>
-    </KeyboardAvoidingView>
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Text style={styles.title}>{t('shopping_edit_title')}</Text>
+  
+          <Input
+            label={t('item_name')}
+            maxLength={SHOPPING_NAME_MAX}
+            editable={!busy}
+            value={name}
+            onChangeText={setName}
+            testID="shopping-edit-name"
+            error={error}
+            announceKey={failures}
+          />
+  
+          <Button
+            label={t('shopping_remove')}
+            onPress={onRemove}
+            variant="danger"
+            disabled={busy}
+            style={{ marginTop: spacing.xl }}
+            testID="shopping-edit-remove"
+          />
+        </ScrollView>
+        <FormFooter overlap={overlap}>
+          <Button
+            label={t('common_cancel')}
+            onPress={() => router.back()}
+            variant="secondary"
+            disabled={busy}
+            style={{ flex: 1 }}
+            testID="shopping-edit-cancel"
+          />
+          <Button
+            label={t('item_save_button')}
+            onPress={onSave}
+            loading={busy}
+            style={{ flex: 1 }}
+            testID="shopping-edit-save"
+          />
+        </FormFooter>
+      </KeyboardAvoidingView>
     </View>
   );
 }

@@ -41,7 +41,6 @@ function AddItemModalContent() {
   const screenRef = useRef<React.ComponentRef<typeof View>>(null);
   const keyboardOverlap = useKeyboardOverlap(screenRef);
   const overlap = Platform.OS === 'android' ? keyboardOverlap : 0;
-  const [footerHeight, setFooterHeight] = useState(0);
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState<string>(DEFAULT_CATEGORY);
@@ -73,71 +72,71 @@ function AddItemModalContent() {
 
   return (
     <View ref={screenRef} style={styles.safe}>
-    <KeyboardAvoidingView
-      style={styles.safe}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={[styles.container, { paddingBottom: spacing.xl + footerHeight + overlap }]}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={styles.safe}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <Text style={styles.title}>{t('item_add_title')}</Text>
-        <InlineError message={loadError ? t(loadError) : null} />
-        {loadError ? <Button label={t('common_retry')} onPress={() => { void retry(); }} /> : null}
-
-        <Input
-          label={t('item_name')}
-          placeholder={t('item_name_placeholder')}
-          maxLength={ITEM_NAME_MAX}
-          editable={!busy}
-          value={name}
-          onChangeText={setName}
-          autoFocus
-          testID="add-item-name"
-          error={error}
-          announceKey={failures}
-        />
-
-        <Text style={styles.sectionLabel}>{t('item_category')}</Text>
-        <OptionChips
-          options={[...CATEGORIES]}
-          value={category}
-          onChange={setCategory}
-          labelFor={(k) => t(`cat_${k}`)}
-          testIDPrefix="add-item-category"
-        />
-
-        <View style={{ height: spacing.md }} />
-
-        <Text style={styles.sectionLabel}>{t('item_location')}</Text>
-        <OptionChips
-          options={[...LOCATIONS]}
-          value={location}
-          onChange={setLocation}
-          labelFor={(k) => t(`loc_${k}`)}
-          testIDPrefix="add-item-location"
-        />
-
-      </ScrollView>
-      <FormFooter overlap={overlap} onLayoutHeight={setFooterHeight}>
-        <Button
-          label={t('common_cancel')}
-          onPress={() => router.back()}
-          variant="secondary"
-          disabled={busy}
-          style={{ flex: 1 }}
-          testID="add-item-cancel"
-        />
-        <Button
-          label={t('item_add_button')}
-          onPress={onSave}
-          loading={busy}
-          disabled={loading || !householdId || !!loadError}
-          style={{ flex: 1 }}
-          testID="add-item-save"
-        />
-      </FormFooter>
-    </KeyboardAvoidingView>
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Text style={styles.title}>{t('item_add_title')}</Text>
+          <InlineError message={loadError ? t(loadError) : null} />
+          {loadError ? <Button label={t('common_retry')} onPress={() => { void retry(); }} /> : null}
+  
+          <Input
+            label={t('item_name')}
+            placeholder={t('item_name_placeholder')}
+            maxLength={ITEM_NAME_MAX}
+            editable={!busy}
+            value={name}
+            onChangeText={setName}
+            autoFocus
+            testID="add-item-name"
+            error={error}
+            announceKey={failures}
+          />
+  
+          <Text style={styles.sectionLabel}>{t('item_category')}</Text>
+          <OptionChips
+            options={[...CATEGORIES]}
+            value={category}
+            onChange={setCategory}
+            labelFor={(k) => t(`cat_${k}`)}
+            testIDPrefix="add-item-category"
+          />
+  
+          <View style={{ height: spacing.md }} />
+  
+          <Text style={styles.sectionLabel}>{t('item_location')}</Text>
+          <OptionChips
+            options={[...LOCATIONS]}
+            value={location}
+            onChange={setLocation}
+            labelFor={(k) => t(`loc_${k}`)}
+            testIDPrefix="add-item-location"
+          />
+  
+        </ScrollView>
+        <FormFooter overlap={overlap}>
+          <Button
+            label={t('common_cancel')}
+            onPress={() => router.back()}
+            variant="secondary"
+            disabled={busy}
+            style={{ flex: 1 }}
+            testID="add-item-cancel"
+          />
+          <Button
+            label={t('item_add_button')}
+            onPress={onSave}
+            loading={busy}
+            disabled={loading || !householdId || !!loadError}
+            style={{ flex: 1 }}
+            testID="add-item-save"
+          />
+        </FormFooter>
+      </KeyboardAvoidingView>
     </View>
   );
 }

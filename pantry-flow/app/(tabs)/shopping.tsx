@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, SectionList, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Keyboard, SectionList, StyleSheet, Text, View } from 'react-native';
 import { EmptyState } from '@/components/EmptyState';
 import { ShoppingItem } from '@/components/ShoppingItem';
 import { Button } from '@/components/Button';
@@ -166,7 +166,7 @@ function HouseholdShoppingScreen() {
             <ShoppingItem
               item={item}
               onToggle={() => { void toggle(item); }}
-              onPress={() => openEditor(`/shopping-item/${item.id}`)}
+              onPress={() => { Keyboard.dismiss(); openEditor(`/shopping-item/${item.id}`); }}
               pending={pendingIds.has(item.id)}
             />
           )}

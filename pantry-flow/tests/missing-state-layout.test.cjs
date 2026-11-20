@@ -21,7 +21,8 @@ function render(kind) {
     ScrollView: 'ScrollView', KeyboardAvoidingView: 'KeyboardAvoidingView', Platform: { OS: 'android' },
     Alert: { alert: () => {} }, Keyboard, AppState, StyleSheet: { create: s => s, hairlineWidth: 1 } };
   const useKeyboardOverlap = load('hooks/useKeyboardOverlap.ts', { 'react-native': native });
-  const FormFooter = load('components/FormFooter.tsx', { 'react-native': native, '@/lib/theme': theme });
+  const FormFooter = load('components/FormFooter.tsx', { 'react-native': native, '@/lib/theme': theme,
+    'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0, left: 0, right: 0, bottom: 0 }) } });
   const mutation = load('hooks/useItemMutation.ts', { 'expo-router': { useFocusEffect: () => {} } });
   const { default: Screen } = load(SCREENS[kind], {
     'react-native': native, '@/lib/theme': theme, '@/lib/constants': constants,
