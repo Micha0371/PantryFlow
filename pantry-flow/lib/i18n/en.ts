@@ -62,6 +62,8 @@ export const en = {
   item_add_title: 'Add Item',
   item_edit_title: 'Edit Item',
   item_add_button: 'Add Item',
+  item_added_prefix: 'Added:',
+  item_added_announcement: 'added',
   item_save_button: 'Save',
   item_delete: 'Delete',
   item_delete_confirm_title: 'Delete this item?',
@@ -82,6 +84,7 @@ export const en = {
 
   // Common
   common_cancel: 'Cancel',
+  common_done: 'Done',
   common_save: 'Save',
   common_delete: 'Delete',
   common_back: 'Back',

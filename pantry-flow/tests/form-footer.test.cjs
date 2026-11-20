@@ -44,6 +44,7 @@ function render(kind, os = 'android', opts = {}) {
     '@/components/FormFooter': FormFooter, '@/hooks/useKeyboardOverlap': useKeyboardOverlap,
     '@/hooks/useItemMutation': mutation, '@/hooks/useFormError': load('hooks/useFormError.ts'),
     '@/hooks/useErrorAnnouncement': { useFocusedErrorAnnouncement: () => {} },
+    '@/lib/accessibility': { announce: () => {} },
     '@/hooks/useShoppingPrompt': { useShoppingPrompt: () => ({ prompting: false, offer: () => {} }) },
     '@/lib/pantry-data': pantryData, '@/lib/shopping-data': shoppingData,
     '@/hooks/usePantryItems': { usePantryItems: () => ({ householdId: 'h', loading: false, error: null, retry: () => {},
