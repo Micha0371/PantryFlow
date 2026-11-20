@@ -40,6 +40,7 @@ function render(kind, os = 'android', opts = {}) {
     '@/components/Button': { Button: 'Button' }, '@/components/Input': { Input: 'Input' },
     '@/components/OptionChips': { OptionChips: 'OptionChips' }, '@/components/InlineError': { InlineError: 'InlineError' },
     '@/components/AuthGate': { AuthGate: ({ children }) => children },
+    '@/components/MissingItemState': load('components/MissingItemState.tsx', { 'react-native': native, '@/lib/theme': theme, '@/components/Button': { Button: 'Button' }, '@/lib/i18n': { useTranslation: () => ({ t }) } }),
     '@/components/FormFooter': FormFooter, '@/hooks/useKeyboardOverlap': useKeyboardOverlap,
     '@/hooks/useItemMutation': mutation, '@/hooks/useFormError': load('hooks/useFormError.ts'),
     '@/hooks/useErrorAnnouncement': { useFocusedErrorAnnouncement: () => {} },

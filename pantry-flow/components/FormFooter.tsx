@@ -10,7 +10,7 @@ type Props = {
 };
 
 // Primary actions of a modal form, last in the screen column, above the keyboard.
-export function FormFooter({ children, overlap }: Props) {
+export function FormFooter({ children, overlap }: Readonly<Props>) {
   const { bottom } = useSafeAreaInsets();
   // The overlap is measured to the window bottom, so it already includes the
   // navigation bar while the keyboard is open.

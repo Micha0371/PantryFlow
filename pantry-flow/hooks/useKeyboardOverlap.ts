@@ -48,7 +48,10 @@ export function useKeyboardOverlap(ref: RefObject<Measurable | null>): number {
     const app = AppState.addEventListener('change', (state) => {
       if (state === 'active') { token.current += 1; setOverlap(0); }
     });
-    return () => { if (seed !== undefined) caf(seed); show.remove(); hide.remove(); app.remove(); };
+    return () => {
+      if (seed !== undefined) { caf(seed); }
+      show.remove(); hide.remove(); app.remove();
+    };
   }, [ref]);
   return overlap;
 }

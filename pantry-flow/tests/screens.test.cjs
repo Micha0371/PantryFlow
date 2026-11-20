@@ -15,6 +15,7 @@ const announcement = load('hooks/useErrorAnnouncement.ts', {
   'expo-router': { useFocusEffect: callback => React.useEffect(callback, [callback]) } });
 const inlineError = load('components/InlineError.tsx', { 'react-native': { Text: 'Text', View: 'View' } });
 const shared = { 'react-native': native, '@/lib/theme': theme,
+  '@/components/MissingItemState': load('components/MissingItemState.tsx', { 'react-native': native, '@/lib/theme': theme, '@/components/Button': { Button: 'Button' }, '@/lib/i18n': { useTranslation: () => ({ t }) } }),
   '@/components/FormFooter': { FormFooter: 'FormFooter' }, '@/hooks/useKeyboardOverlap': { useKeyboardOverlap: () => 0 },
   '@/lib/i18n': { useTranslation: () => ({ t }) }, '@/components/Button': { Button: 'Button' },
   '@/hooks/useErrorAnnouncement': announcement, '@/components/InlineError': inlineError,

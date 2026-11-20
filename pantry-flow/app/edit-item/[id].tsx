@@ -13,6 +13,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button } from '@/components/Button';
 import { FormFooter } from '@/components/FormFooter';
+import { MissingItemState } from '@/components/MissingItemState';
 import { useKeyboardOverlap } from '@/hooks/useKeyboardOverlap';
 import { Input } from '@/components/Input';
 import { OptionChips } from '@/components/OptionChips';
@@ -82,15 +83,11 @@ function EditItemModalContent() {
 
   if (!item) {
     return (
-      <View style={styles.missing}>
-        <Text style={styles.errorText} accessibilityRole="alert">{t(loadError ?? 'err_item_missing')}</Text>
-        <Button label={t('common_retry')} onPress={() => { void retry(); }} />
-        <Button
-          label={t('common_back')}
-          onPress={() => router.back()}
-          variant="secondary"
-        />
-      </View>
+      <MissingItemState
+        message={t(loadError ?? 'err_item_missing')}
+        onRetry={() => { void retry(); }}
+        onBack={() => router.back()}
+      />
     );
   }
 
@@ -247,14 +244,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing.xl,
   },
-  missing: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    alignItems: 'stretch',
-    justifyContent: 'center',
-    padding: spacing.xl,
-    gap: spacing.md,
-  },
   title: {
     ...typography.title,
     color: colors.text,
@@ -275,5 +264,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statusText: { ...typography.label, fontWeight: '600' },
-  errorText: { ...typography.body, color: colors.danger, textAlign: 'center' },
 });

@@ -31,6 +31,8 @@ function render(kind) {
     '@/lib/i18n': { useTranslation: () => ({ t }) },
     'expo-router': { useRouter: () => ({ back: () => {} }), useLocalSearchParams: () => ({ id: '1' }) },
     '@/components/Button': { Button }, '@/components/Input': { Input: 'Input' },
+    '@/components/MissingItemState': load('components/MissingItemState.tsx', { 'react-native': native, '@/lib/theme': theme,
+      '@/components/Button': { Button }, '@/lib/i18n': { useTranslation: () => ({ t }) } }),
     '@/components/OptionChips': { OptionChips: 'OptionChips' }, '@/components/InlineError': { InlineError: 'InlineError' },
     '@/components/AuthGate': { AuthGate: ({ children }) => children },
     '@/components/FormFooter': FormFooter, '@/hooks/useKeyboardOverlap': useKeyboardOverlap,
