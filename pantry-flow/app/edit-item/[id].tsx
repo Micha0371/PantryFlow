@@ -12,6 +12,9 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button } from '@/components/Button';
+import { FormFooter } from '@/components/FormFooter';
+import { MissingItemState } from '@/components/MissingItemState';
+import { useKeyboardOverlap } from '@/hooks/useKeyboardOverlap';
 import { Input } from '@/components/Input';
 import { OptionChips } from '@/components/OptionChips';
 import { AuthGate } from '@/components/AuthGate';
@@ -36,6 +39,11 @@ function EditItemModalContent() {
   const { t } = useTranslation();
   const { loading, error: loadError, retry, updateItem, deleteItem, getItem } = usePantryItems();
   const { prompting, offer } = useShoppingPrompt();
+  // Edge-to-edge Android does not resize for the keyboard, so the footer lifts by
+  // the measured overlap. iOS keeps KeyboardAvoidingView padding and needs none.
+  const screenRef = useRef<React.ComponentRef<typeof View>>(null);
+  const keyboardOverlap = useKeyboardOverlap(screenRef);
+  const overlap = Platform.OS === 'android' ? keyboardOverlap : 0;
 
   const item = id ? getItem(id) : null;
 
@@ -75,16 +83,11 @@ function EditItemModalContent() {
 
   if (!item) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText} accessibilityRole="alert">{t(loadError ?? 'err_item_missing')}</Text>
-        <Button label={t('common_retry')} onPress={() => { void retry(); }} />
-        <Button
-          label={t('common_back')}
-          onPress={() => router.back()}
-          variant="secondary"
-          style={{ marginTop: spacing.lg }}
-        />
-      </View>
+      <MissingItemState
+        message={t(loadError ?? 'err_item_missing')}
+        onRetry={() => { void retry(); }}
+        onBack={() => router.back()}
+      />
     );
   }
 
@@ -132,74 +135,84 @@ function EditItemModalContent() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.safe}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
+    <View ref={screenRef} style={styles.safe}>
+      <KeyboardAvoidingView
+        style={styles.safe}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <Text style={styles.title}>{t('item_edit_title')}</Text>
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Text style={styles.title}>{t('item_edit_title')}</Text>
 
-        <Input
-          label={t('item_name')}
-          placeholder={t('item_name_placeholder')}
-          maxLength={ITEM_NAME_MAX}
-          editable={!busy}
-          value={name}
-          onChangeText={setName}
-          testID="edit-item-name"
-          error={error}
-          announceKey={failures}
-        />
+          <Input
+            label={t('item_name')}
+            placeholder={t('item_name_placeholder')}
+            maxLength={ITEM_NAME_MAX}
+            editable={!busy}
+            value={name}
+            onChangeText={setName}
+            testID="edit-item-name"
+            error={error}
+            announceKey={failures}
+          />
 
-        <Text style={styles.sectionLabel}>{t('item_status')}</Text>
-        <View style={styles.statusRow}>
-          {STATUSES.map((s) => {
-            const selected = s === status;
-            const color = colors.status[s];
-            const bg = selected ? color : colors.surface;
-            const fg = selected ? colors.primaryOn : color;
-            return (
-              <Pressable
-                key={s}
-                onPress={() => setStatus(s)}
-                testID={`edit-item-status-${s}`}
-                style={[
-                  styles.statusPill,
-                  { backgroundColor: bg, borderColor: color },
-                ]}
-              >
-                <Text style={[styles.statusText, { color: fg }]}>
-                  {t(`status_${s}`)}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+          <Text style={styles.sectionLabel}>{t('item_status')}</Text>
+          <View style={styles.statusRow}>
+            {STATUSES.map((s) => {
+              const selected = s === status;
+              const color = colors.status[s];
+              const bg = selected ? color : colors.surface;
+              const fg = selected ? colors.primaryOn : color;
+              return (
+                <Pressable
+                  key={s}
+                  onPress={() => setStatus(s)}
+                  testID={`edit-item-status-${s}`}
+                  style={[
+                    styles.statusPill,
+                    { backgroundColor: bg, borderColor: color },
+                  ]}
+                >
+                  <Text style={[styles.statusText, { color: fg }]}>
+                    {t(`status_${s}`)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
 
-        <Text style={styles.sectionLabel}>{t('item_category')}</Text>
-        <OptionChips
-          options={[...CATEGORIES]}
-          value={category}
-          onChange={setCategory}
-          labelFor={(k) => t(`cat_${k}`)}
-          testIDPrefix="edit-item-category"
-        />
+          <Text style={styles.sectionLabel}>{t('item_category')}</Text>
+          <OptionChips
+            options={[...CATEGORIES]}
+            value={category}
+            onChange={setCategory}
+            labelFor={(k) => t(`cat_${k}`)}
+            testIDPrefix="edit-item-category"
+          />
 
-        <View style={{ height: spacing.md }} />
+          <View style={{ height: spacing.md }} />
 
-        <Text style={styles.sectionLabel}>{t('item_location')}</Text>
-        <OptionChips
-          options={[...LOCATIONS]}
-          value={location}
-          onChange={setLocation}
-          labelFor={(k) => t(`loc_${k}`)}
-          testIDPrefix="edit-item-location"
-        />
+          <Text style={styles.sectionLabel}>{t('item_location')}</Text>
+          <OptionChips
+            options={[...LOCATIONS]}
+            value={location}
+            onChange={setLocation}
+            labelFor={(k) => t(`loc_${k}`)}
+            testIDPrefix="edit-item-location"
+          />
 
-        <View style={styles.actions}>
+          <Button
+            label={t('item_delete')}
+            onPress={onDelete}
+            variant="danger"
+            disabled={busy}
+            style={{ marginTop: spacing.xl }}
+            testID="edit-item-delete"
+          />
+        </ScrollView>
+        <FormFooter overlap={overlap}>
           <Button
             label={t('common_cancel')}
             onPress={() => router.back()}
@@ -208,7 +221,6 @@ function EditItemModalContent() {
             style={{ flex: 1 }}
             testID="edit-item-cancel"
           />
-          <View style={{ width: spacing.md }} />
           <Button
             label={t('item_save_button')}
             onPress={onSave}
@@ -216,18 +228,9 @@ function EditItemModalContent() {
             style={{ flex: 1 }}
             testID="edit-item-save"
           />
-        </View>
-
-        <Button
-          label={t('item_delete')}
-          onPress={onDelete}
-          variant="danger"
-          disabled={busy}
-          style={{ marginTop: spacing.xl }}
-          testID="edit-item-delete"
-        />
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </FormFooter>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -261,6 +264,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statusText: { ...typography.label, fontWeight: '600' },
-  actions: { flexDirection: 'row', marginTop: spacing.xl },
-  errorText: { ...typography.body, color: colors.danger, textAlign: 'center' },
 });

@@ -427,6 +427,36 @@ Phone: Xiaomi 23122PCD1G, Android 16, arm64-v8a, German system language. It ran 
 
 Not checked: iOS (PF-IOS-001).
 
+## UX-06 coverage — KAN-96 (High findings)
+
+Contract: the High findings of the [form layout evaluation](../quality/2026-11-19-form-layout-evaluation.md), per the [UX-06 plan](../planning/2026-11-19-ux-06-form-consistency-plan.md). Medium and Low findings are dispositioned in KAN-96 afterwards. Files are under `pantry-flow/tests/`.
+
+| ID | Observable outcome | Automated coverage | Limit |
+| --- | --- | --- | --- |
+| FORM-01 | Add Item, Edit Item and the shopping item keep Cancel and Save in a footer outside the ScrollView. The footer is the in-flow last child of the KeyboardAvoidingView column (not an overlay), and the ScrollView ends at its top, so the last field scrolls above it | `form-footer.test.cjs` (per screen: footer outside the ScrollView, in-flow, not absolute) | Component level |
+| FORM-02 | On Android the footer lifts by the keyboard overlap and returns when the keyboard hides; iOS keeps KeyboardAvoidingView `padding` and applies no overlap | `form-footer.test.cjs` (lifts and returns; iOS no overlap); `keyboard-overlap.test.cjs` | iOS not run on a device (PF-IOS-001) |
+| FORM-03 | A form opened while the keyboard is already visible lifts its footer: the hook seeds the overlap on the next frame, and a stale seed is dropped | `keyboard-overlap.test.cjs` (seed at mount; seed dropped if hidden); `form-footer.test.cjs` (per screen, visible at mount) | Seed measures once; an unsettled layout corrects at the next keyboard event |
+| FORM-04 | The footer adds the bottom safe-area inset when the keyboard is hidden (3-button navigation), and the overlap when it exceeds the inset | `form-footer.test.cjs` (inset hidden; overlap shown; iOS inset only) | On iOS the inset also stays while the keyboard is up (cosmetic gap) |
+| FORM-05 | Delete (Edit Item) and Remove (shopping item) stay inside the scroll content, never next to Save | `form-footer.test.cjs` (destructive actions stay in the scroll content) | Component level |
+| FORM-06 | A shopping row press dismisses the keyboard before it opens the editor, and a fast double tap still opens it once (KAN-33) | `shopping-screen.test.cjs` (dismiss before push; fast-tap single push) | Component level |
+| FORM-07 | Sign-in and registration add the keyboard overlap to their ScrollView bottom padding on Android, so the submit button can be scrolled above the keyboard | `auth-layout.test.cjs` | Component level |
+| FORM-08 | The post-registration "Check your email" view stacks message, Resend and Go to sign in with 12 dp gaps, Resend first, with confirm-email's title spacing; Go to sign in is the secondary variant on all three confirmation screens (owner approval 2026-11-20) | `auth-layout.test.cjs` (stack and order; title spacing; secondary variant) | — |
+| FORM-09 | The missing-item states (Edit Item, shopping item) stack the message, Retry and Back with 12 dp gaps and full-width buttons; the loading spinner keeps its own centered style | `missing-state-layout.test.cjs` | Not triggered on the phone; screen tests only |
+| A11Y-FORM-01 | TalkBack reads the "Check your email" view as message, Resend, Go to sign in | None automated | Owner TalkBack check on the phone (2026-11-20) |
+
+### UX-06 Android evidence
+
+Phone: Xiaomi 23122PCD1G, Android 16, arm64-v8a, 3-button navigation (`navigation_mode` 0), against the local stack through the loopback proxy and `adb reverse`, over Wi-Fi ADB (USB ADB was not recognized during the session).
+
+- **Local gates at `aaf74a2`:** `npm run test:fast` exited 0 (typecheck, 372 node tests, 18 jest, 1 safety); `npm run test:integration` 30/30.
+- **APK from `aaf74a2`** (arm64-v8a, SHA-256 starting `137cabdc`; the bundle was checked for `login-submit` and `form-footer`):
+  - First attempt: the phone dropped off ADB before the first flow; no flow ran.
+  - Second run: Slice 1.1, Slice 2, the status and search journeys and the first four confirmation flows passed. The final confirmation pass failed with "device offline" mid-tap (a Wi-Fi drop; the router was later found to have been reset), not an app assertion.
+  - Rerun of the whole confirmation block (the same commands and fixtures as `run-e2e.cjs`): all five confirmation flows passed. Together, every e2e flow passed on this APK. The logcat asset scan was not repeated in the rerun.
+- **Owner checks (2026-11-20):** Add Item with the keyboard open on entry: Cancel and Add item visible, clear of the navigation buttons. Edit Item: Save visible with the keyboard open; Delete reachable by scrolling. Shopping item opened from a row with the add-field keyboard up: the keyboard closes and Save and Cancel are visible; Save stays visible with the name field's keyboard open. Sign-in → registration with the keyboard up: the keyboard closes on navigation; everything is reachable. "Check your email": spacing and order correct, TalkBack order correct. A first registration attempt failed only because the router was down; the retry passed.
+
+Not checked: iOS (PF-IOS-001); the missing-item states on a device. **The owner accepted the iOS risk for merging PR #53 on 2026-11-20** (no Mac or iPhone available); the iOS keyboard and footer check (FORM-02, FORM-04) is tracked under KAN-69 for the first iOS simulator or TestFlight run.
+
 ## Slice 1.1 baseline coverage
 
 | ID | Approved behavior / observable outcome | Reused automated coverage | Additional coverage | Manual / deferred limit |

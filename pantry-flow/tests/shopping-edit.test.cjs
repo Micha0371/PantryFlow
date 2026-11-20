@@ -22,6 +22,8 @@ function render({ state = {} } = {}) {
     Alert: { alert: (...args) => log.alerts.push(args) }, StyleSheet: { create: s => s } };
   const { default: Screen } = load('app/shopping-item/[id].tsx', {
     'react-native': native, '@/lib/theme': theme, '@/lib/i18n': { useTranslation: () => ({ t }) },
+    '@/components/MissingItemState': load('components/MissingItemState.tsx', { 'react-native': native, '@/lib/theme': theme, '@/components/Button': { Button: 'Button' }, '@/lib/i18n': { useTranslation: () => ({ t }) } }),
+    '@/components/FormFooter': { FormFooter: 'FormFooter' }, '@/hooks/useKeyboardOverlap': { useKeyboardOverlap: () => 0 },
     'expo-router': { useRouter: () => ({ back: () => { log.back++; } }), useLocalSearchParams: () => ({ id: '1' }) },
     '@/components/Button': { Button: 'Button' }, '@/components/Input': { Input: 'Input' },
     '@/components/AuthGate': { AuthGate: ({ children }) => children },

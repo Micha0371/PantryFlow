@@ -26,6 +26,8 @@ function render({ updateItem, addItem, shopping = {}, current = 'in_stock' } = {
     // Announcements are covered in screens.test.cjs (KAN-39); inert here.
     '@/hooks/useErrorAnnouncement': { useFocusedErrorAnnouncement: () => {} }, '@/hooks/useFormError': load('hooks/useFormError.ts'),
     'react-native': native, '@/lib/theme': theme, '@/lib/constants': constants,
+    '@/components/MissingItemState': load('components/MissingItemState.tsx', { 'react-native': native, '@/lib/theme': theme, '@/components/Button': { Button: 'Button' }, '@/lib/i18n': { useTranslation: () => ({ t }) } }),
+    '@/components/FormFooter': { FormFooter: 'FormFooter' }, '@/hooks/useKeyboardOverlap': { useKeyboardOverlap: () => 0 },
     '@/lib/i18n': { useTranslation: () => ({ t }) },
     'expo-router': { useRouter: () => ({ back: () => { log.back++; } }), useLocalSearchParams: () => ({ id: '1' }) },
     '@/components/Button': { Button: 'Button' }, '@/components/Input': { Input: 'Input' },

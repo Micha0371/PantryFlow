@@ -4,21 +4,25 @@ const React = require('react');
 const { create, act } = require('react-test-renderer');
 const { load } = require('./helpers.cjs');
 
-function setup(os, node) {
+function setup(os, node, kb = {}) {
   const listeners = [];
   const appState = [];
   const AppState = { addEventListener: (name, cb) => { const l = { name, cb }; appState.push(l);
     return { remove: () => appState.splice(appState.indexOf(l), 1) }; } };
-  const Keyboard = { addListener: (name, cb) => { const l = { name, cb }; listeners.push(l);
+  const Keyboard = { isVisible: () => !!kb.visible, metrics: () => kb.metrics, addListener: (name, cb) => { const l = { name, cb }; listeners.push(l);
     return { remove: () => listeners.splice(listeners.indexOf(l), 1) }; } };
   const { useKeyboardOverlap } = load('hooks/useKeyboardOverlap.ts', { 'react-native': { Keyboard, AppState, Platform: { OS: os } } });
   let value;
   const ref = { current: node };
   const C = () => { value = useKeyboardOverlap(ref); return null; };
+  const rafs = [];
+  global.requestAnimationFrame = cb => { rafs.push(cb); return rafs.length; };
+  global.cancelAnimationFrame = () => {};
   let r; act(() => { r = create(React.createElement(C)); });
   const emit = (name, e) => act(() => listeners.filter(l => l.name === name).forEach(l => l.cb(e)));
   const appChange = st => act(() => appState.filter(l => l.name === 'change').forEach(l => l.cb(st)));
-  return { listeners, appState, appChange, emit, get: () => value, unmount: () => act(() => r.unmount()) };
+  const frame = () => act(() => rafs.splice(0).forEach(cb => cb(0)));
+  return { frame, listeners, appState, appChange, emit, get: () => value, unmount: () => act(() => r.unmount()) };
 }
 const lateView = () => { const calls = []; return { calls, measureInWindow: cb => calls.push(cb) }; };
 const view = bottomY => ({ measureInWindow: cb => cb(0, 0, 100, bottomY) });
@@ -86,4 +90,30 @@ test('becoming active again resets the overlap, and unmount removes the AppState
   assert.equal(h.appState.length, 1);
   h.unmount();
   assert.equal(h.appState.length, 0);
+});
+
+test('a keyboard already visible at mount seeds the overlap on the next frame', () => {
+  const h = setup('android', view(800), { visible: true, metrics: { screenY: 560, height: 240 } });
+  assert.equal(h.get(), 0);
+  h.frame();
+  assert.equal(h.get(), 240);
+  h.emit('keyboardDidHide', {});
+  assert.equal(h.get(), 0);
+  h.unmount();
+});
+
+test('the mount seed is dropped if the keyboard hid before the frame, and skipped when hidden or without metrics', () => {
+  const a = setup('android', view(800), { visible: true, metrics: { screenY: 560, height: 240 } });
+  a.emit('keyboardDidHide', {});
+  a.frame();
+  assert.equal(a.get(), 0);
+  a.unmount();
+  const b = setup('android', view(800), { visible: false });
+  b.frame();
+  assert.equal(b.get(), 0);
+  b.unmount();
+  const c = setup('android', view(800), { visible: true, metrics: undefined });
+  c.frame();
+  assert.equal(c.get(), 0);
+  c.unmount();
 });
