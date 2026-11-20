@@ -1,0 +1,68 @@
+appId: com.pantryflow.test
+name: Slice 3 faster item entry journey
+---
+# Runs after slice-3-search and search-verify. Starting state: Alice's pantry has
+# Milk (Out), Rice and Rye flour. Return on the name field saves and stays; the
+# keyboard stays open throughout. Return is pressKey Enter; never hideKeyboard
+# (on the owner's phone it may act as Back).
+- runScript: helpers/restore.js
+- launchApp:
+    clearState: true
+- runFlow:
+    file: helpers/login.yaml
+    env:
+      EMAIL: pf.test.alice@example.com
+- extendedWaitUntil:
+    visible: Milk
+    timeout: 15000
+- tapOn:
+    id: pantry-fab-add
+- extendedWaitUntil:
+    visible:
+      id: add-item-name
+    timeout: 15000
+
+# 1. Oats + Return: confirmation shows and the name field is empty again
+# (the placeholder is visible only while it is empty).
+- inputText: Oats
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: "Added: Oats"
+    timeout: 15000
+- assertVisible:
+    id: add-item-saved
+- assertVisible: "e.g. Milk"
+
+# 2. Tea + Return, no taps in between: focus and keyboard were kept.
+- inputText: Tea
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: "Added: Tea"
+    timeout: 15000
+- assertVisible: "e.g. Milk"
+
+# 3. Rice already exists: the duplicate error shows and Rice stays in the field.
+- inputText: Rice
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: "An item with this name already exists in your household. Please use a different name."
+    timeout: 15000
+- assertVisible:
+    id: add-item-name
+    text: Rice
+
+# 4. Done closes without a prompt; the list shows both new items.
+- assertVisible: Done
+- tapOn:
+    id: add-item-cancel
+- extendedWaitUntil:
+    notVisible:
+      id: add-item-name
+    timeout: 15000
+- extendedWaitUntil:
+    visible: Oats
+    timeout: 15000
+- assertVisible: Tea
+- assertVisible: Milk
+- assertVisible: Rice
+- assertVisible: Rye flour

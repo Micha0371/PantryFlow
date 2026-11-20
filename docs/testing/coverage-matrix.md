@@ -600,3 +600,32 @@ SMTP flow on the patched APK without proving that the fallback caused that
 success. The fallback is independently covered by the failing-before/passing-after
 delayed-bridge regression. Subsequent integration and sender-authentication
 verification are recorded in the [2026-11-10 evidence](../release-readiness/2026-11-10-email-authentication.md), including public DNS and fresh Gmail SPF/DKIM/DMARC PASS. The initial recipient test alone did not establish those results.
+
+## UX-04 coverage — KAN-94 (faster item entry)
+
+Contract: Return on the Add Item name field saves and stays for the next item; the Add item button saves and closes; Cancel reads Done after a Return save. Files are under `pantry-flow/`.
+
+| ID | Observable outcome | Automated coverage | Limit |
+| --- | --- | --- | --- |
+| ENTRY-01 | Return with a valid name adds once, clears the name, keeps category and location, stays open and shows the confirmation line | `tests/add-item-entry.test.cjs` (Return save) | Component level |
+| ENTRY-02 | Return with an empty or overlong name shows the existing error and adds nothing | `tests/add-item-entry.test.cjs` (invalid input) | Component level |
+| ENTRY-03 | A duplicate, including an item saved earlier in the same visit, shows the duplicate error and keeps the name; any failed save keeps name, category and location | `tests/add-item-entry.test.cjs` (duplicate; failed save) | Component level |
+| ENTRY-04 | At most one item per intent: Return plus the button, or repeated Return, while a save is pending | `tests/add-item-entry.test.cjs` (busy guard) | Component level; a hardware or IME double submit is covered only through the same guard |
+| ENTRY-05 | The Add item button still saves and closes; Cancel reads Done after a Return save and closes without adding | `tests/add-item-entry.test.cjs` (button; Done) | Component level |
+| ENTRY-06 | A save resolving after the screen closed neither navigates nor updates state; text typed during a pending save is not cleared | `tests/add-item-entry.test.cjs` (late resolve; typed text kept) | Component level |
+| ENTRY-07 | A Return save is announced once (the confirmation line is not a live region) | `tests/add-item-entry.test.cjs` (announce once) | The spoken output is not asserted; see the phone check |
+| ENTRY-E2E-01 | Journey: add button, `Oats` + Return (confirmation, empty field), `Tea` + Return, `Rice` + Return (duplicate error, name stays), Done; the list shows Oats and Tea. `entry-verify` reads back exactly Milk, Rice, Rye flour, Oats and Tea, with Oats and Tea at the default category `other`, location `pantry` and status `in_stock`, and nothing for the other household | `.maestro/slice-3-entry.yaml` (runs after `search-verify`); `entry-verify` in `scripts/e2e-fixtures.ts` | Written, not yet run on a device (see the phone check) |
+| ENTRY-PHONE-01 | On the phone: the Return key label, focus and keyboard kept between items, and the TalkBack announcement spoken once per save | None automated | **Pending owner** (no device run is claimed here) |
+
+### Tap counts (beyond typing)
+
+Before is measured against main with UX-06, where Save is already visible above the keyboard.
+
+| Task | Before | After |
+| --- | --- | --- |
+| One item | add + Add item = 2 | add + Return + Done = 3, or add + Add item = 2 |
+| Five items | 5 × (add + Add item) = 10 | add + 5 × Return + Done = 7 |
+
+### Deviation
+
+KAN-94's "keeps selected status" does not apply: the Add form has no status field, and new items stay `in_stock`. Category and location are kept between items.
