@@ -5,7 +5,9 @@ const { create, act } = require('react-test-renderer');
 const { load, deferred } = require('./helpers.cjs');
 const theme = load('lib/theme.ts');
 const native = { Text: 'Text', View: 'View', ActivityIndicator: 'Spinner', SectionList: 'SectionList',
-  Pressable: 'Pressable', StyleSheet: { create: styles => styles } };
+  Pressable: 'Pressable', StyleSheet: { create: styles => styles },
+  Keyboard: { dismiss: () => { pushes.push('keyboard-dismiss'); } } };
+const dismissOnly = r => r.filter(x => x !== 'keyboard-dismiss');
 const t = key => key;
 const pushes = [];
 // The real single-open hook runs with the same router stub; the list stays focused.
@@ -418,7 +420,7 @@ test('pressing a row name opens the edit modal for that item', () => {
     pushes.length = 0;
     const props = r.renderer.root.findByType('SectionList').props.renderItem({ item }).props;
     act(() => props.onPress());
-    assert.deepEqual(pushes, ['/shopping-item/1']);
+    assert.deepEqual(pushes, ['keyboard-dismiss', '/shopping-item/1']);
   } finally { act(() => r.renderer.unmount()); }
 });
 
@@ -429,7 +431,7 @@ test('fast repeated row taps open one edit screen, even on different rows (KAN-3
     pushes.length = 0;
     const tap = item => r.renderer.root.findByType('SectionList').props.renderItem({ item }).props.onPress();
     act(() => { tap(a); tap(a); tap(b); });
-    assert.deepEqual(pushes, ['/shopping-item/a']);
+    assert.deepEqual(dismissOnly(pushes), ['/shopping-item/a']);
   } finally { act(() => r.renderer.unmount()); }
 });
 

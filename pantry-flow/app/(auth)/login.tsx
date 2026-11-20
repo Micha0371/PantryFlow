@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -16,11 +16,17 @@ import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { colors, spacing, typography } from '@/lib/theme';
 import { useFormError } from '@/hooks/useFormError';
+import { useKeyboardOverlap } from '@/hooks/useKeyboardOverlap';
 
 export default function LoginScreen() {
   const { t } = useTranslation();
   const { signIn } = useAuth();
   const router = useRouter();
+  // Edge-to-edge Android does not resize for the keyboard, so the ScrollView pads
+  // by the measured overlap. iOS keeps KeyboardAvoidingView padding and needs none.
+  const screenRef = useRef<React.ComponentRef<typeof SafeAreaView>>(null);
+  const keyboardOverlap = useKeyboardOverlap(screenRef);
+  const overlap = Platform.OS === 'android' ? keyboardOverlap : 0;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,13 +47,13 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView ref={screenRef} style={styles.safe} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
         <ScrollView
-          contentContainerStyle={styles.container}
+          contentContainerStyle={[styles.container, { paddingBottom: spacing.xl + overlap }]}
           keyboardShouldPersistTaps="handled"
         >
           <Text style={styles.title}>{t('auth_login_title')}</Text>

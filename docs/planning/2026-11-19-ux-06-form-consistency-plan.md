@@ -20,6 +20,7 @@ This lands before UX-04, whose continuous entry keeps the keyboard open on Add I
 **Spec:**
 - [KAN-96](https://michaelwuerthner.atlassian.net/browse/KAN-96) (UX-06), whose scope the owner extended on 2026-11-19 to the sign-in, registration and email-confirmation screens;
 - owner decisions of 2026-11-19 on the "Check your email" screen: align the button gap, the button order, and the gap between text and the first button with the other confirmation screens;
+- owner approval of 2026-11-20: "Go to sign in" uses the secondary button variant on all three confirmation screens;
 - the evaluation's proposed convention, section 3.
 
 **Process:** Sonnet implementers and focused Sonnet reviews, then one final Opus review. Proportionate. Preserve existing behavioral regression assertions. A phone check with the owner is required (keyboard behavior can't be proven off-device).
@@ -40,7 +41,7 @@ This lands before UX-04, whose continuous entry keeps the keyboard open on Add I
   - order: **Resend confirmation email first, then Go to sign in**;
   - title spacing as on `confirm-email.tsx`.
 
-  [Owner-to-confirm] The evaluation also recommends styling "Go to sign in" as the secondary variant on all three confirmation screens. This plan includes it only if the owner approves at plan review; otherwise both buttons stay primary.
+  **Approved by the owner on 2026-11-20:** "Go to sign in" uses the secondary variant on all three confirmation screens (register "Check your email", `confirm-email.tsx`, `auth/callback.tsx`); the other action stays primary.
 - **Missing-item states** (Edit Item, shopping item): text, Retry and Back stacked with `gap: spacing.md`, buttons full width (no content-width shrink), no 0 dp contact.
 - **Not in this package:** the Medium and Low findings. They're dispositioned in KAN-96 after this package.
 
@@ -78,13 +79,14 @@ This lands before UX-04, whose continuous entry keeps the keyboard open on Add I
 ### Task 2: Sign-in, registration and the "Check your email" view (H1 auth, H2)
 
 **Files:**
-- Modify: `pantry-flow/app/(auth)/login.tsx`, `pantry-flow/app/(auth)/register.tsx`, and `pantry-flow/app/(auth)/confirm-email.tsx` plus `pantry-flow/app/auth/callback.tsx` only if the owner approves the secondary variant
+- Modify: `pantry-flow/app/(auth)/login.tsx`, `pantry-flow/app/(auth)/register.tsx`, and `pantry-flow/app/(auth)/confirm-email.tsx` and `pantry-flow/app/auth/callback.tsx` (secondary variant, approved 2026-11-20)
 - Test: `pantry-flow/tests/auth-layout.test.cjs`
 
 - [ ] **Step 1: Failing tests:**
   - `sign-in and registration add the keyboard overlap to the ScrollView bottom padding`;
   - `the post-registration view stacks message, Resend and Go to sign in with gap 12, Resend first`;
-  - `the post-registration title spacing equals confirm-email's`.
+  - `the post-registration title spacing equals confirm-email's`;
+  - `Go to sign in uses the secondary variant on all three confirmation screens` (testIDs unchanged).
 - [ ] **Step 2: Run.** Expected: FAIL.
 - [ ] **Step 3: Implement.** The confirmation view gets its own styles (`confirmContainer` with `gap: spacing.md`, and a `message` style), so the registration form keeps its current look.
 - [ ] **Step 4: Run** the new tests, then `npm run test:fast`. Expected: PASS.
