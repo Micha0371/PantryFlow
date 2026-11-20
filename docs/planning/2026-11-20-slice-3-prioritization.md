@@ -1,6 +1,6 @@
-# Slice 3 prioritization — draft for owner review
+# Slice 3 prioritization and scope register
 
-**Status:** draft, 2026-11-20. Nothing in Jira has been changed. After approval, the labels and closures are applied through the Jira CLI with a preview first.
+**Status:** decisions D1–D4 approved by the owner on 2026-11-20 (section 4). The Jira labels and closures are applied through the Jira CLI with a preview first; section 6 records the verification of the closures.
 
 **Inputs:**
 - the owner's phase order of 2026-11-18 (3.1 baseline … 3.8 final assessment; usability outranks engineering polish);
@@ -87,9 +87,9 @@ Each tier maps to one label, replacing the mixed `p1`–`p3` labels:
 
 | Issue | Proposal | Verify before closing |
 |---|---|---|
-| KAN-51 reconcile Slice 3 scope | **Close as done:** decision record (#48) and PRD Amendment 1 | That its acceptance criteria are met by those records |
-| KAN-53 reassess carried findings | **Close as done** if the 2026-11-18 QA integration covered it | Its description against the QA dry-run plan |
-| KAN-41 (parent) | Close once 51 and 53 are closed | — |
+| KAN-51 reconcile Slice 3 scope | **Close once this document merges** (its scope register, section 7, completes the criteria) | Done (section 6) |
+| KAN-53 reassess carried findings | **Close as obsolete:** every finding it classifies (KAN-27, 32–39) was fixed and closed in Slice 2 | Done (section 6) |
+| KAN-41 (parent) | Close once 51 and 53 are closed | KAN-52 is already done |
 | KAN-114 GOV-02: review the tiered process | **Merge into GOV-01** as its last step, or close | — |
 | KAN-110 TEST-03: reduce stub maps | **Close**; handle it in normal work when a test is touched | — |
 | KAN-109 CI-01: Gradle download flake | **Close** unless it recurs; reopen with evidence | — |
@@ -116,3 +116,27 @@ Each tier maps to one label, replacing the mixed `p1`–`p3` labels:
 2. **BETA-01**, so the beta gate becomes checkable.
 3. **English/German localization:** KAN-60, then 61 and 62.
 4. In parallel, the owner-side items: the hosted Auth dashboard values (M2) and the SEC-02 authorization.
+
+## 6. Decisions and closure verification (2026-11-20)
+
+**Owner decisions:** D1 option c (iOS in Slice 3 as tier B, outside the beta gate); D2 the tier D closures, merge and deferral; D3 the tier labels `p0`–`p3` on all open Slice 3 issues, with the Jira priority field unchanged; D4 the design-depth rule.
+
+**Verification of the "close as done" candidates**, against their acceptance criteria:
+- **KAN-51** asks for (1) a versioned scope register sorting requirements into mandatory, conditional, proposed and excluded, (2) the source precedence, with no standalone Slice 3 spec claimed, and (3) explicit decisions on the filters/localization boundary and the sharing/premium conflicts. The decision record (§1–2) and PRD Amendment 1 meet (3). No document met (1) and (2), so section 7 adds the register. KAN-51 closes when this document merges.
+- **KAN-53** asks for a release classification of KAN-27 and 32–39, keeping KAN-33/35 as fixed regressions, with quick-add/bulk/undo/export staying proposed. All nine issues were fixed and are Fertig in Slice 2, and the proposed items remain proposed (section 7), so the classification is obsolete. It closes as obsolete, not as done.
+
+## 7. Scope register (Slice 3, version 1, 2026-11-20)
+
+There is no standalone approved Slice 3 specification. **Source precedence**, highest first:
+1. owner decisions recorded in the [decision record](2026-11-19-slice-3-decision-record.md), including Amendment 1;
+2. the PRD with Amendment 1;
+3. the reviewed technical specifications (account lifecycle);
+4. this register and its tiers;
+5. Jira issue text and the 2026-11-17 backlog dry run.
+
+| Class | Requirements |
+|---|---|
+| **Mandatory** | Tiers A and B (section 3): usability (UX-03, 04, 06, 07), password recovery and rules, account deletion and retention, English and German, accessibility qualification, operations and recovery, website and public content (including the deletion request path), Android qualification, the usability study, the beta checklist and release records; iOS qualification per D1, outside the beta gate |
+| **Conditional** | French and Italian, only after German has shipped with stable strings (decision record §2); crash reporting (Sentry EU) after the OPS-01 comparison note and owner confirmation (§3); tier C items, if capacity allows |
+| **Proposed, not in scope** | Bulk entry (UX-05, deferred), undo, export, and quick-add beyond UX-04 |
+| **Excluded** | Premium, payment and gating (PRD Amendment 1); household sharing, invitations and household management (Slice 4); quantity, expiry, barcode and recipes; analytics expansion; offline queue; other suite apps; a custom application server; Spanish (deferred); architectural rewrite or whole-app redesign |
