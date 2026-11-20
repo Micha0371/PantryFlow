@@ -98,10 +98,14 @@ Each tier maps to one label, replacing the mixed `p1`–`p3` labels:
 
 ## 4. Owner decisions
 
-- **D1 — iOS in Slice 3?** The beta is Android-only (S3-Q7), and there's no iOS build environment here (iOS simulators need macOS; macOS CI is billed at 10x and needs explicit approval).
-  - **Option a:** keep iOS in phase 3.6 as tier B.
+- **D1 — iOS in Slice 3?** The beta is Android-only (S3-Q7). The owner has no Mac or iPhone; a rented Mac, GitHub macOS workflows and volunteer iPhone testers are possible (owner, 2026-11-20).
+  - **Option a:** keep iOS in phase 3.6 as tier B, with no build route decided.
   - **Option b:** move KAN-47, 68–70 and 101 to a later slice, and record "Android only" in the Slice 3 acceptance.
-  - Recommendation: **b**, unless an iOS release is planned within Slice 3. It also settles the open iOS merge condition on PR #53.
+  - **Option c (recommended):** keep iOS in Slice 3 as **tier B, outside the beta gate**, using three layers:
+    1. a GitHub macOS workflow that builds for the iOS simulator and runs the Maestro flows. Free on standard runners for this public repository (to be checked on the billing page); every macOS dispatch still needs explicit owner approval.
+    2. TestFlight with volunteer iPhone testers for real-device and VoiceOver checks (KAN-69, 70, 101, 64). Needs the Apple Developer Program ($99/year); device builds can be made in the cloud. External testers need separate owner authorization.
+    3. a rented Mac only if a native failure can't be diagnosed from CI.
+  - **PR #53:** the owner accepted the iOS risk for its merge on 2026-11-20; the check is tracked under KAN-69 for the first simulator or TestFlight run.
 - **D2 — the tier D closures and merges** above.
 - **D3 — label scheme:** replace `p1`–`p3` with the tier labels `p0`–`p3` on all open Slice 3 issues, and keep the Jira priority field unchanged (it carries no information today).
 - **D4 — design-depth rule** from section 1: future designs stop at the first review without a High finding unless the owner asks for more.
