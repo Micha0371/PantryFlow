@@ -455,7 +455,7 @@ Phone: Xiaomi 23122PCD1G, Android 16, arm64-v8a, 3-button navigation (`navigatio
   - Rerun of the whole confirmation block (the same commands and fixtures as `run-e2e.cjs`): all five confirmation flows passed. Together, every e2e flow passed on this APK. The logcat asset scan was not repeated in the rerun.
 - **Owner checks (2026-11-20):** Add Item with the keyboard open on entry: Cancel and Add item visible, clear of the navigation buttons. Edit Item: Save visible with the keyboard open; Delete reachable by scrolling. Shopping item opened from a row with the add-field keyboard up: the keyboard closes and Save and Cancel are visible; Save stays visible with the name field's keyboard open. Sign-in → registration with the keyboard up: the keyboard closes on navigation; everything is reachable. "Check your email": spacing and order correct, TalkBack order correct. A first registration attempt failed only because the router was down; the retry passed.
 
-Not checked: iOS (PF-IOS-001); the missing-item states on a device.
+Not checked: iOS (PF-IOS-001); the missing-item states on a device. **The owner accepted the iOS risk for merging PR #53 on 2026-11-20** (no Mac or iPhone available); the iOS keyboard and footer check (FORM-02, FORM-04) is tracked under KAN-69 for the first iOS simulator or TestFlight run.
 
 ## Slice 1.1 baseline coverage
 
