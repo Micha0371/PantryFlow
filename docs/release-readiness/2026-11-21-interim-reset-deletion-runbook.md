@@ -1,6 +1,6 @@
 # Interim password-reset and account-deletion support (beta lines B3, B4)
 
-**Status:** draft for owner decision, 2026-11-21. These are the interim support paths the [beta entry checklist](2026-11-21-beta-entry-checklist.md) allows until KAN-42 (password recovery) and KAN-43 (account deletion) are delivered. The decision record requires them to be **secure, documented and genuinely operational**; each needs one rehearsed request before the beta.
+**Status:** owner decided option A for B3 on 2026-11-21; the rehearsal is authorized and pending. These are the interim support paths the [beta entry checklist](2026-11-21-beta-entry-checklist.md) allows until KAN-42 (password recovery) and KAN-43 (account deletion) are delivered. The decision record requires them to be **secure, documented and genuinely operational**; each needs one rehearsed request before the beta.
 
 - **Support contact:** contact@mwsoftworks.com (owner, 2026-11-21).
 - **Response time:** within **3 days** (owner, 2026-11-21). Testers are told this in the tester instructions and the privacy notice.
@@ -23,9 +23,9 @@ A request from any other address gets the same confirmation mail to the register
 4. Confirm the deletion to the registered address, and state that backups keep data until they expire under the plan's backup retention (exact period from the pending hosted read, FV-A1).
 5. Record the date and the user UUID only (no email, no names) in the owner's support log.
 
-**Rehearsal (required before the beta):** create a disposable test account on the hosted project, run steps 1–5 against it, and check that its rows are gone. **This is a hosted change and needs separate owner authorization.**
+**Rehearsal (required before the beta; authorized by the owner on 2026-11-21):** create a disposable test account on the hosted project with an address the owner can receive, run steps 1–5 against it, and check that its rows are gone (a read-only query by the test account's UUID), then re-register with the same address (option A). Record the date and UUID only.
 
-## B3 — password reset (interim): owner decision needed
+## B3 — password reset (interim): option A decided (owner, 2026-11-21)
 
 The app has no recovery screen yet (KAN-42). A Supabase recovery email would open a link nothing in the app handles, so it is **not** an operational path. Three options:
 
@@ -35,7 +35,7 @@ The app has no recovery screen yet (KAN-42). A Supabase recovery email would ope
 | B. Owner-set temporary password | After verification, the owner sets a random temporary password with a small local admin script (service-role key read from Windows Credential Manager, never printed) and mails it to the registered address | A password travels by email, and the app has no change-password screen, so the tester keeps it | A new reviewed script, plus a hosted-change authorization per use | More moving parts and a credential in a mailbox |
 | C. Deliver KAN-42 before the beta | Real in-app recovery | Best | Large; KAN-42's remaining gates (hosted read M2, implementation authorization) | Delays the beta |
 
-**Recommendation: A** for the supervised beta, with C before any broader beta (as the checklist already requires). **Rehearsal for A** is the B4 rehearsal plus one re-registration with the same address.
+**Decision: A** for the supervised beta (owner, 2026-11-21), with C before any broader beta (as the checklist already requires). **Rehearsal for A** is the B4 rehearsal plus one re-registration with the same address.
 
 ## What the testers are told (goes into the tester instructions and the privacy notice)
 
