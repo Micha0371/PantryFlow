@@ -1,3 +1,149 @@
-// German translations — stub for Slice 1.
-// Keys will be populated in Slice 2/3. Missing keys fall back to English.
-export const de: Record<string, string> = {};
+import type { TranslationKey } from './en';
+
+// German catalogue (KAN-60). Informal "du" (owner decision 2026-11-21). Kept short:
+// German strings must not grow beyond what the layout needs.
+export const de: Record<TranslationKey, string> = {
+  // Navigation
+  nav_pantry: 'Vorrat',
+  nav_shopping: 'Einkauf',
+  nav_settings: 'Einstellungen',
+
+  // Auth
+  auth_login_title: 'Willkommen zurück',
+  auth_register_title: 'Konto erstellen',
+  auth_login_button: 'Anmelden',
+  auth_register_button: 'Konto erstellen',
+  auth_logout: 'Abmelden',
+  auth_email: 'E-Mail',
+  auth_password: 'Passwort',
+  auth_name: 'Name',
+  auth_email_placeholder: 'du@example.com',
+  auth_password_placeholder: 'Mindestens 6 Zeichen',
+  auth_name_placeholder: 'Dein Name',
+  auth_no_account: 'Noch kein Konto?',
+  auth_have_account: 'Schon ein Konto?',
+  auth_go_to_register: 'Jetzt erstellen',
+  auth_go_to_login: 'Anmelden',
+
+  // Status
+  status_in_stock: 'Vorrätig',
+  status_low: 'Knapp',
+  status_out: 'Leer',
+  status_group_label: 'Status',
+  status_change_hint: 'Status ändern',
+  status_not_changed_title: 'Status nicht geändert',
+  status_unconfirmed_title: 'Statusänderung nicht bestätigt',
+  item_edit_hint: 'Artikel bearbeiten',
+
+  // Categories
+  cat_dairy: 'Milchprodukte',
+  cat_grains: 'Getreide',
+  cat_produce: 'Obst & Gemüse',
+  cat_protein: 'Proteine',
+  cat_canned: 'Konserven',
+  cat_frozen: 'Tiefkühl',
+  cat_beverages: 'Getränke',
+  cat_snacks: 'Snacks',
+  cat_condiments: 'Gewürze & Soßen',
+  cat_cleaning: 'Putzmittel',
+  cat_personal: 'Pflege',
+  cat_other: 'Sonstiges',
+
+  // Locations
+  loc_fridge: 'Kühlschrank',
+  loc_freezer: 'Gefrierfach',
+  loc_pantry: 'Speisekammer',
+  loc_counter: 'Arbeitsplatte',
+  loc_cabinet: 'Schrank',
+  loc_other: 'Sonstiges',
+
+  // Items
+  item_name: 'Name',
+  item_name_placeholder: 'z. B. Milch',
+  item_category: 'Kategorie',
+  item_location: 'Lagerort',
+  item_status: 'Status',
+  item_add_title: 'Artikel hinzufügen',
+  item_edit_title: 'Artikel bearbeiten',
+  item_add_button: 'Hinzufügen',
+  item_added_prefix: 'Hinzugefügt:',
+  item_added_announcement: 'hinzugefügt',
+  item_save_button: 'Speichern',
+  item_delete: 'Löschen',
+  item_delete_confirm_title: 'Artikel löschen?',
+  item_delete_confirm_message: 'Das kann nicht rückgängig gemacht werden.',
+
+  // Empty state
+  empty_pantry_title: 'Dein Vorrat ist leer',
+  empty_pantry_subtitle: 'Füge deinen ersten Artikel hinzu.',
+  empty_pantry_cta: 'Artikel hinzufügen',
+
+  // Pantry search
+  pantry_search_label: 'Vorrat durchsuchen',
+  pantry_search_placeholder: 'Artikel suchen',
+  pantry_search_clear: 'Suche löschen',
+  pantry_search_no_match_title: 'Keine passenden Artikel',
+  pantry_search_results_one: '1 Artikel gefunden',
+  pantry_search_results_many: 'Artikel gefunden',
+
+  // Common
+  common_cancel: 'Abbrechen',
+  common_done: 'Fertig',
+  common_save: 'Speichern',
+  common_delete: 'Löschen',
+  common_back: 'Zurück',
+  common_ok: 'OK',
+
+  common_retry: 'Erneut versuchen',
+  auth_check_email_title: 'Prüfe deine E-Mails',
+  auth_resend_confirmation: 'Bestätigungs-E-Mail erneut senden',
+  auth_confirming: 'E-Mail wird bestätigt…',
+  auth_already_signed_in: 'Du bist bereits angemeldet',
+  auth_confirmation_invalid: 'Dieser Bestätigungslink ist ungültig oder abgelaufen',
+  auth_confirmation_recovery: 'Fordere hier eine neue Bestätigungs-E-Mail an und öffne den neuesten Link auf diesem Gerät. Nach einem Neustart der App kommst du über „Anmelden“ hierher zurück.',
+  auth_confirmation_sent: 'Falls diese Adresse auf eine Bestätigung wartet, haben wir eine neue E-Mail gesendet. Öffne den neuesten Link auf diesem Gerät.',
+  auth_confirmation_wait: 'Bitte warte, bevor du erneut sendest',
+  err_confirmation_resend: 'Die Bestätigungs-E-Mail konnte nicht gesendet werden. Prüfe Adresse und Verbindung und versuche es erneut.',
+  err_confirmation_rate_limit: 'Zu viele E-Mail-Anfragen. Bitte warte kurz und versuche es dann erneut.',
+  auth_check_email_message: 'Falls diese Adresse registriert werden kann, haben wir dir eine Bestätigungs-E-Mail gesendet. Öffne den neuesten Link auf diesem Gerät, um die Anmeldung abzuschließen.',
+  err_restore_session: 'Deine Sitzung konnte nicht wiederhergestellt werden. Bitte versuche es erneut.',
+  err_signout: 'Abmelden fehlgeschlagen. Bitte versuche es erneut.',
+  err_item_name_length: 'Der Name darf höchstens 120 Zeichen lang sein.',
+  err_item_missing: 'Dieser Artikel ist nicht mehr verfügbar.',
+  err_duplicate_item: 'Ein Artikel mit diesem Namen existiert bereits in deinem Haushalt. Bitte wähle einen anderen Namen.',
+
+  // Errors
+  err_required_name: 'Bitte gib einen Namen ein.',
+  err_login_failed: 'E-Mail oder Passwort ist falsch.',
+  err_register_failed: 'Konto konnte nicht erstellt werden.',
+  err_load_items: 'Artikel konnten nicht geladen werden.',
+  err_save_item: 'Artikel konnte nicht gespeichert werden.',
+  err_status_unconfirmed: 'Prüfe deine Verbindung. Die Liste zeigt den gespeicherten Status, sobald sie neu geladen ist.',
+  err_status_conflict: 'Dieser Artikel wurde gerade auf einem anderen Gerät geändert. Sein aktueller Status wird angezeigt.',
+  err_delete_item: 'Artikel konnte nicht gelöscht werden.',
+  err_no_household: 'Kein Haushalt gefunden. Bitte melde dich ab und wieder an.',
+  err_load_shopping: 'Die Einkaufsliste konnte nicht geladen werden.',
+  err_save_shopping: 'Der Eintrag konnte nicht gespeichert werden. Bitte versuche es erneut.',
+  err_duplicate_shopping_item: 'Dieser Artikel steht schon auf deiner Einkaufsliste.',
+  err_shopping_invalid: 'Der Name muss 1 bis 120 Zeichen lang sein.',
+  err_shopping_link_missing: 'Der zugehörige Vorratsartikel ist nicht mehr verfügbar.',
+  err_shopping_permission: 'Du hast keinen Zugriff auf diese Einkaufsliste.',
+  err_shopping_missing: 'Dieser Eintrag ist nicht mehr verfügbar.',
+  err_generic: 'Etwas ist schiefgelaufen. Bitte versuche es erneut.',
+
+  // Shopping list
+  shopping_prompt_title: 'Auf die Einkaufsliste?',
+  shopping_prompt_add: 'Hinzufügen',
+  shopping_prompt_skip: 'Jetzt nicht',
+  shopping_prompt_failed_title: 'Nicht zur Einkaufsliste hinzugefügt',
+  shopping_empty_title: 'Deine Einkaufsliste ist leer',
+  shopping_empty_subtitle: 'Füge hinzu, was du kaufen musst.',
+  shopping_section_open: 'Zu kaufen',
+  shopping_section_completed: 'Erledigt',
+  shopping_add_placeholder: 'Artikel hinzufügen',
+  shopping_add_button: 'Hinzufügen',
+  shopping_edit_title: 'Eintrag bearbeiten',
+  shopping_remove: 'Entfernen',
+  shopping_remove_confirm_title: 'Eintrag entfernen?',
+  shopping_remove_confirm_message: 'Der Eintrag wird für alle in deinem Haushalt von der Einkaufsliste entfernt.',
+};

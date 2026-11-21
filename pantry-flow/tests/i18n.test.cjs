@@ -20,7 +20,9 @@ test('saved locale restores, missing translations fall back and locale changes p
   try {
     await act(async () => { view = create(React.createElement(I18nProvider, null, React.createElement(Probe))); });
     assert.equal(current.locale, 'de');
-    assert.equal(view.toJSON().children[0], en.err_duplicate_item);
+    // KAN-60: German is complete, so the restored German locale shows German text.
+    assert.equal(view.toJSON().children[0], de.err_duplicate_item);
+    assert.notEqual(de.err_duplicate_item, en.err_duplicate_item);
     assert.equal(current.t('unrecognized_test_key'), 'unrecognized_test_key');
     await act(async () => current.setLocale('en'));
     assert.equal(storage.get('user_language'), 'en');
@@ -54,5 +56,25 @@ test('the i18n context value is stable across a parent re-render and changes wit
     assert.equal(german.locale, 'de');
     assert.equal(german.t('nav_shopping'), de.nav_shopping ?? en.nav_shopping);
     assert.equal(german.setLocale, first.setLocale);
+  } finally { if (view) act(() => view.unmount()); }
+});
+
+// KAN-60: German is complete today; a key missing from a future German catalogue still
+// falls back to English instead of showing its internal name.
+test('a key missing from the German catalogue falls back to English', async () => {
+  const { en } = load('lib/i18n/en.ts');
+  const incompleteDe = { nav_pantry: 'Vorrat' };
+  const { I18nProvider, useTranslation } = load('lib/i18n/index.tsx', {
+    './en': { en }, './de': { de: incompleteDe },
+    '@react-native-async-storage/async-storage': { getItem: async () => 'de', setItem: async () => {} },
+  });
+  let current;
+  function Probe() { current = useTranslation(); return null; }
+  let view;
+  try {
+    await act(async () => { view = create(React.createElement(I18nProvider, null, React.createElement(Probe))); });
+    assert.equal(current.locale, 'de');
+    assert.equal(current.t('nav_pantry'), 'Vorrat');
+    assert.equal(current.t('err_duplicate_item'), en.err_duplicate_item);
   } finally { if (view) act(() => view.unmount()); }
 });
