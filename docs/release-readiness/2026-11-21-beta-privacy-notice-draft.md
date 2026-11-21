@@ -12,7 +12,6 @@
 - the owner's Free-plan decision.
 
 **Placeholders to fill:**
-- `[Controller]`: the name and postal address of the person or business responsible.
 - `[Email provider]`: the service that delivers the confirmation emails (custom SMTP is configured; the provider is not recorded in the repository).
 - `[Log retention]`: the platform's log retention for the Free plan, from Supabase's current plan documentation.
 - `[Web address]`: once a page exists (KAN-71/72).
@@ -21,7 +20,7 @@
 
 ## English
 
-**Who is responsible.** [Controller]. Contact for privacy questions and requests: **contact@mwsoftworks.com**. We reply within **3 days**.
+**Who is responsible.** MW Software Solutions, Neuköllner Weg 15, 78056 Villingen-Schwenningen, Germany. Contact for privacy questions and requests: **contact@mwsoftworks.com**. We reply within **3 days**.
 
 **What PantryFlow is during this beta.** A test version of a household pantry app, used by a small group of invited testers. Features, data and availability can change.
 
@@ -58,7 +57,7 @@ Please don't put sensitive personal information into item names.
 
 ## Deutsch
 
-**Verantwortlich.** [Controller]. Kontakt für Datenschutzfragen und Anfragen: **contact@mwsoftworks.com**. Wir antworten innerhalb von **3 Tagen**.
+**Verantwortlich.** MW Software Solutions, Neuköllner Weg 15, 78056 Villingen-Schwenningen, Deutschland. Kontakt für Datenschutzfragen und Anfragen: **contact@mwsoftworks.com**. Wir antworten innerhalb von **3 Tagen**.
 
 **Was PantryFlow in dieser Beta ist.** Eine Testversion einer Haushalts-Vorratsapp für eine kleine Gruppe eingeladener Tester. Funktionen, Daten und Verfügbarkeit können sich ändern.
 
