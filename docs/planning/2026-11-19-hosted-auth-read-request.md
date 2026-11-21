@@ -2,7 +2,7 @@
 
 **Status:** requested 2026-11-19; **approved by the owner on 2026-11-20** (methods M1 and M2, as suggested; M3 not set up). Approval covers this read only, not any hosted change.
 - **M1 executed 2026-11-19T23:15Z:** the unauthenticated `GET /auth/v1/health` returned **401** (the hosted gateway requires an API key even for the health route). No key was used, as this request specifies, so item 1 moves to M2: the dashboard's infrastructure page shows the Auth version.
-- **M2:** pending, performed by the owner.
+- **M2:** performed by the owner on 2026-11-21. The values and evaluation are in the [FV-A1 evidence note](../testing/2026-11-21-hosted-auth-read-fv-a1.md). Only the access-token expiry was not captured.
 
 **Purpose:** confirm the hosted provider facts that the [password spec](2026-11-19-password-recovery-session-spec.md) and the [deletion spec](2026-11-19-account-deletion-spec.md) depend on. These are the Auth version, the password and session settings, rate limits, plan entitlements and retention. Without them, rollout of the 15-code-point policy (OD-A1) and the retention text (R-2 to R-4) can't be completed.
 

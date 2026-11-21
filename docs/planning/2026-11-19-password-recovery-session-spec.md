@@ -113,7 +113,7 @@ These were verified by reading the versioned source. Execution behavior is not v
 
 ### 2.2 Server enforcement prerequisite
 
-**[Settled direction, OD-A1, 2026-11-19]; rollout [Blocked] until FV-A1 and FV-A2 pass:**
+**[Settled direction, OD-A1, 2026-11-19]; rollout [Blocked] until FV-A2 passes. FV-A1 (2026-11-21) confirmed hosted Auth v2.198.0, so the version precondition is met ([evidence](../testing/2026-11-21-hosted-auth-read-fv-a1.md)):**
 - On v2.197.0 the server counts the minimum in bytes. For example, 8 `ä` (16 bytes) passes a 15 minimum while having only 8 code points. The approved rule therefore cannot be enforced on v2.197.0.
 - **Requirement:** every environment runs an Auth version that enforces the code-point minimum server-side. v2.198.0 is the candidate minimum.
   - **Local:** Supabase CLI **v3.2.0** (2026-11-16) bundles Auth v2.198.0; CLI 2.122.1 bundles v2.197.0. The CLI major-version change is itself a compatibility item: config, migrations and the existing integration and Maestro suites must pass on it.
