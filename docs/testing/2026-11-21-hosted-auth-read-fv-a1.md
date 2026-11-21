@@ -47,3 +47,9 @@
 - the legacy HS256 key still verifies tokens: revoke only after confirming no client uses a legacy key.
 
 **Remaining:** the access-token (JWT) expiry, from the dashboard's legacy JWT settings, is the only item not captured.
+
+## Owner follow-up (2026-11-21)
+
+- **Magic links and email OTP: disabled by the owner** in the dashboard (risk 3 closed). **Still to verify:** that signup confirmation (the code exchange the app uses) still works. Do this with the first hosted-configured beta build (beta line B10), as part of its smoke test.
+- **Site URL:** no real page exists yet (the website is KAN-71/72). It stays `http://localhost:3000` for now. Risk 2 remains open and is tracked on beta line B5, because the notice and the support links need a real address.
+- **Free vs Pro:** not decided yet (risk 1).
