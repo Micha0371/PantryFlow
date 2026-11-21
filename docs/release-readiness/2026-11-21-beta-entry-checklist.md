@@ -1,6 +1,6 @@
 # Supervised Android beta — entry checklist (BETA-01, KAN-106)
 
-**Status: NO-GO.** Drafted 2026-11-21 from KAN-106 and the owner's decisions. Two lines are met; the rest are open.
+**Status: NO-GO.** Drafted 2026-11-21 from KAN-106 and the owner's decisions. Three lines are met (B1, B6, B12); the rest are open.
 
 ## What this is
 
@@ -20,7 +20,7 @@ Status as of 2026-11-21. "Waivable" says whether an owner waiver may close the l
 
 | # | Line | Source | Waivable | Evidence required | Status | Next step |
 |---|---|---|---|---|---|---|
-| B1 | Hosted database baseline re-verified, read-only | KAN-106 line 1; SEC-02 (KAN-103) | No (security) | A dated SEC-02 record against the hosted project | **Open:** KAN-103 Backlog | Owner authorizes the SEC-02 read |
+| B1 | Hosted database baseline re-verified, read-only | KAN-106 line 1; SEC-02 (KAN-103) | No (security) | A dated SEC-02 record against the hosted project | **Met 2026-11-21:** [SEC-02 record](../testing/2026-11-21-sec02-hosted-drift-check.md): match against 00001–00004; documented exceptions only | Re-check at sign-off only if a migration lands before then |
 | B2 | Crash and error reporting active and disclosed to testers | Line 2; OPS-01 (KAN-104); decision record §3 | Yes, with reason; disclosure is required if active | An OPS-01 record: the service configured with EU storage and scrubbing, and the disclosure text | **Open:** KAN-104 Backlog; the comparison note is not written | OPS-01 comparison note, then owner confirmation |
 | B3 | Password reset: KAN-42 delivered, **or** an interim support path that is secure, documented and operational | Line 3; §7 | No (security) | Either KAN-42 accepted, or a runbook covering: support contact, stated response time, how the requester's ownership of the account is verified (for example a request from the registered address), the reset steps, and one rehearsed request | **Open:** KAN-42 not delivered; no interim runbook | Write and rehearse the interim reset runbook |
 | B4 | Account deletion: KAN-43 delivered, **or** an interim support path that is secure, documented and operational | Line 3; §7 | No (privacy) | Either KAN-43 accepted, or a runbook covering: support contact, response time, ownership verification, the deletion steps on the hosted project, a confirmation to the requester, and one rehearsed request on a test account | **Open:** KAN-43 not delivered (design reviewed; implementation not authorized); no interim runbook | Write and rehearse the interim deletion runbook |
