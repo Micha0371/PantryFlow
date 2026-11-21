@@ -52,4 +52,4 @@
 
 - **Magic links and email OTP: disabled by the owner** in the dashboard (risk 3 closed). **Still to verify:** that signup confirmation (the code exchange the app uses) still works. Do this with the first hosted-configured beta build (beta line B10), as part of its smoke test.
 - **Site URL:** no real page exists yet (the website is KAN-71/72). It stays `http://localhost:3000` for now. Risk 2 remains open and is tracked on beta line B5, because the notice and the support links need a real address.
-- **Free vs Pro:** not decided yet (risk 1).
+- **Free vs Pro: Free plan until further notice** (owner, 2026-11-21). Risk 1 is accepted and disclosed: testers are told there are no backups (data can be lost) and that the service may pause after inactivity. The owner watches for pauses during the beta.
