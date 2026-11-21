@@ -25,7 +25,7 @@ A request from any other address gets the same confirmation mail to the register
 
 **Rehearsal (required before the beta; authorized by the owner on 2026-11-21):** create a disposable test account on the hosted project with an address the owner can receive, run steps 1–5 against it, and check that its rows are gone (a read-only query by the test account's UUID), then re-register with the same address (option A). Record the date and UUID only.
 
-**Rehearsal record (2026-11-21):** test account `94d0dc13-b3a2-498b-9916-02eb36fd4366`, created by the owner in the dashboard (auto-confirmed). A read-only count before the deletion showed auth user 1, profile 1, owned household 1, membership 1, pantry items 0, shopping items 0. The owner deleted the user in the dashboard. The same read-only count afterwards (01:05 UTC) showed 0 in every column. The cascades work on the hosted project. Both counts ran in `BEGIN READ ONLY` and returned counts only.
+**Rehearsal record (2026-11-21):** test account `94d0dc13-b3a2-498b-9916-02eb36fd4366`, created by the owner in the dashboard (auto-confirmed). The owner ran the requester-verification mail exchange (request to the support contact from the test address, confirmation mail to the registered address, confirming reply) before deleting. A read-only count before the deletion showed auth user 1, profile 1, owned household 1, membership 1, pantry items 0, shopping items 0. The owner deleted the user in the dashboard. The same read-only count afterwards (01:05 UTC) showed 0 in every column. The cascades work on the hosted project. Both counts ran in `BEGIN READ ONLY` and returned counts only.
 
 ## B3 — password reset (interim): option A decided (owner, 2026-11-21)
 
