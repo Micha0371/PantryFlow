@@ -89,7 +89,6 @@ export const en = {
   common_delete: 'Delete',
   common_back: 'Back',
   common_ok: 'OK',
-  common_loading: 'Loadingâ€¦',
 
   common_retry: 'Try again',
   auth_check_email_title: 'Check your email',
