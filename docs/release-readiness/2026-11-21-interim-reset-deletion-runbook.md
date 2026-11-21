@@ -1,6 +1,6 @@
 # Interim password-reset and account-deletion support (beta lines B3, B4)
 
-**Status:** owner decided option A for B3 on 2026-11-21; the rehearsal is authorized and pending. These are the interim support paths the [beta entry checklist](2026-11-21-beta-entry-checklist.md) allows until KAN-42 (password recovery) and KAN-43 (account deletion) are delivered. The decision record requires them to be **secure, documented and genuinely operational**; each needs one rehearsed request before the beta.
+**Status:** owner decided option A for B3 on 2026-11-21. The deletion rehearsal passed on 2026-11-21; the re-registration half of option A waits for a hosted-configured build (KAN-77). These are the interim support paths the [beta entry checklist](2026-11-21-beta-entry-checklist.md) allows until KAN-42 (password recovery) and KAN-43 (account deletion) are delivered. The decision record requires them to be **secure, documented and genuinely operational**; each needs one rehearsed request before the beta.
 
 - **Support contact:** contact@mwsoftworks.com (owner, 2026-11-21).
 - **Response time:** within **3 days** (owner, 2026-11-21). Testers are told this in the tester instructions and the privacy notice.
@@ -24,6 +24,8 @@ A request from any other address gets the same confirmation mail to the register
 5. Record the date and the user UUID only (no email, no names) in the owner's support log.
 
 **Rehearsal (required before the beta; authorized by the owner on 2026-11-21):** create a disposable test account on the hosted project with an address the owner can receive, run steps 1–5 against it, and check that its rows are gone (a read-only query by the test account's UUID), then re-register with the same address (option A). Record the date and UUID only.
+
+**Rehearsal record (2026-11-21):** test account `94d0dc13-b3a2-498b-9916-02eb36fd4366`, created by the owner in the dashboard (auto-confirmed). A read-only count before the deletion showed auth user 1, profile 1, owned household 1, membership 1, pantry items 0, shopping items 0. The owner deleted the user in the dashboard. The same read-only count afterwards (01:05 UTC) showed 0 in every column. The cascades work on the hosted project. Both counts ran in `BEGIN READ ONLY` and returned counts only.
 
 ## B3 — password reset (interim): option A decided (owner, 2026-11-21)
 
