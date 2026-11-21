@@ -32,7 +32,7 @@
   - data is stored in the EU (Frankfurt);
   - the project keeps **no backups**, so deleted data is not retained in backups;
   - Auth audit entries are not stored in the database.
-  - Platform log retention for the Free plan is still to be confirmed from Supabase's plan documentation before publication.
+  - Platform log retention on the Free plan (supabase.com/pricing, fetched 2026-11-21): API and database logs 1 day; Auth audit logs 24 hours. The same page confirms no automatic backups and no point-in-time recovery on Free, and that Free projects pause after 1 week of inactivity.
 
 **Risks for the supervised beta** (owner decisions; each change to hosted settings needs separate authorization):
 1. **Free plan without backups:** a database loss would lose all tester data. Free projects are also paused after a period of inactivity, which would interrupt a quiet beta. Options: accept and disclose, or upgrade to Pro.

@@ -13,7 +13,6 @@
 
 **Placeholders to fill:**
 - `[Email provider]`: the service that delivers the confirmation emails (custom SMTP is configured; the provider is not recorded in the repository).
-- `[Log retention]`: the platform's log retention for the Free plan, from Supabase's current plan documentation.
 - `[Web address]`: once a page exists (KAN-71/72).
 
 ---
@@ -38,12 +37,12 @@ Please don't put sensitive personal information into item names.
 - The app's database and sign-in run on **Supabase**, in the **EU region Frankfurt (Germany)**, as our processor. Supabase is a US company; some service and account metadata may be processed outside the EU under its data processing terms.
 - Confirmation emails are sent through **[Email provider]**.
 
-**Why we process it.** To provide the app you signed up for: your account, your household data and its synchronization. This is the performance of our agreement with you (Art. 6(1)(b) GDPR). The service provider keeps technical logs, such as sign-in events and IP addresses, to run and secure the service; this is our legitimate interest (Art. 6(1)(f) GDPR), kept for [Log retention].
+**Why we process it.** To provide the app you signed up for: your account, your household data and its synchronization. This is the performance of our agreement with you (Art. 6(1)(b) GDPR). The service provider keeps technical logs, such as sign-in events and IP addresses, to run and secure the service; this is our legitimate interest (Art. 6(1)(f) GDPR). On the current plan these logs are kept for about one day.
 
 **How long we keep it**
 - Your data stays until you delete your account or the beta ends without the app being launched; we then delete the tester accounts.
 - **There are no backups during the beta**, so deleted data is gone immediately. This also means that **data can be lost** if the service has a fault.
-- The beta runs on a free hosting plan and **may pause** after a period without activity.
+- The beta runs on a free hosting plan and **may pause** after about a week without activity.
 
 **Deleting your account, or if you can't sign in**
 - Email **contact@mwsoftworks.com** from your registered address. We confirm by writing to that address, then delete your account and all its data, and confirm when done.
@@ -75,12 +74,12 @@ Bitte trage keine sensiblen persönlichen Informationen in Artikelnamen ein.
 - Datenbank und Anmeldung der App laufen bei **Supabase**, in der **EU-Region Frankfurt (Deutschland)**, als unser Auftragsverarbeiter. Supabase ist ein US-Unternehmen; einige Dienst- und Kontometadaten können nach dessen Auftragsverarbeitungsbedingungen außerhalb der EU verarbeitet werden.
 - Bestätigungs-E-Mails werden über **[Email provider]** versendet.
 
-**Warum wir sie verarbeiten.** Um dir die App bereitzustellen, für die du dich registriert hast: dein Konto, deine Haushaltsdaten und deren Synchronisierung. Das ist die Erfüllung unserer Vereinbarung mit dir (Art. 6 Abs. 1 lit. b DSGVO). Der Dienstleister führt technische Protokolle, etwa Anmeldeereignisse und IP-Adressen, um den Dienst zu betreiben und abzusichern; das ist unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO), aufbewahrt für [Log retention].
+**Warum wir sie verarbeiten.** Um dir die App bereitzustellen, für die du dich registriert hast: dein Konto, deine Haushaltsdaten und deren Synchronisierung. Das ist die Erfüllung unserer Vereinbarung mit dir (Art. 6 Abs. 1 lit. b DSGVO). Der Dienstleister führt technische Protokolle, etwa Anmeldeereignisse und IP-Adressen, um den Dienst zu betreiben und abzusichern; das ist unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO). Im aktuellen Tarif werden diese Protokolle etwa einen Tag aufbewahrt.
 
 **Wie lange wir sie aufbewahren**
 - Deine Daten bleiben, bis du dein Konto löschst oder die Beta endet, ohne dass die App veröffentlicht wird; dann löschen wir die Testerkonten.
 - **Während der Beta gibt es keine Sicherungen**, gelöschte Daten sind also sofort weg. Das heißt auch: **Daten können verloren gehen**, wenn der Dienst einen Fehler hat.
-- Die Beta läuft auf einem kostenlosen Hosting-Tarif und **kann pausieren**, wenn sie eine Zeit lang nicht genutzt wird.
+- Die Beta läuft auf einem kostenlosen Hosting-Tarif und **kann pausieren**, wenn sie etwa eine Woche nicht genutzt wird.
 
 **Konto löschen, oder wenn du dich nicht anmelden kannst**
 - Schreib an **contact@mwsoftworks.com** von deiner registrierten Adresse. Wir bestätigen per E-Mail an diese Adresse, löschen dann dein Konto mit allen Daten und bestätigen, wenn es erledigt ist.
