@@ -614,8 +614,8 @@ Contract: Return on the Add Item name field saves and stays for the next item; t
 | ENTRY-05 | The Add item button still saves and closes; Cancel reads Done after a Return save and closes without adding | `tests/add-item-entry.test.cjs` (button; Done) | Component level |
 | ENTRY-06 | A save resolving after the screen closed neither navigates nor updates state; text typed during a pending save is not cleared | `tests/add-item-entry.test.cjs` (late resolve; typed text kept) | Component level |
 | ENTRY-07 | A Return save is announced once (the confirmation line is not a live region) | `tests/add-item-entry.test.cjs` (announce once) | The spoken output is not asserted; see the phone check |
-| ENTRY-E2E-01 | Journey: add button, `Oats` + Return (confirmation, empty field), `Tea` + Return, `Rice` + Return (duplicate error, name stays), Done; the list shows Oats and Tea. `entry-verify` reads back exactly Milk, Rice, Rye flour, Oats and Tea, with Oats and Tea at the default category `other`, location `pantry` and status `in_stock`, and nothing for the other household | `.maestro/slice-3-entry.yaml` (runs after `search-verify`); `entry-verify` in `scripts/e2e-fixtures.ts` | Proves the name field keeps focus between items (typing lands without a tap); does not claim keyboard retention, which is a phone check. Written, not yet run on a device |
-| ENTRY-PHONE-01 | On the phone: the Return key label, focus and keyboard kept between items (checked with the on-screen keyboard's own Return key, not adb or Maestro, whose key-event Enter hides the soft keyboard), and the TalkBack announcement spoken once per save | None automated | **Pending owner** (no device run is claimed here) |
+| ENTRY-E2E-01 | Journey: add button, `Oats` + Return (confirmation, empty field), `Tea` + Return, `Rice` + Return (duplicate error, name stays), Done; the list shows Oats and Tea. `entry-verify` reads back exactly Milk, Rice, Rye flour, Oats and Tea, with Oats and Tea at the default category `other`, location `pantry` and status `in_stock`, and nothing for the other household | `.maestro/slice-3-entry.yaml` (runs after `search-verify`); `entry-verify` in `scripts/e2e-fixtures.ts` | Proves the name field keeps focus between items (typing lands without a tap); does not claim keyboard retention, which is a phone check. **Passed on the phone** (run 5, 2026-11-21, below) |
+| ENTRY-PHONE-01 | On the phone: the Return key label, focus and keyboard kept between items (checked with the on-screen keyboard's own Return key, not adb or Maestro, whose key-event Enter hides the soft keyboard), and the TalkBack announcement spoken once per save | None automated | **Owner check passed on the phone (2026-11-21)**, below |
 
 ### Tap counts (beyond typing)
 
@@ -629,3 +629,23 @@ Before is measured against main with UX-06, where Save is already visible above 
 ### Deviation
 
 KAN-94's "keeps selected status" does not apply: the Add form has no status field, and new items stay `in_stock`. Category and location are kept between items.
+
+### UX-04 Android evidence
+
+Phone: Xiaomi 23122PCD1G, Android 16, arm64-v8a, against the local stack through the loopback proxy and `adb reverse`, over Wi-Fi ADB. USB ADB wasn't usable: Windows bound the phone's ADB interface to the generic WinUSB driver, which adb doesn't see.
+
+- **Local gates at `746a4c1`:** `npm run test:fast` exited 0 (typecheck, 388 node tests, 18 jest, 1 safety); `npm run test:integration` 30/30; `git diff --check` clean.
+- **APK from `746a4c1`** (arm64-v8a, SHA-256 starting `2eaff733`; the bundle was checked for `login-submit`, `add-item-saved`, `add-item-name` and `pantry-fab-add`):
+  - Runs 1–4 failed for reasons outside the app, each confirmed from its screenshot: an overlay bubble caught the password-field tap; Maestro typed a doubled first character in the shared login step; the system USB-debugging dialog opened mid-run; a messaging app came to the foreground. None reached a UX-04 step with a failure.
+  - **Run 5: `npm run test:e2e` exited 0.** Every flow passed: Slice 1.1, Slice 2, the status and search journeys, the new faster-entry journey (ENTRY-E2E-01) with `entry-verify`, and the five confirmation flows.
+- **Owner checks with the on-screen keyboard (2026-11-21):**
+  - the Return key shows the "next" arrow;
+  - after `Oats` + Return and `Tea` + Return, the keyboard stays open and the cursor stays in the field, with the confirmation line shown;
+  - `Rice` + Return shows the duplicate error and keeps the name, and typing clears the error;
+  - the footer button reads Done and closes to a list with Oats and Tea;
+  - TalkBack speaks "<name>, added" once, not cut off;
+  - a quick double Return adds one item.
+
+All passed.
+
+Not checked: iOS (PF-IOS-001).
