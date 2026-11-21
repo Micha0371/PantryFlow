@@ -138,6 +138,25 @@ if (command === 'prepare') {
   await alice.auth.signOut();
   await bob.auth.signOut();
   console.log('Verified the search journey wrote nothing: Milk, Rice and Rye flour unchanged.');
+} else if (command === 'entry-verify') {
+  // Ordinary clients only: the entry journey added Oats and Tea; the duplicate Rice wrote nothing.
+  const alice = stack.client();
+  assert.equal((await alice.auth.signInWithPassword({ email: emails[0], password })).error, null);
+  const pantry = await alice.from('pantry_items').select('name, category, location, status').order('name');
+  assert.equal(pantry.error, null);
+  assert.deepEqual(pantry.data?.map(row => row.name).sort(), ['Milk', 'Oats', 'Rice', 'Rye flour', 'Tea'],
+    'The entry journey must leave exactly Milk, Rice, Rye flour, Oats and Tea');
+  for (const name of ['Oats', 'Tea']) {
+    const found: { category: string; location: string; status: string } = pantry.data!.find(entry => entry.name === name)!;
+    assert.deepEqual({ category: found.category, location: found.location, status: found.status },
+      { category: 'other', location: 'pantry', status: 'in_stock' }, `${name} must keep the default category, location and status`);
+  }
+  const bob = stack.client();
+  assert.equal((await bob.auth.signInWithPassword({ email: emails[1], password })).error, null);
+  assert.deepEqual((await bob.from('pantry_items').select('id')).data, []);
+  await alice.auth.signOut();
+  await bob.auth.signOut();
+  console.log('Verified the entry journey: Oats and Tea added with defaults, no duplicate Rice, nothing for the other household.');
 } else if (command === 'confirmation-first') {
   const state = JSON.parse(await fs.readFile(path.join(appRoot, '.verification/confirmation-state.json'), 'utf8'));
   const location = await openVerification(await confirmationLink(emails[3], new Set(state.previousIds)));
@@ -185,7 +204,7 @@ if (command === 'prepare') {
   await fs.rm(path.join(appRoot, '.verification/e2e-env.json'), { force: true });
   await fs.rm(path.join(appRoot, '.verification/confirmation-state.json'), { force: true });
   console.log('Removed only reserved local test accounts and their cascading household data.');
-} else throw new Error('Expected prepare, verify, shopping-verify, status-verify, search-seed, search-verify or cleanup');
+} else throw new Error('Expected prepare, verify, shopping-verify, status-verify, search-seed, search-verify, entry-verify or cleanup');
 
 }
 main().catch(error => { console.error(error.message); process.exitCode = 1; });

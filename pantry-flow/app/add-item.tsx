@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -18,6 +19,7 @@ import { useItemMutation } from '@/hooks/useItemMutation';
 import { ITEM_NAME_MAX, itemSaveErrorKey } from '@/lib/pantry-data';
 import { usePantryItems } from '@/hooks/usePantryItems';
 import { useTranslation } from '@/lib/i18n';
+import { announce } from '@/lib/accessibility';
 import {
   CATEGORIES,
   DEFAULT_CATEGORY,
@@ -47,26 +49,56 @@ function AddItemModalContent() {
   const [location, setLocation] = useState<string>(DEFAULT_LOCATION);
   const { busy, run } = useItemMutation();
   const { error, failures, setError } = useFormError();
+  // The name field stays editable during a pending save, so a success clears it
+  // only when it still holds exactly the submitted text.
+  const nameRef = useRef('');
+  const nameInput = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const [savedName, setSavedName] = useState<string | null>(null);
+  const [savedAny, setSavedAny] = useState(false);
 
-  const onSave = async () => {
+  const onNameChange = (text: string) => {
+    nameRef.current = text;
+    setName(text);
+    setError(null);
+  };
+
+  const onSave = async (mode: 'close' | 'next') => {
     if (busy) return;
+    const submitted = name;
     const trimmed = name.trim();
     if (!trimmed) {
+      setSavedName(null);
       setError(t('err_required_name'));
       return;
     }
     if (Array.from(trimmed).length > ITEM_NAME_MAX) {
+      setSavedName(null);
       setError(t('err_item_name_length')); return;
     }
     if (!householdId) {
+      setSavedName(null);
       setError(t('err_no_household'));
       return;
     }
     setError(null);
     await run(
       () => addItem({ name: trimmed, category, location }),
-      () => router.back(),
-      (failure) => setError(t(itemSaveErrorKey(failure))),
+      () => {
+        if (mode === 'close') {
+          router.back();
+          return;
+        }
+        if (nameRef.current === submitted) onNameChange('');
+        setSavedName(trimmed);
+        setSavedAny(true);
+        announce(`${trimmed}, ${t('item_added_announcement')}`);
+        nameInput.current?.focus();
+      },
+      (failure) => {
+        setSavedName(null);
+        const message = t(itemSaveErrorKey(failure));
+        setError(nameRef.current === submitted ? message : `${trimmed}: ${message}`);
+      },
     );
   };
 
@@ -88,14 +120,23 @@ function AddItemModalContent() {
             label={t('item_name')}
             placeholder={t('item_name_placeholder')}
             maxLength={ITEM_NAME_MAX}
-            editable={!busy}
+            ref={nameInput}
             value={name}
-            onChangeText={setName}
+            onChangeText={onNameChange}
             autoFocus
+            returnKeyType="next"
+            submitBehavior="submit"
+            onSubmitEditing={() => { void onSave('next'); }}
             testID="add-item-name"
             error={error}
             announceKey={failures}
           />
+          <Text
+            style={savedName ? styles.saved : undefined}
+            testID="add-item-saved"
+          >
+            {savedName ? <>{t('item_added_prefix')} {savedName}</> : null}
+          </Text>
 
           <Text style={styles.sectionLabel}>{t('item_category')}</Text>
           <OptionChips
@@ -120,7 +161,7 @@ function AddItemModalContent() {
         </ScrollView>
         <FormFooter overlap={overlap}>
           <Button
-            label={t('common_cancel')}
+            label={t(savedAny ? 'common_done' : 'common_cancel')}
             onPress={() => router.back()}
             variant="secondary"
             disabled={busy}
@@ -129,7 +170,7 @@ function AddItemModalContent() {
           />
           <Button
             label={t('item_add_button')}
-            onPress={onSave}
+            onPress={() => onSave('close')}
             loading={busy}
             disabled={loading || !householdId || !!loadError}
             style={{ flex: 1 }}
@@ -148,6 +189,11 @@ const styles = StyleSheet.create({
     ...typography.title,
     color: colors.text,
     marginBottom: spacing.lg,
+  },
+  saved: {
+    ...typography.small,
+    color: colors.textMuted,
+    marginBottom: spacing.md,
   },
   sectionLabel: {
     ...typography.label,

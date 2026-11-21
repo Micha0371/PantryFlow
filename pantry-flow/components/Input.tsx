@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, type Ref } from 'react';
 import {
   StyleSheet,
   Text,
@@ -11,6 +11,8 @@ import { InlineError } from './InlineError';
 import { announceError } from '@/lib/accessibility';
 
 interface Props extends TextInputProps {
+  // React 19 passes ref as a prop; it reaches the TextInput through ...rest.
+  ref?: Ref<React.ComponentRef<typeof TextInput>>;
   label?: string;
   error?: string | null;
   // Changes on every failed submit. A failed submit that leaves the same error
