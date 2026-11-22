@@ -5,6 +5,7 @@ import {
   clearPendingLanguage,
   fetchProfileLanguage,
   getPendingLanguage,
+  languageChoiceGeneration,
   saveProfileLanguage,
 } from '@/lib/profile-language';
 
@@ -20,16 +21,20 @@ export function LanguageSync() {
 
   useEffect(() => {
     if (!userId) return;
+    // A newer explicit choice in Settings owns the language and the pending record.
+    const generation = languageChoiceGeneration();
+    const superseded = () => languageChoiceGeneration() !== generation;
     const apply = (locale: Parameters<typeof setLocale>[0]) => {
-      if (current.current === userId) setLocale(locale);
+      if (current.current === userId && !superseded()) setLocale(locale);
     };
     void (async () => {
       try {
         const pending = await getPendingLanguage(userId);
         if (pending) {
           try {
+            if (superseded()) return;
             await saveProfileLanguage(userId, pending);
-            await clearPendingLanguage(userId);
+            if (!superseded()) await clearPendingLanguage(userId);
           } catch {
             // Kept pending; retried at the next sign-in.
           }

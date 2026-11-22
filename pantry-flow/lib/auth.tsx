@@ -76,6 +76,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (err) throw err;
     if (data.user) {
+      // supabase.auth.signUp notifies SIGNED_IN before it returns, so this runs after the session is set. That is safe
+      // only because LanguageSync's effect runs later and AsyncStorage serializes its read after this write. The path
+      // is dormant while email confirmation is required (local and hosted): there is no session until the user confirms.
       try { await setPendingLanguage(data.user.id, localeRef.current); } catch { /* the account language is applied from the profile instead */ }
     }
     if (!data.session) return 'confirmation_required';

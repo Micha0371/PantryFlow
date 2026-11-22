@@ -10,12 +10,15 @@ const localization = { getLocales: () => [{ languageCode: 'en' }] };
 function syncFixture({ fetch, pending = {}, save = async () => {} } = {}) {
   const calls = [];
   const store = { ...pending };
+  let generation = 0;
+  let pendingGate = null;
   let auth = { user: null };
   const profile = {
     fetchProfileLanguage: async id => { calls.push(['fetch', id]); return fetch(id); },
     saveProfileLanguage: async (id, l) => { calls.push(['save', id, l]); return save(id, l); },
-    getPendingLanguage: async id => store[id] ?? null,
+    getPendingLanguage: async id => { if (pendingGate) await pendingGate; return store[id] ?? null; },
     clearPendingLanguage: async id => { calls.push(['clear', id]); delete store[id]; },
+    languageChoiceGeneration: () => generation,
   };
   const setLocale = l => calls.push(['setLocale', l]);
   const { LanguageSync } = load('components/LanguageSync.tsx', {
@@ -27,6 +30,8 @@ function syncFixture({ fetch, pending = {}, save = async () => {} } = {}) {
   const el = () => React.createElement(LanguageSync);
   return {
     calls, store,
+    choose() { generation++; },
+    delayPendingRead(p) { pendingGate = p; },
     async mount(user) { auth = { user }; await act(async () => { view = create(el()); }); },
     async setUser(user) { auth = { user }; await act(async () => { view.update(el()); }); },
     dispose() { act(() => view.unmount()); },
@@ -72,6 +77,62 @@ test('a read for a previous user is dropped', async () => {
   await f.setUser({ id: 'B' });
   await act(async () => a.resolve('de'));
   assert.deepEqual(locales(f.calls), ['en']);
+  f.dispose();
+});
+
+test('a read that resolves after a newer Settings choice applies nothing', async () => {
+  const read = deferred();
+  const f = syncFixture({ fetch: () => read.promise });
+  await f.mount({ id: 'u1' });
+  f.choose();
+  await act(async () => read.resolve('de'));
+  assert.deepEqual(locales(f.calls), []);
+  f.dispose();
+});
+
+test('a Settings choice during a pending flush: the older locale is not applied and the pending key is not cleared', async () => {
+  const write = deferred();
+  const f = syncFixture({ pending: { u1: 'de' }, save: () => write.promise });
+  await f.mount({ id: 'u1' });
+  f.store.u1 = 'en'; // Settings wrote its own pending choice
+  f.choose();
+  await act(async () => write.resolve());
+  assert.deepEqual(f.calls.filter(c => c[0] === 'clear'), []);
+  assert.deepEqual(locales(f.calls), []);
+  assert.equal(f.store.u1, 'en');
+  f.dispose();
+});
+
+test('a Settings choice made before the pending save starts: LanguageSync does not save', async () => {
+  const f = syncFixture({ pending: { u1: 'de' } });
+  const pendingRead = deferred();
+  // Delay the pending read so the choice lands between effect start and the save.
+  f.delayPendingRead(pendingRead.promise);
+  await f.mount({ id: 'u1' });
+  f.choose();
+  await act(async () => pendingRead.resolve());
+  assert.deepEqual(f.calls.filter(c => c[0] === 'save'), []);
+  assert.deepEqual(locales(f.calls), []);
+  f.dispose();
+});
+
+test('the user changing during a pending flush applies and clears nothing for the old user', async () => {
+  const write = deferred();
+  const f = syncFixture({ fetch: async () => 'en', pending: { A: 'de' }, save: id => (id === 'A' ? write.promise : Promise.resolve()) });
+  await f.mount({ id: 'A' });
+  await f.setUser({ id: 'B' });
+  await act(async () => write.resolve());
+  assert.deepEqual(locales(f.calls).filter(l => l === 'de'), []);
+  f.dispose();
+});
+
+test('signing out during a pending flush applies nothing', async () => {
+  const write = deferred();
+  const f = syncFixture({ pending: { u1: 'de' }, save: () => write.promise });
+  await f.mount({ id: 'u1' });
+  await f.setUser(null);
+  await act(async () => write.resolve());
+  assert.deepEqual(locales(f.calls), []);
   f.dispose();
 });
 

@@ -7,7 +7,7 @@ import { OptionChips } from '@/components/OptionChips';
 import { useAuth } from '@/lib/auth';
 import { useTranslation } from '@/lib/i18n';
 import { isLocale, type Locale } from '@/lib/language';
-import { clearPendingLanguage, saveProfileLanguage, setPendingLanguage } from '@/lib/profile-language';
+import { clearPendingLanguage, noteLanguageChoice, saveProfileLanguage, setPendingLanguage } from '@/lib/profile-language';
 import { colors, spacing, typography } from '@/lib/theme';
 import { InlineError } from '@/components/InlineError';
 
@@ -40,6 +40,7 @@ export default function SettingsScreen() {
   const onChooseLanguage = (key: string) => {
     if (!isLocale(key)) return;
     latest.current = key;
+    noteLanguageChoice();
     setLanguageError(false);
     setLocale(key);
     if (!user) return;

@@ -4,6 +4,16 @@ import { isLocale, type Locale } from './language';
 
 const pendingKey = (userId: string) => `pending_language:${userId}`;
 
+// Counts explicit language choices made in Settings this session, so the startup
+// sync can tell that a newer choice exists and must not override it.
+let choiceGeneration = 0;
+export function noteLanguageChoice(): void {
+  choiceGeneration++;
+}
+export function languageChoiceGeneration(): number {
+  return choiceGeneration;
+}
+
 export async function fetchProfileLanguage(userId: string): Promise<Locale | null> {
   const { data, error } = await supabase.from('profiles').select('language').eq('id', userId).maybeSingle();
   if (error) throw error;
