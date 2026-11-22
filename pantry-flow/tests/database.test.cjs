@@ -7,7 +7,14 @@ const { PGlite } = require('@electric-sql/pglite');
 const alice = '00000000-0000-0000-0000-000000000001';
 const bob = '00000000-0000-0000-0000-000000000002';
 
-test('migrations enforce authorization, validation, attribution and deletion behavior in PostgreSQL', async t => {
+const migration = name => fs.readFileSync(path.join(__dirname, '../supabase/migrations', name), 'utf8');
+const migrations = {
+  '00002': ['00001_first_slice.sql', '00002_review_hardening.sql'],
+  '00003': ['00001_first_slice.sql', '00002_review_hardening.sql', '00003_strict_duplicate_prevention.sql'],
+  '00004': ['00001_first_slice.sql', '00002_review_hardening.sql', '00003_strict_duplicate_prevention.sql', '00004_shopping_items.sql'],
+};
+
+async function buildDatabase(through) {
   const db = new PGlite();
   try {
     await db.exec(`
@@ -22,23 +29,24 @@ test('migrations enforce authorization, validation, attribution and deletion beh
     `);
     // PGlite uses PostgreSQL's built-in UUID generator in place of uuid-ossp;
     // every table, trigger, policy, grant, and hardening statement runs unchanged.
-    const migration = name => fs.readFileSync(path.join(__dirname, '../supabase/migrations', name), 'utf8');
-    await db.exec(migration('00001_first_slice.sql').replace('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";', ''));
+    const [first, ...rest] = migrations[through];
+    await db.exec(migration(first).replace('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";', ''));
     // Reproduce the permissive Supabase table grants the review targeted.
     await db.exec('GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated;');
-    await db.exec(migration('00002_review_hardening.sql'));
+    for (const name of rest) await db.exec(migration(name));
     await db.query('INSERT INTO auth.users (id) VALUES ($1), ($2)', [alice, bob]);
+    return db;
+  } catch (error) {
+    await db.close();
+    throw error;
+  }
+}
+
+async function freshDatabase({ through }) {
+  const db = await buildDatabase(through);
+  try {
     const households = await db.query('SELECT id, owner_id FROM public.pantry_households');
     const home = id => households.rows.find(row => row.owner_id === id).id;
-    // Prove legacy conflicts abort without merging or deleting either record.
-    await db.query(`INSERT INTO public.pantry_items (household_id,name,created_by)
-      VALUES ($1,'Milk',$2), ($1,' milk ',$2)`, [home(alice), alice]);
-    await assert.rejects(db.exec(migration('00003_strict_duplicate_prevention.sql')), /duplicate normalized names/);
-    await db.exec('ROLLBACK');
-    assert.equal((await db.query('SELECT count(*)::int AS n FROM public.pantry_items')).rows[0].n, 2);
-    // Explicit test-fixture cleanup, never performed by the migration.
-    await db.exec('DELETE FROM public.pantry_items');
-    await db.exec(migration('00003_strict_duplicate_prevention.sql'));
     const as = async (id, role = 'authenticated') => {
       await db.exec('RESET ROLE');
       await db.query("SELECT set_config('request.jwt.claim.sub', $1, false)", [id ?? '']);
@@ -48,99 +56,185 @@ test('migrations enforce authorization, validation, attribution and deletion beh
       db.query(`INSERT INTO public.pantry_items (household_id,name,created_by,category,location)
         VALUES ($1,$2,$3,$4,$5) RETURNING id`, [household,name,creator,category,location]);
     await as(alice);
+    return { db, home, as, insert, close: () => db.close() };
+  } catch (error) {
+    await db.close();
+    throw error;
+  }
+}
+
+test('a new database starts clean and open databases stay independent', async () => {
+  const sessionState = db => db.query("SELECT current_user AS who, current_setting('request.jwt.claim.sub', true) AS sub")
+    .then(result => result.rows[0]);
+  // A database straight from buildDatabase, before any as(...), must start with no role or JWT state.
+  // The brand-new instance is closed before building so only one is open at a time.
+  const pristine = new PGlite();
+  let bootstrap;
+  try { bootstrap = (await sessionState(pristine)).who; } finally { await pristine.close(); }
+  const raw = await buildDatabase('00004');
+  try {
+    const rawState = await sessionState(raw);
+    assert.equal(rawState.who, bootstrap);
+    assert.ok(!rawState.sub, `new database inherited a JWT subject: ${rawState.sub}`);
+  } finally { await raw.close(); }
+  // Two live databases are independent: switching A never changes B.
+  const a = await freshDatabase({ through: '00004' });
+  let b;
+  try {
+    await a.as(bob);
+    await a.as(null, 'anon');
+    await a.as(bob);
+    b = await freshDatabase({ through: '00004' });
+    assert.deepEqual(await sessionState(b.db), { who: 'authenticated', sub: alice });
+    assert.deepEqual(await sessionState(a.db), { who: 'authenticated', sub: bob });
+  } finally { await a.close(); await b?.close(); }
+});
+
+test('00003 aborts on legacy duplicate names without merging or deleting', async () => {
+  const { db, home, close } = await freshDatabase({ through: '00002' });
+  try {
+    await db.exec('RESET ROLE');
+    // Prove legacy conflicts abort without merging or deleting either record.
+    await db.query(`INSERT INTO public.pantry_items (household_id,name,created_by)
+      VALUES ($1,'Milk',$2), ($1,' milk ',$2)`, [home(alice), alice]);
+    await assert.rejects(db.exec(migration('00003_strict_duplicate_prevention.sql')), /duplicate normalized names/);
+    await db.exec('ROLLBACK');
+    assert.equal((await db.query('SELECT count(*)::int AS n FROM public.pantry_items')).rows[0].n, 2);
+    // Explicit test-fixture cleanup, never performed by the migration.
+    await db.exec('DELETE FROM public.pantry_items');
+    await db.exec(migration('00003_strict_duplicate_prevention.sql'));
+    // The re-applied guard must work: a normalized duplicate is now rejected.
+    await db.query("INSERT INTO public.pantry_items (household_id,name,created_by) VALUES ($1,'Milk',$2)", [home(alice), alice]);
+    await assert.rejects(
+      db.query("INSERT INTO public.pantry_items (household_id,name,created_by) VALUES ($1,' milk ',$2)", [home(alice), alice]),
+      error => error.code === '23505');
+  } finally { await close(); }
+});
+
+test('shopping migration preserves existing pantry and household data', async () => {
+  const { db, insert, close } = await freshDatabase({ through: '00003' });
+  try {
+    await insert();
+    await db.exec('RESET ROLE');
+    const snapshot = async () => {
+      const rows = {};
+      for (const table of ['profiles', 'pantry_households', 'pantry_household_members', 'pantry_items']) {
+        rows[table] = (await db.query(`SELECT * FROM public.${table} ORDER BY id`)).rows;
+      }
+      return rows;
+    };
+    const before = await snapshot();
+    await db.exec(migration('00004_shopping_items.sql'));
+    assert.deepEqual(await snapshot(), before);
+  } finally { await close(); }
+});
+
+test('users may edit profile fields but cannot self-assign premium or change identity', async () => {
+  const { db, close } = await freshDatabase({ through: '00004' });
+  try {
+    await db.query("UPDATE public.profiles SET name='Alice', language='de' WHERE id=$1", [alice]);
+    await assert.rejects(db.query('UPDATE public.profiles SET is_premium=true WHERE id=$1', [alice]), /permission denied/);
+    await assert.rejects(db.query('UPDATE public.profiles SET id=$1 WHERE id=$2', [bob,alice]), /permission denied/);
+    await assert.rejects(db.query("UPDATE public.profiles SET language='xx' WHERE id=$1", [alice]), /check constraint/);
+    assert.equal((await db.query('SELECT is_premium FROM public.profiles')).rows[0].is_premium, false);
+  } finally { await close(); }
+});
+
+test('creator spoofing, null attribution and cross-household insertion are rejected', async () => {
+  const { db, home, insert, close } = await freshDatabase({ through: '00004' });
+  try {
+    await insert();
+    await assert.rejects(insert('Forged', bob), /row-level security/);
+    await assert.rejects(insert('Null', null), /row-level security/);
+    await assert.rejects(insert('Foreign', alice, home(bob)), /row-level security/);
+    for (const column of ['created_by', 'household_id', 'id', 'created_at', 'updated_at']) {
+      const value = column.endsWith('_at') ? "now()" : `'${bob}'`;
+      await assert.rejects(db.exec(`UPDATE public.pantry_items SET ${column}=${value}`), /permission denied/);
+    }
+  } finally { await close(); }
+});
+
+test('direct API equivalents cannot bypass input constraints', async () => {
+  const { db, home, insert, close } = await freshDatabase({ through: '00004' });
+  try {
     const item = (await insert()).rows[0].id;
+    for (const name of ['', '   ', '\t\n', 'a'.repeat(121)]) await assert.rejects(insert(name), /check constraint/);
+    await assert.rejects(insert('Milk', alice, home(alice), 'invalid'), /check constraint/);
+    await assert.rejects(insert('Milk', alice, home(alice), 'dairy', 'invalid'), /check constraint/);
+    await assert.rejects(db.exec("UPDATE public.pantry_items SET status='invalid'"), /check constraint/);
+    await db.query("UPDATE public.pantry_items SET name='Oat milk', status='low' WHERE id=$1", [item]);
+    assert.equal((await db.query('SELECT status FROM public.pantry_items WHERE id=$1', [item])).rows[0].status, 'low');
+  } finally { await close(); }
+});
 
-    await t.test('shopping migration preserves existing pantry and household data', async () => {
-      await db.exec('RESET ROLE');
-      const snapshot = async () => {
-        const rows = {};
-        for (const table of ['profiles', 'pantry_households', 'pantry_household_members', 'pantry_items']) {
-          rows[table] = (await db.query(`SELECT * FROM public.${table} ORDER BY id`)).rows;
-        }
-        return rows;
-      };
-      const before = await snapshot();
-      await db.exec(migration('00004_shopping_items.sql'));
-      assert.deepEqual(await snapshot(), before);
-      await as(alice);
-    });
+test('duplicate add and rename are blocked regardless of category, location or status', async () => {
+  const { db, home, as, insert, close } = await freshDatabase({ through: '00004' });
+  try {
+    const item = (await insert()).rows[0].id;
+    // Own setup: the item is "Oat milk", so "Milk" is free for the duplicate checks below.
+    await db.query("UPDATE public.pantry_items SET name='Oat milk', status='low' WHERE id=$1", [item]);
+    await insert('Milk');
+    for (const name of ['milk', 'Milk', '  MILK  ', '\u00a0Milk\u00a0']) {
+      await assert.rejects(insert(name), error => error.code === '23505');
+    }
+    await assert.rejects(insert('milk', alice, home(alice), 'other', 'pantry'), error => error.code === '23505');
+    await assert.rejects(db.query("UPDATE public.pantry_items SET name='milk', status='out' WHERE id=$1", [item]), error => error.code === '23505');
+    await db.query("UPDATE public.pantry_items SET name='  OAT MILK  ', status='low' WHERE id=$1", [item]);
+    assert.equal((await db.query('SELECT name FROM public.pantry_items WHERE id=$1', [item])).rows[0].name, 'OAT MILK');
+    await insert('Milk Fridge');
+    await insert('Milk Pantry');
+    await insert('Milk  Fridge');
+    await as(bob);
+    await insert('milk', bob, home(bob));
+  } finally { await close(); }
+});
 
-    await t.test('users may edit profile fields but cannot self-assign premium or change identity', async () => {
-      await db.query("UPDATE public.profiles SET name='Alice', language='de' WHERE id=$1", [alice]);
-      await assert.rejects(db.query('UPDATE public.profiles SET is_premium=true WHERE id=$1', [alice]), /permission denied/);
-      await assert.rejects(db.query('UPDATE public.profiles SET id=$1 WHERE id=$2', [bob,alice]), /permission denied/);
-      await assert.rejects(db.query("UPDATE public.profiles SET language='xx' WHERE id=$1", [alice]), /check constraint/);
-      assert.equal((await db.query('SELECT is_premium FROM public.profiles')).rows[0].is_premium, false);
-    });
-    await t.test('creator spoofing, null attribution and cross-household insertion are rejected', async () => {
-      await assert.rejects(insert('Forged', bob), /row-level security/);
-      await assert.rejects(insert('Null', null), /row-level security/);
-      await assert.rejects(insert('Foreign', alice, home(bob)), /row-level security/);
-      for (const column of ['created_by', 'household_id', 'id', 'created_at', 'updated_at']) {
-        const value = column.endsWith('_at') ? "now()" : `'${bob}'`;
-        await assert.rejects(db.exec(`UPDATE public.pantry_items SET ${column}=${value}`), /permission denied/);
-      }
-    });
-    await t.test('direct API equivalents cannot bypass input constraints', async () => {
-      for (const name of ['', '   ', '\t\n', 'a'.repeat(121)]) await assert.rejects(insert(name), /check constraint/);
-      await assert.rejects(insert('Milk', alice, home(alice), 'invalid'), /check constraint/);
-      await assert.rejects(insert('Milk', alice, home(alice), 'dairy', 'invalid'), /check constraint/);
-      await assert.rejects(db.exec("UPDATE public.pantry_items SET status='invalid'"), /check constraint/);
-      await db.query("UPDATE public.pantry_items SET name='Oat milk', status='low' WHERE id=$1", [item]);
-      assert.equal((await db.query('SELECT status FROM public.pantry_items WHERE id=$1', [item])).rows[0].status, 'low');
-    });
-    await t.test('duplicate add and rename are blocked regardless of category, location or status', async () => {
-      await insert('Milk');
-      for (const name of ['milk', 'Milk', '  MILK  ', '\u00a0Milk\u00a0']) {
-        await assert.rejects(insert(name), error => error.code === '23505');
-      }
-      await assert.rejects(insert('milk', alice, home(alice), 'other', 'pantry'), error => error.code === '23505');
-      await assert.rejects(db.query("UPDATE public.pantry_items SET name='milk', status='out' WHERE id=$1", [item]), error => error.code === '23505');
-      await db.query("UPDATE public.pantry_items SET name='  OAT MILK  ', status='low' WHERE id=$1", [item]);
-      assert.equal((await db.query('SELECT name FROM public.pantry_items WHERE id=$1', [item])).rows[0].name, 'OAT MILK');
-      await insert('Milk Fridge');
-      await insert('Milk Pantry');
-      await insert('Milk  Fridge');
-      await as(bob);
-      await insert('milk', bob, home(bob));
-      await as(alice);
-    });
-    await t.test('overlapping duplicate insert and rename calls cannot both succeed', async () => {
-      const outcomes = await Promise.allSettled([insert('Eggs'), insert(' eggs ')]);
-      assert.equal(outcomes.filter(x => x.status === 'fulfilled').length, 1);
-      assert.equal(outcomes.find(x => x.status === 'rejected').reason.code, '23505');
-      const a = (await insert('Bread A')).rows[0].id;
-      const b = (await insert('Bread B')).rows[0].id;
-      const renames = await Promise.allSettled([
-        db.query("UPDATE public.pantry_items SET name='Bread' WHERE id=$1", [a]),
-        db.query("UPDATE public.pantry_items SET name=' bread ' WHERE id=$1", [b]),
-      ]);
-      assert.equal(renames.filter(x => x.status === 'fulfilled').length, 1);
-      assert.equal(renames.find(x => x.status === 'rejected').reason.code, '23505');
-      await db.query('DELETE FROM public.pantry_items WHERE id <> $1', [item]);
-    });
-    await t.test('other users and anonymous clients cannot read or mutate an existing item', async () => {
-      for (const [id, role] of [[bob, 'authenticated'], [null, 'anon']]) {
-        await as(id, role);
-        assert.equal((await db.query('SELECT * FROM public.pantry_items WHERE id=$1', [item])).rows.length, 0);
-        assert.equal((await db.query('DELETE FROM public.pantry_items WHERE id=$1 RETURNING id', [item])).rows.length, 0);
-        if (role === 'authenticated') assert.equal((await db.query("UPDATE public.pantry_items SET name='stolen' WHERE id=$1 RETURNING id", [item])).rows.length, 0);
-        else await assert.rejects(insert(), /permission denied/);
-      }
-      await as(alice);
-      assert.equal((await db.query('SELECT id FROM public.pantry_items WHERE id=$1', [item])).rows.length, 1);
-    });
-    await t.test('deleting an author preserves items in a surviving household and clears attribution', async () => {
-      await db.exec('RESET ROLE');
-      // Represents an existing shared-household item, or a legacy forged record.
-      await db.query('UPDATE public.pantry_items SET created_by=$1 WHERE id=$2', [bob,item]);
-      await db.query('DELETE FROM auth.users WHERE id=$1', [bob]);
-      const result = await db.query('SELECT created_by FROM public.pantry_items WHERE id=$1', [item]);
-      assert.equal(result.rows.length, 1);
-      assert.equal(result.rows[0].created_by, null);
-      await as(alice);
-      await db.query('DELETE FROM public.pantry_items WHERE id=$1', [item]);
-      assert.equal((await db.query('SELECT * FROM public.pantry_items')).rows.length, 0);
-    });
-  } finally { await db.close(); }
+test('overlapping duplicate insert and rename calls cannot both succeed', async () => {
+  const { db, insert, close } = await freshDatabase({ through: '00004' });
+  try {
+    const outcomes = await Promise.allSettled([insert('Eggs'), insert(' eggs ')]);
+    assert.equal(outcomes.filter(x => x.status === 'fulfilled').length, 1);
+    assert.equal(outcomes.find(x => x.status === 'rejected').reason.code, '23505');
+    const a = (await insert('Bread A')).rows[0].id;
+    const b = (await insert('Bread B')).rows[0].id;
+    const renames = await Promise.allSettled([
+      db.query("UPDATE public.pantry_items SET name='Bread' WHERE id=$1", [a]),
+      db.query("UPDATE public.pantry_items SET name=' bread ' WHERE id=$1", [b]),
+    ]);
+    assert.equal(renames.filter(x => x.status === 'fulfilled').length, 1);
+    assert.equal(renames.find(x => x.status === 'rejected').reason.code, '23505');
+  } finally { await close(); }
+});
+
+test('other users and anonymous clients cannot read or mutate an existing item', async () => {
+  const { db, as, insert, close } = await freshDatabase({ through: '00004' });
+  try {
+    const item = (await insert()).rows[0].id;
+    for (const [id, role] of [[bob, 'authenticated'], [null, 'anon']]) {
+      await as(id, role);
+      assert.equal((await db.query('SELECT * FROM public.pantry_items WHERE id=$1', [item])).rows.length, 0);
+      assert.equal((await db.query('DELETE FROM public.pantry_items WHERE id=$1 RETURNING id', [item])).rows.length, 0);
+      if (role === 'authenticated') assert.equal((await db.query("UPDATE public.pantry_items SET name='stolen' WHERE id=$1 RETURNING id", [item])).rows.length, 0);
+      else await assert.rejects(insert(), /permission denied/);
+    }
+    await as(alice);
+    assert.equal((await db.query('SELECT id FROM public.pantry_items WHERE id=$1', [item])).rows.length, 1);
+  } finally { await close(); }
+});
+
+test('deleting an author preserves items in a surviving household and clears attribution', async () => {
+  const { db, as, insert, close } = await freshDatabase({ through: '00004' });
+  try {
+    const item = (await insert()).rows[0].id;
+    await db.exec('RESET ROLE');
+    // Represents an existing shared-household item, or a legacy forged record.
+    await db.query('UPDATE public.pantry_items SET created_by=$1 WHERE id=$2', [bob,item]);
+    await db.query('DELETE FROM auth.users WHERE id=$1', [bob]);
+    const result = await db.query('SELECT created_by FROM public.pantry_items WHERE id=$1', [item]);
+    assert.equal(result.rows.length, 1);
+    assert.equal(result.rows[0].created_by, null);
+    await as(alice);
+    await db.query('DELETE FROM public.pantry_items WHERE id=$1', [item]);
+    assert.equal((await db.query('SELECT * FROM public.pantry_items')).rows.length, 0);
+  } finally { await close(); }
 });
