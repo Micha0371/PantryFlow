@@ -49,7 +49,8 @@ test('on sign-in the account language is applied', async () => {
 test('a pending choice is written to the profile before anything else and then applied', async () => {
   const f = syncFixture({ fetch: async () => 'en', pending: { u1: 'de' } });
   await f.mount({ id: 'u1' });
-  assert.deepEqual(f.calls.filter(c => c[0] !== 'fetch'), [['save', 'u1', 'de'], ['clear', 'u1'], ['setLocale', 'de']]);
+  // The pending choice replaces the profile read: no fetch at all.
+  assert.deepEqual(f.calls, [['save', 'u1', 'de'], ['clear', 'u1'], ['setLocale', 'de']]);
   assert.equal(f.store.u1, undefined);
   assert.deepEqual(locales(f.calls), ['de']);
   f.dispose();
@@ -116,13 +117,36 @@ test('a Settings choice made before the pending save starts: LanguageSync does n
   f.dispose();
 });
 
-test('the user changing during a pending flush applies and clears nothing for the old user', async () => {
+test('the user changing during a pending flush applies nothing for the old user', async () => {
   const write = deferred();
   const f = syncFixture({ fetch: async () => 'en', pending: { A: 'de' }, save: id => (id === 'A' ? write.promise : Promise.resolve()) });
   await f.mount({ id: 'A' });
   await f.setUser({ id: 'B' });
   await act(async () => write.resolve());
-  assert.deepEqual(locales(f.calls).filter(l => l === 'de'), []);
+  assert.deepEqual(locales(f.calls), ['en']);
+  // The old user's write succeeded, so only their own pending record is cleared.
+  assert.equal(f.store.A, undefined);
+  f.dispose();
+});
+
+test('the user changing while the pending read is in flight applies nothing for the old user', async () => {
+  const gate = deferred();
+  const f = syncFixture({ fetch: async () => 'en', pending: { A: 'de' } });
+  f.delayPendingRead(gate.promise);
+  await f.mount({ id: 'A' });
+  await f.setUser({ id: 'B' });
+  await act(async () => gate.resolve());
+  assert.deepEqual(locales(f.calls), ['en']);
+  f.dispose();
+});
+
+test('signing out during an in-flight profile read applies nothing', async () => {
+  const read = deferred();
+  const f = syncFixture({ fetch: () => read.promise });
+  await f.mount({ id: 'u1' });
+  await f.setUser(null);
+  await act(async () => read.resolve('de'));
+  assert.deepEqual(locales(f.calls), []);
   f.dispose();
 });
 

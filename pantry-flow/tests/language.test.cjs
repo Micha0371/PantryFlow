@@ -61,6 +61,20 @@ test('a phone language change is followed while no choice was saved', async () =
   assert.equal(await run(storage, 'de'), 'de');
 });
 
+test('a saved choice wins over the build-time default', async () => {
+  const before = process.env.EXPO_PUBLIC_DEFAULT_LOCALE;
+  process.env.EXPO_PUBLIC_DEFAULT_LOCALE = 'de';
+  try {
+    // The default is in effect without a saved choice (phone is English) ...
+    assert.equal(await run(new Map(), 'en'), 'de');
+    // ... and a saved choice replaces it.
+    assert.equal(await run(new Map([['user_language', 'en']]), 'en'), 'en');
+  } finally {
+    if (before === undefined) delete process.env.EXPO_PUBLIC_DEFAULT_LOCALE;
+    else process.env.EXPO_PUBLIC_DEFAULT_LOCALE = before;
+  }
+});
+
 test('a valid build-time default replaces the phone language; an invalid one is ignored', () => {
   const phone = [{ languageCode: 'de' }];
   assert.equal(defaultLocale('en', phone), 'en');

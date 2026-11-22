@@ -8,6 +8,8 @@ interface Props {
   onChange: (next: string) => void;
   labelFor: (key: string) => string;
   testIDPrefix?: string;
+  // Names the group for screen readers, e.g. the row's visible label.
+  accessibilityLabel?: string;
 }
 
 export function OptionChips({
@@ -16,10 +18,13 @@ export function OptionChips({
   onChange,
   labelFor,
   testIDPrefix,
+  accessibilityLabel,
 }: Props) {
   return (
     <ScrollView
       horizontal
+      accessibilityRole="radiogroup"
+      accessibilityLabel={accessibilityLabel}
       keyboardShouldPersistTaps="handled"
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.row}

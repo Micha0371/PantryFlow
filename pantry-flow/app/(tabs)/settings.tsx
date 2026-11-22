@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -22,6 +22,25 @@ export default function SettingsScreen() {
   // The newest requested language; writes run one after another and skip a superseded choice.
   const latest = useRef<Locale>(locale);
   const queue = useRef<Promise<void>>(Promise.resolve());
+
+  // A language applied from outside Settings (startup read, account sync) supersedes
+  // a failed choice: its error and Retry go away and a queued save for it is skipped.
+  useEffect(() => {
+    if (locale !== latest.current) {
+      latest.current = locale;
+      setLanguageError(false);
+    }
+  }, [locale]);
+
+  // A failed save belongs to the account that made it; Retry never writes it to another.
+  const accountId = user?.id ?? null;
+  const errorOwner = useRef(accountId);
+  useEffect(() => {
+    if (accountId !== errorOwner.current) {
+      errorOwner.current = accountId;
+      setLanguageError(false);
+    }
+  }, [accountId]);
 
   const persist = (userId: string, next: Locale) => {
     queue.current = queue.current.then(async () => {
@@ -81,6 +100,7 @@ export default function SettingsScreen() {
             onChange={onChooseLanguage}
             labelFor={(key) => (key === 'de' ? 'Deutsch' : 'English')}
             testIDPrefix="settings-language"
+            accessibilityLabel={t('settings_language')}
           />
           <InlineError
             message={languageError ? t('err_language_save') : null}
