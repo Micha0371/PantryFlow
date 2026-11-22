@@ -15,7 +15,7 @@ function fixture() {
     signUp: async request => { signupRequest = request; return response; }, signInWithPassword: async () => response,
     signOut: async () => ({ error: signoutError }),
   };
-  const { AuthProvider, useAuth } = load('lib/auth.tsx', { './supabase': { supabase: { auth } }, 'expo-linking': { createURL: () => 'pantryflow://auth/callback' }, './native-auth-crypto': { assertSecurePkce() {} } });
+  const { AuthProvider, useAuth } = load('lib/auth.tsx', { './i18n': { useTranslation: () => ({ locale: 'en' }) }, './profile-language': { setPendingLanguage: async () => {} }, './supabase': { supabase: { auth } }, 'expo-linking': { createURL: () => 'pantryflow://auth/callback' }, './native-auth-crypto': { assertSecurePkce() {} } });
   function Consumer() { value = useAuth(); return null; }
   let renderer;
   act(() => { renderer = create(React.createElement(AuthProvider, null, React.createElement(Consumer))); });
@@ -90,7 +90,7 @@ test('the auth context value is stable across a parent re-render and changes wit
     signUp: async () => ({ data: { session: null }, error: null }), signInWithPassword: async () => ({ data: {}, error: null }),
     signOut: async () => ({ error: null }),
   };
-  const { AuthProvider, useAuth } = load('lib/auth.tsx', { './supabase': { supabase: { auth } },
+  const { AuthProvider, useAuth } = load('lib/auth.tsx', { './i18n': { useTranslation: () => ({ locale: 'en' }) }, './profile-language': { setPendingLanguage: async () => {} }, './supabase': { supabase: { auth } },
     'expo-linking': { createURL: () => 'pantryflow://auth/callback' }, './native-auth-crypto': { assertSecurePkce() {} } });
   const seen = [];
   function Consumer() { seen.push(useAuth()); return null; }

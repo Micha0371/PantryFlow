@@ -4,6 +4,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   ReactNode,
 } from 'react';
@@ -30,15 +31,19 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     defaultLocale(process.env.EXPO_PUBLIC_DEFAULT_LOCALE, Localization.getLocales())
   );
 
+  // An explicit setLocale() wins over the stored value that is still being read.
+  const explicit = useRef(false);
+
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((saved) => {
-      if (isLocale(saved)) {
+      if (isLocale(saved) && !explicit.current) {
         setLocaleState(saved);
       }
     });
   }, []);
 
   const setLocale = useCallback((next: Locale) => {
+    explicit.current = true;
     setLocaleState(next);
     AsyncStorage.setItem(STORAGE_KEY, next);
   }, []);
