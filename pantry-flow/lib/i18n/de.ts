@@ -7,6 +7,7 @@ export const de: Record<TranslationKey, string> = {
   nav_pantry: 'Vorrat',
   nav_shopping: 'Einkauf',
   nav_settings: 'Einstellungen',
+  settings_language: 'Sprache',
 
   // Auth
   auth_login_title: 'Willkommen zurück',
@@ -108,6 +109,7 @@ export const de: Record<TranslationKey, string> = {
   auth_check_email_message: 'Falls diese Adresse registriert werden kann, haben wir dir eine Bestätigungs-E-Mail gesendet. Öffne den neuesten Link auf diesem Gerät, um die Anmeldung abzuschließen.',
   err_restore_session: 'Deine Sitzung konnte nicht wiederhergestellt werden. Bitte versuche es erneut.',
   err_signout: 'Abmelden fehlgeschlagen. Bitte versuche es erneut.',
+  err_language_save: 'Die Sprache konnte nicht in deinem Konto gespeichert werden.',
   err_item_name_length: 'Der Name darf höchstens 120 Zeichen lang sein.',
   err_item_missing: 'Dieser Artikel ist nicht mehr verfügbar.',
   err_duplicate_item: 'Ein Artikel mit diesem Namen existiert bereits in deinem Haushalt. Bitte wähle einen anderen Namen.',

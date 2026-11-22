@@ -12,8 +12,10 @@ export async function fetchProfileLanguage(userId: string): Promise<Locale | nul
 }
 
 export async function saveProfileLanguage(userId: string, locale: Locale): Promise<void> {
-  const { error } = await supabase.from('profiles').update({ language: locale }).eq('id', userId);
+  // PostgREST reports an RLS denial or a missing row as success with no rows.
+  const { data, error } = await supabase.from('profiles').update({ language: locale }).eq('id', userId).select('id');
   if (error) throw error;
+  if (!data || data.length === 0) throw new Error('Profile language was not saved: no profile row was updated.');
 }
 
 export async function getPendingLanguage(userId: string): Promise<Locale | null> {

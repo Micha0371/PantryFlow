@@ -31,6 +31,8 @@ export function OptionChips({
             key={opt}
             testID={testIDPrefix ? `${testIDPrefix}-${opt}` : undefined}
             onPress={() => onChange(opt)}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: selected }}
             style={[
               styles.chip,
               selected ? styles.chipSelected : styles.chipIdle,

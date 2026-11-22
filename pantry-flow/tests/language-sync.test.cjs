@@ -95,7 +95,7 @@ test('profile-language reads, validates and writes through supabase and storage'
   const query = {
     select() { return this; }, eq() { return this; },
     maybeSingle: async () => ({ data: row, error: null }),
-    update(v) { return { eq: async (c, id) => { updated = [v, c, id]; return { error: failWrite ? new Error('x') : null }; } }; },
+    update(v) { return { eq: (c, id) => { updated = [v, c, id]; return { select: async () => ({ data: [{ id }], error: failWrite ? new Error('x') : null }) }; } }; },
   };
   const mod = load('lib/profile-language.ts', {
     './supabase': { supabase: { from: t => { assert.equal(t, 'profiles'); return query; } } },

@@ -3,6 +3,7 @@ export const en = {
   nav_pantry: 'Pantry',
   nav_shopping: 'Shopping',
   nav_settings: 'Settings',
+  settings_language: 'Language',
 
   // Auth
   auth_login_title: 'Welcome back',
@@ -104,6 +105,7 @@ export const en = {
   auth_check_email_message: 'If this address can be registered, we have sent a confirmation email. Open its latest link on this device to finish signing in.',
   err_restore_session: 'Could not restore your session. Please try again.',
   err_signout: 'Could not sign out. Please try again.',
+  err_language_save: 'Could not save your language to your account.',
   err_item_name_length: 'Use a name of 120 characters or fewer.',
   err_item_missing: 'This item is no longer available.',
   err_duplicate_item: 'An item with this name already exists in your household. Please use a different name.',
