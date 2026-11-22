@@ -1,4 +1,4 @@
-const { test, mock } = require('node:test');
+const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const React = require('react');
 const { create, act } = require('react-test-renderer');
@@ -193,19 +193,20 @@ test('cancel closes without writing', () => {
   try { act(() => by('shopping-edit-cancel').props.onPress()); assert.equal(log.back, 1); } finally { act(() => renderer.unmount()); }
 });
 
-test('a missing item or failed load is announced on the detail screen (KAN-39)', () => {
-  mock.timers.enable({ apis: ['setTimeout'] });
+test('a missing item or failed load is announced on the detail screen (KAN-39)', t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
   const { renderer, announced } = render({ state: { getItem: () => undefined, error: 'err_load_shopping' } });
   try {
-    act(() => mock.timers.tick(1000));
+    act(() => t.mock.timers.tick(1000));
     assert.deepEqual(announced, ['err_load_shopping']);
-  } finally { act(() => renderer.unmount()); mock.timers.reset(); }
-  mock.timers.enable({ apis: ['setTimeout'] });
+  } finally { act(() => renderer.unmount()); }
+  t.mock.timers.reset();
+  t.mock.timers.enable({ apis: ['setTimeout'] });
   const ok = render();
   try {
-    act(() => mock.timers.tick(1000));
+    act(() => t.mock.timers.tick(1000));
     assert.deepEqual(ok.announced, []);
-  } finally { act(() => ok.renderer.unmount()); mock.timers.reset(); }
+  } finally { act(() => ok.renderer.unmount()); }
 });
 
 test('each failed rename gives the field a new announceKey, so a repeated error is spoken (final review M3)', async () => {

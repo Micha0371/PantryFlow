@@ -116,13 +116,16 @@ function medianMs(fn, runs = 5) {
   return times.sort((a, b) => a - b)[Math.floor(runs / 2)];
 }
 
-// Compares a 10x larger input against a small one instead of a fixed time limit, so machine speed cancels out.
+// Compares a 10x larger input against a small one instead of a fixed time limit. For a slow check the ratio
+// cancels machine speed; for a check that takes microseconds (this one) the 5 ms floor decides, i.e. an
+// absolute bound of about 5 ms on the median large run. 40x sits between ~10x (linear) and ~100x (quadratic)
+// growth for a 10x input; 5 ms absorbs sub-millisecond noise.
 test('the email shape check runs in linear time', () => {
   const { isEmailShape } = fixture().service;
   const shapes = [n => 'a@' + 'b'.repeat(n), n => 'a@' + '.'.repeat(n), n => 'a'.repeat(n) + '@b',
     n => 'a@' + 'b.'.repeat(n / 2) + ' '];
   for (const build of shapes) {
     const [small, large] = [10000, 100000].map(n => { const address = build(n); return medianMs(() => isEmailShape(address)); });
-    assert.ok(large < 40 * small + 5, `small ${small} ms, large ${large} ms`);
+    assert.ok(large < 40 * small + 5, `small ${small.toFixed(1)} ms, large ${large.toFixed(1)} ms`);
   }
 });

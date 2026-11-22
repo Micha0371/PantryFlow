@@ -18,17 +18,20 @@ test('hosted runner refuses another project and administrative keys before makin
   try {
     fs.mkdirSync(path.join(folder, 'scripts'));
     fs.copyFileSync(path.join(__dirname, '../scripts/verify-hosted.cjs'), path.join(folder, 'scripts/verify-hosted.cjs'));
+    const preload = path.join(folder, 'no-requests.cjs');
+    fs.writeFileSync(preload, `global.fetch = async () => { throw Error('Unexpected request'); };`);
     for (const overrides of [
       { EXPO_PUBLIC_SUPABASE_URL: 'https://other-project.supabase.co', EXPO_PUBLIC_SUPABASE_ANON_KEY: 'sb_publishable_test' },
       { EXPO_PUBLIC_SUPABASE_URL: 'https://oiqteedkfwmcertgxqga.supabase.co', EXPO_PUBLIC_SUPABASE_ANON_KEY: 'sb_secret_test' },
       { EXPO_PUBLIC_SUPABASE_URL: 'https://oiqteedkfwmcertgxqga.supabase.co', EXPO_PUBLIC_SUPABASE_ANON_KEY: jwt },
     ]) {
-      const result = spawnSync(process.execPath, ['scripts/verify-hosted.cjs', '--preflight'], {
+      const result = spawnSync(process.execPath, ['--require', preload, 'scripts/verify-hosted.cjs', '--preflight'], {
         cwd: folder, env: childEnv(overrides), encoding: 'utf8', timeout: 30000,
       });
       assert.equal(result.status, 1);
       assert.match(result.stderr, /unexpected project|Only publishable or legacy anon keys/);
       assert.doesNotMatch(result.stdout + result.stderr, /signature|sb_secret_test/);
+      assert.doesNotMatch(result.stdout + result.stderr, /Unexpected request/);
     }
   } finally { fs.rmSync(folder, { recursive: true, force: true }); }
 });
