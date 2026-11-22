@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { localStack, fixtures, cleanup } from './local-stack';
+import { withTestUsers } from './local-stack';
 import {
   fetchAllShoppingItems, insertShoppingItem, renameShoppingItem, setShoppingItemChecked,
   deleteShoppingItem, shoppingErrorKey,
@@ -11,10 +11,7 @@ async function rejection(work: Promise<unknown>): Promise<unknown> {
   assert.fail('expected the operation to be rejected');
 }
 
-test('pantry and shopping stay independent with ordinary clients', async () => {
-  const stack = localStack();
-  try {
-    const [a] = await fixtures(stack);
+test('pantry and shopping stay independent with ordinary clients', () => withTestUsers(1, 'shop', async ([a]) => {
     const { client, household, id } = a;
 
     const addPantry = async (name: string, status = 'in_stock') => {
@@ -81,7 +78,4 @@ test('pantry and shopping stay independent with ordinary clients', async () => {
       insertShoppingItem(client, household, id, { name: 'Stale link', pantryItemId: breadPantry.id }))),
     'err_shopping_link_missing');
     assert.equal(await shoppingCount(), countBeforeStale);
-  } finally {
-    await cleanup(stack.admin);
-  }
-});
+}));

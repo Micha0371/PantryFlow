@@ -1,20 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { localStack, fixtures, cleanup } from './local-stack';
+import { withTestUsers, type TestUser } from './local-stack';
 
 // KAN-61: the profiles.language boundary through ordinary authenticated clients.
-// Each test creates fresh fixture users and sets its own starting state, so the
-// tests do not depend on each other or on their order.
-type User = Awaited<ReturnType<typeof fixtures>>[number];
+// Each test creates its own unique accounts, sets its own starting state and
+// deletes exactly those accounts, so the tests do not depend on each other or
+// on their order.
+type User = TestUser;
 
-async function withUsers(run: (a: User, b: User) => Promise<void>) {
-  const stack = localStack();
-  try {
-    const [a, b] = await fixtures(stack);
-    await run(a, b);
-  } finally {
-    await cleanup(stack.admin);
-  }
+function withUsers(run: (a: User, b: User) => Promise<void>) {
+  return withTestUsers(2, 'lang', async ([a, b]) => run(a, b));
 }
 
 async function read(user: User, id: string) {
