@@ -4,12 +4,15 @@ const React = require('react');
 const { create, act } = require('react-test-renderer');
 const { load } = require('./helpers.cjs');
 
+const language = load('lib/language.ts');
+const localization = { getLocales: () => [{ languageCode: 'en' }] };
+
 test('saved locale restores, missing translations fall back and locale changes persist', async () => {
   const storage = new Map([['user_language', 'de']]);
   const { en } = load('lib/i18n/en.ts');
   const { de } = load('lib/i18n/de.ts');
   const { I18nProvider, useTranslation } = load('lib/i18n/index.tsx', {
-    './en': { en }, './de': { de },
+    './en': { en }, './de': { de }, '../language': language, 'expo-localization': localization,
     '@react-native-async-storage/async-storage': {
       getItem: async key => storage.get(key), setItem: async (key, value) => { storage.set(key, value); },
     },
@@ -38,7 +41,7 @@ test('the i18n context value is stable across a parent re-render and changes wit
   const { en } = load('lib/i18n/en.ts');
   const { de } = load('lib/i18n/de.ts');
   const { I18nProvider, useTranslation } = load('lib/i18n/index.tsx', {
-    './en': { en }, './de': { de },
+    './en': { en }, './de': { de }, '../language': language, 'expo-localization': localization,
     '@react-native-async-storage/async-storage': { getItem: async () => null, setItem: async () => {} },
   });
   const seen = [];
@@ -65,7 +68,7 @@ test('a key missing from the German catalogue falls back to English', async () =
   const { en } = load('lib/i18n/en.ts');
   const incompleteDe = { nav_pantry: 'Vorrat' };
   const { I18nProvider, useTranslation } = load('lib/i18n/index.tsx', {
-    './en': { en }, './de': { de: incompleteDe },
+    './en': { en }, './de': { de: incompleteDe }, '../language': language, 'expo-localization': localization,
     '@react-native-async-storage/async-storage': { getItem: async () => 'de', setItem: async () => {} },
   });
   let current;

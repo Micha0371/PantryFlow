@@ -10,8 +10,8 @@ import React, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { en, TranslationKey } from './en';
 import { de } from './de';
-
-type Locale = 'en' | 'de';
+import * as Localization from 'expo-localization';
+import { defaultLocale, isLocale, type Locale } from '../language';
 
 const STORAGE_KEY = 'user_language';
 
@@ -26,11 +26,13 @@ interface I18nContextType {
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>('en');
+  const [locale, setLocaleState] = useState<Locale>(() =>
+    defaultLocale(process.env.EXPO_PUBLIC_DEFAULT_LOCALE, Localization.getLocales())
+  );
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((saved) => {
-      if (saved === 'en' || saved === 'de') {
+      if (isLocale(saved)) {
         setLocaleState(saved);
       }
     });
