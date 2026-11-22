@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { localStack, fixtures, cleanup, appRoot, emails, password } from '../tests/integration/local-stack';
 import { confirmationLink, messages, openVerification } from '../tests/integration/confirmation-mail';
+import { e2eLocaleEnv } from './e2e-locale';
 import { setTimeout as delay } from 'node:timers/promises';
 
 async function main() {
@@ -16,6 +17,7 @@ if (command === 'prepare') {
     await fs.mkdir(path.join(appRoot, '.verification'), { recursive: true });
     await fs.writeFile(path.join(appRoot, '.verification/e2e-env.json'), JSON.stringify({
       // Only a local anon key is copied into the APK. Never the admin key.
+      ...e2eLocaleEnv(process.env.PANTRY_TEST_LOCALE),
       EXPO_PUBLIC_SUPABASE_ANON_KEY: stack.key,
       // Device HTTP is loopback-only through ADB reverse; the proxy binds 127.0.0.1.
       // These endpoints are confined to disposable fixtures, never the hosted app.

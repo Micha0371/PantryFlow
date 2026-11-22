@@ -3,6 +3,8 @@ import type { Session, User } from '@supabase/supabase-js';
 import { createURL } from 'expo-linking';
 import { assertSecurePkce } from './native-auth-crypto';
 import { supabase } from './supabase';
+import { useTranslation } from './i18n';
+import { setPendingLanguage } from './profile-language';
 
 interface AuthContextType {
   session: Session | null;
@@ -20,6 +22,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { locale } = useTranslation();
+  const localeRef = useRef(locale);
+  localeRef.current = locale;
   const generation = useRef(0);
   const mounted = useRef(true);
 
@@ -70,6 +75,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email, password, options: { data: { name: name.trim() }, emailRedirectTo: createURL('auth/callback') },
     });
     if (err) throw err;
+    if (data.user) {
+      // supabase.auth.signUp notifies SIGNED_IN before it returns, so this runs after the session is set. That is safe
+      // only because LanguageSync's effect runs later and AsyncStorage serializes its read after this write. The path
+      // is dormant while email confirmation is required (local and hosted): there is no session until the user confirms.
+      try { await setPendingLanguage(data.user.id, localeRef.current); } catch { /* the account language is applied from the profile instead */ }
+    }
     if (!data.session) return 'confirmation_required';
     generation.current++;
     if (mounted.current) { setSession(data.session); setError(null); setLoading(false); }

@@ -4,14 +4,15 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   ReactNode,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { en, TranslationKey } from './en';
 import { de } from './de';
-
-type Locale = 'en' | 'de';
+import * as Localization from 'expo-localization';
+import { defaultLocale, isLocale, type Locale } from '../language';
 
 const STORAGE_KEY = 'user_language';
 
@@ -26,17 +27,23 @@ interface I18nContextType {
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>('en');
+  const [locale, setLocaleState] = useState<Locale>(() =>
+    defaultLocale(process.env.EXPO_PUBLIC_DEFAULT_LOCALE, Localization.getLocales())
+  );
+
+  // An explicit setLocale() wins over the stored value that is still being read.
+  const explicit = useRef(false);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((saved) => {
-      if (saved === 'en' || saved === 'de') {
+      if (isLocale(saved) && !explicit.current) {
         setLocaleState(saved);
       }
     });
   }, []);
 
   const setLocale = useCallback((next: Locale) => {
+    explicit.current = true;
     setLocaleState(next);
     AsyncStorage.setItem(STORAGE_KEY, next);
   }, []);

@@ -50,6 +50,7 @@ test('root layout mounts ShoppingProvider inside the household scope and around 
     '@/hooks/useShoppingItems': { ShoppingProvider: host('ShoppingProvider') },
     '@/hooks/household-scope': { HouseholdProvider: host('HouseholdProvider') },
     '@/lib/auth': { AuthProvider: host('AuthProvider') },
+    '@/components/LanguageSync': { LanguageSync: host('LanguageSync') },
     '@/lib/theme': { colors: {} },
   });
   let renderer;
