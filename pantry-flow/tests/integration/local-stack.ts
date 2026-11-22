@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 
 export const appRoot = path.resolve(__dirname, '../..');
@@ -55,4 +56,50 @@ export async function fixtures(stack: ReturnType<typeof localStack>) {
     users.push({ client, id: data.user.id, household: membership.data.household_id as string });
   }
   return users;
+}
+
+export type TestUser = { client: SupabaseClient; id: string; email: string; household: string };
+
+// Per-test accounts: unique emails, removed by exact id (never by pattern).
+export async function createTestUsers(stack: ReturnType<typeof localStack>, count: number, label: string): Promise<TestUser[]> {
+  const users: TestUser[] = [];
+  try {
+    for (let i = 0; i < count; i++) {
+      const email = `pf.test.${label}.${randomUUID().slice(0, 8)}.${i}@example.com`;
+      const name = i === 0 ? 'Alice' : i === 1 ? 'Bob' : `User ${i}`;
+      const { data, error } = await stack.admin.auth.admin.createUser({ email, password, email_confirm: true,
+        user_metadata: { name } });
+      if (error) throw error;
+      const entry = { id: data.user.id } as TestUser;
+      users.push(entry);
+      const client = stack.client();
+      const login = await client.auth.signInWithPassword({ email, password });
+      if (login.error) throw login.error;
+      const membership = await client.from('pantry_household_members').select('household_id').single();
+      if (membership.error) throw membership.error;
+      Object.assign(entry, { client, email, household: membership.data.household_id as string });
+    }
+  } catch (error) {
+    await removeTestUsers(stack.admin, users);
+    throw error;
+  }
+  return users;
+}
+
+export async function removeTestUsers(admin: SupabaseClient, users: { id: string }[]) {
+  for (const user of users) {
+    const { error } = await admin.auth.admin.deleteUser(user.id);
+    if (error && !/not.?found/i.test(error.message) && error.status !== 404) throw error;
+  }
+}
+
+export async function withTestUsers(count: number, label: string,
+  run: (users: TestUser[], stack: ReturnType<typeof localStack>) => Promise<void>) {
+  const stack = localStack();
+  const users = await createTestUsers(stack, count, label);
+  try {
+    await run(users, stack);
+  } finally {
+    await removeTestUsers(stack.admin, users);
+  }
 }
