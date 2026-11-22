@@ -1,8 +1,16 @@
-const { test } = require('node:test');
+const { test, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const React = require('react');
 const { create, act } = require('react-test-renderer');
 const { load } = require('./helpers.cjs');
+
+// The tests replace the animation-frame globals; put the originals back after each test.
+const originalFrames = { request: global.requestAnimationFrame, cancel: global.cancelAnimationFrame };
+afterEach(() => {
+  for (const [name, original] of [['requestAnimationFrame', originalFrames.request], ['cancelAnimationFrame', originalFrames.cancel]]) {
+    if (original === undefined) delete global[name]; else global[name] = original;
+  }
+});
 
 // KAN-96 H1: Save and Cancel live in a footer that lifts above the Android keyboard.
 const theme = load('lib/theme.ts');
