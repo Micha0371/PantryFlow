@@ -106,12 +106,23 @@ test('the email shape check accepts and rejects exactly the same addresses', () 
   for (const [address, valid] of EMAIL_SHAPES) assert.equal(isEmailShape(address), valid, JSON.stringify(address));
 });
 
+function medianMs(fn, runs = 5) {
+  const times = [];
+  for (let i = 0; i < runs; i++) {
+    const started = performance.now();
+    fn();
+    times.push(performance.now() - started);
+  }
+  return times.sort((a, b) => a - b)[Math.floor(runs / 2)];
+}
+
+// Compares a 10x larger input against a small one instead of a fixed time limit, so machine speed cancels out.
 test('the email shape check runs in linear time', () => {
   const { isEmailShape } = fixture().service;
-  for (const address of ['a@' + 'b'.repeat(100000), 'a@' + '.'.repeat(100000), 'a'.repeat(100000) + '@b',
-    'a@' + 'b.'.repeat(50000) + ' ']) {
-    const started = performance.now();
-    isEmailShape(address);
-    assert.ok(performance.now() - started < 100, `took ${Math.round(performance.now() - started)} ms`);
+  const shapes = [n => 'a@' + 'b'.repeat(n), n => 'a@' + '.'.repeat(n), n => 'a'.repeat(n) + '@b',
+    n => 'a@' + 'b.'.repeat(n / 2) + ' '];
+  for (const build of shapes) {
+    const [small, large] = [10000, 100000].map(n => { const address = build(n); return medianMs(() => isEmailShape(address)); });
+    assert.ok(large < 40 * small + 5, `small ${small} ms, large ${large} ms`);
   }
 });

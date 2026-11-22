@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import tempfile
 from contextlib import redirect_stderr, redirect_stdout
+import statistics
 import time
 import unittest
 from unittest.mock import patch
@@ -26,11 +27,26 @@ class SafetyTests(unittest.TestCase):
             with self.subTest(email=email):
                 self.assertEqual(jira.is_email_shape(email), valid)
 
-    def test_credential_email_check_runs_in_linear_time(self):
-        for email in ("a@" + "b" * 100000, "a@" + "." * 100000, "a" * 100000 + "@b", "a@" + "b." * 50000 + " "):
+    @staticmethod
+    def median_seconds(check, value, runs=5):
+        times = []
+        for _ in range(runs):
             started = time.perf_counter()
-            jira.is_email_shape(email)
-            self.assertLess(time.perf_counter() - started, 0.1)
+            check(value)
+            times.append(time.perf_counter() - started)
+        return statistics.median(times)
+
+    def assert_linear_time(self, check):
+        # Compares a 10x larger input against a small one instead of a fixed time limit, so machine speed cancels out.
+        shapes = (lambda n: "a@" + "b" * n, lambda n: "a@" + "." * n, lambda n: "a" * n + "@b",
+                  lambda n: "a@" + "b." * (n // 2) + " ")
+        for build in shapes:
+            small = self.median_seconds(check, build(10000))
+            large = self.median_seconds(check, build(100000))
+            self.assertLess(large, 40 * small + 0.005, f"small {small * 1000:.1f} ms, large {large * 1000:.1f} ms")
+
+    def test_credential_email_check_runs_in_linear_time(self):
+        self.assert_linear_time(jira.is_email_shape)
 
     def test_abbreviated_apply_is_not_authorization(self):
         for command in (["create", "--input", "fixture.json"],
