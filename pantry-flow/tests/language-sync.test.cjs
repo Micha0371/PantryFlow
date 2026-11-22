@@ -3,6 +3,8 @@ const assert = require('node:assert/strict');
 const React = require('react');
 const { create, act } = require('react-test-renderer');
 const { load, deferred } = require('./helpers.cjs');
+// The provider reads the build-time default; never depend on a value set in the shell or CI.
+delete process.env.EXPO_PUBLIC_DEFAULT_LOCALE;
 
 const language = load('lib/language.ts');
 const localization = { getLocales: () => [{ languageCode: 'en' }] };
