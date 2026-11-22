@@ -32,7 +32,7 @@ const shared = { 'react-native': native, '@/lib/theme': theme,
   '@/hooks/useItemMutation': load('hooks/useItemMutation.ts', { 'expo-router': { useFocusEffect: callback => React.useEffect(callback, [callback]) } }), };
 return shared;
 };
-const shared = makeShared([]);
+const shared = () => makeShared([]);
 const politeRegions = renderer => renderer.root.findAll(n => n.type === 'View' && n.props.accessibilityLiveRegion === 'polite');
 // The real single-open hook runs with the same router stub; the list stays focused.
 const routerStubs = push => {
@@ -41,7 +41,7 @@ const routerStubs = push => {
 };
 
 test('initial inventory loading shows progress without claiming an empty pantry', () => {
-  const { default: Screen } = load('app/(tabs)/index.tsx', { ...shared,
+  const { default: Screen } = load('app/(tabs)/index.tsx', { ...shared(),
     ...routerStubs(() => {}), '@expo/vector-icons': { Ionicons: 'Icon' },
     '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/PantryItem': { PantryItem: 'Item' },
     '@/hooks/usePantryItems': { usePantryItems: () => ({ items: [], loading: true, error: null }) },
@@ -56,7 +56,7 @@ test('initial inventory loading shows progress without claiming an empty pantry'
 
 test('a failed initial pantry load shows retry instead of claiming the pantry is empty', () => {
   let retries = 0;
-  const { default: Screen } = load('app/(tabs)/index.tsx', { ...shared,
+  const { default: Screen } = load('app/(tabs)/index.tsx', { ...shared(),
     ...routerStubs(() => {}), '@expo/vector-icons': { Ionicons: 'Icon' },
     '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/PantryItem': { PantryItem: 'Item' },
     '@/hooks/usePantryItems': { usePantryItems: () => ({ items: [], loading: false, error: 'err_load_items', retry: () => retries++ }) },
@@ -72,7 +72,7 @@ test('a failed initial pantry load shows retry instead of claiming the pantry is
 test('empty pantry offers add navigation and populated pantry opens the selected item', ctx => {
   const navigation = [];
   let items = [];
-  const { default: Screen } = load('app/(tabs)/index.tsx', { ...shared,
+  const { default: Screen } = load('app/(tabs)/index.tsx', { ...shared(),
     ...routerStubs(route => navigation.push(route)),
     '@expo/vector-icons': { Ionicons: 'Icon' },
     '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/PantryItem': { PantryItem: 'Item' },
@@ -100,7 +100,7 @@ test('empty pantry offers add navigation and populated pantry opens the selected
 test('fast repeated pantry row taps open one edit screen, even on different rows (KAN-33)', () => {
   const navigation = [];
   const items = [{ id: 'a' }, { id: 'b' }];
-  const { default: Screen } = load('app/(tabs)/index.tsx', { ...shared,
+  const { default: Screen } = load('app/(tabs)/index.tsx', { ...shared(),
     ...routerStubs(route => navigation.push(route)),
     '@expo/vector-icons': { Ionicons: 'Icon' },
     '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/PantryItem': { PantryItem: 'Item' },
@@ -118,7 +118,7 @@ test('fast repeated pantry row taps open one edit screen, even on different rows
 test('fast repeated add taps open one add screen (KAN-38)', () => {
   const navigation = [];
   let items = [];
-  const { default: Screen } = load('app/(tabs)/index.tsx', { ...shared,
+  const { default: Screen } = load('app/(tabs)/index.tsx', { ...shared(),
     ...routerStubs(route => navigation.push(route)),
     '@expo/vector-icons': { Ionicons: 'Icon' },
     '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/PantryItem': { PantryItem: 'Item' },
@@ -145,7 +145,7 @@ test('fast repeated add taps open one add screen (KAN-38)', () => {
 
 test('email-confirmation signup shows instructions and does not navigate to the pantry', async () => {
   const navigation = [];
-  const { default: Register } = load('app/(auth)/register.tsx', { ...shared,
+  const { default: Register } = load('app/(auth)/register.tsx', { ...shared(),
     'expo-router': { Link: 'Link', useRouter: () => ({ replace: path => navigation.push(path) }) },
     'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView' },
     '@/components/Input': { Input: 'Input' },
@@ -163,7 +163,7 @@ test('email-confirmation signup shows instructions and does not navigate to the 
 
 test('sign-out failure is visible and does not navigate away', async () => {
   let navigation = 0;
-  const { default: Settings } = load('app/(tabs)/settings.tsx', { ...shared,
+  const { default: Settings } = load('app/(tabs)/settings.tsx', { ...shared(),
     'expo-router': { useRouter: () => ({ replace: () => navigation++ }) },
     'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView' },
     '@/lib/auth': { useAuth: () => ({ signOut: async () => { throw new Error('offline'); } }) },
@@ -179,7 +179,7 @@ test('sign-out failure is visible and does not navigate away', async () => {
 
 test('protected routes do not mount children during restoration, failure or signed-out access', () => {
   let state = { loading: true, error: null, session: null }, mounted = 0;
-  const { AuthGate } = load('components/AuthGate.tsx', { ...shared,
+  const { AuthGate } = load('components/AuthGate.tsx', { ...shared(),
     'expo-router': { Redirect: 'Redirect' }, './Button': { Button: 'Button' },
     '@/lib/auth': { useAuth: () => ({ ...state, retrySession: async () => {} }) },
   });
@@ -212,7 +212,7 @@ for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit
     let navigations = 0;
     const existing = { id: '1', household_id: 'h', name: 'Oat milk', category: 'dairy', location: 'fridge', status: 'in_stock' };
     const duplicate = async () => { throw { code: '23505' }; };
-    const { default: Screen } = load(file, { ...shared,
+    const { default: Screen } = load(file, { ...shared(),
       'expo-router': { useRouter: () => ({ back: () => navigations++ }), useLocalSearchParams: () => ({ id: '1' }) },
       '@/lib/i18n': { useTranslation: () => ({ t: key => en[key] ?? key }) },
       '@/components/AuthGate': { AuthGate: ({ children }) => children },
@@ -241,8 +241,8 @@ for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit
 
 test('a failed pantry load is announced on the focused tab after the tab is spoken (KAN-39)', () => {
   const announced = [];
-  const shared = makeShared(announced);
-  const { default: Screen } = load('app/(tabs)/index.tsx', { ...shared,
+  const shared = () => makeShared(announced);
+  const { default: Screen } = load('app/(tabs)/index.tsx', { ...shared(),
     ...routerStubs(() => {}), '@expo/vector-icons': { Ionicons: 'Icon' },
     '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/PantryItem': { PantryItem: 'Item' },
     '@/hooks/usePantryItems': { usePantryItems: () => ({ items: [], loading: false, error: 'err_load_items', retry: () => {} }) },
@@ -259,7 +259,7 @@ test('a failed pantry load is announced on the focused tab after the tab is spok
 });
 
 test('a sign-out failure appears inside a live region that was already mounted (KAN-39)', async () => {
-  const { default: Settings } = load('app/(tabs)/settings.tsx', { ...shared,
+  const { default: Settings } = load('app/(tabs)/settings.tsx', { ...shared(),
     'expo-router': { useRouter: () => ({ replace: () => {} }) },
     'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView' },
     '@/lib/auth': { useAuth: () => ({ signOut: async () => { throw new Error('offline'); } }) },
@@ -280,9 +280,9 @@ test('a sign-out failure appears inside a live region that was already mounted (
 
 test('a session restore failure is announced without a screen focus (KAN-39)', () => {
   const announced = [];
-  const shared = makeShared(announced);
+  const shared = () => makeShared(announced);
   let state = { loading: true, error: null, session: null };
-  const { AuthGate } = load('components/AuthGate.tsx', { ...shared,
+  const { AuthGate } = load('components/AuthGate.tsx', { ...shared(),
     'expo-router': { Redirect: 'Redirect' }, './Button': { Button: 'Button' },
     '@/lib/auth': { useAuth: () => ({ ...state, retrySession: async () => {} }) },
   });
@@ -303,7 +303,7 @@ test('an Add Item load error appears inside a live region that was already mount
   const constants = load('lib/constants.ts');
   const data = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
   let pantry = { householdId: 'h', loading: false, error: null, retry: () => {}, addItem: async () => ({}) };
-  const { default: Screen } = load('app/add-item.tsx', { ...shared,
+  const { default: Screen } = load('app/add-item.tsx', { ...shared(),
     'expo-router': { useRouter: () => ({ back: () => {} }), useLocalSearchParams: () => ({}) },
     '@/components/AuthGate': { AuthGate: ({ children }) => children },
     '@/components/Input': { Input: 'Input' }, '@/components/OptionChips': { OptionChips: 'OptionChips' },
@@ -334,7 +334,7 @@ test('an Add Item load error appears inside a live region that was already mount
 for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit-item/[id].tsx', 'item_save_button']]) {
   test(`${file}: Save twice with the same validation error announces it the second time (KAN-84)`, async () => {
   const announced = [];
-  const shared = makeShared(announced);
+  const shared = () => makeShared(announced);
     const constants = load('lib/constants.ts');
     const data = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
     const { en } = load('lib/i18n/en.ts');
@@ -344,7 +344,7 @@ for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit
       '@/lib/accessibility': load('lib/accessibility.ts', { 'react-native': { Platform: { OS: 'android' },
         AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } } }) });
     const existing = { id: '1', household_id: 'h', name: 'Oat milk', category: 'dairy', location: 'fridge', status: 'in_stock' };
-    const { default: Screen } = load(file, { ...shared,
+    const { default: Screen } = load(file, { ...shared(),
       'expo-router': { useRouter: () => ({ back: () => {} }), useLocalSearchParams: () => ({ id: '1' }),
         useFocusEffect: callback => React.useEffect(callback, [callback]) },
       '@/lib/i18n': { useTranslation: () => ({ t: key => en[key] ?? key }) },
@@ -385,7 +385,7 @@ for (const [file, fill, failing] of [
     { signUp: async () => { throw new Error('denied'); } }],
 ]) {
   test(`${file}: each failed submit gives the error field a new announceKey (KAN-84)`, async () => {
-    const { default: Screen } = load(file, { ...shared,
+    const { default: Screen } = load(file, { ...shared(),
       'expo-router': { Link: 'Link', useRouter: () => ({ replace: () => {} }) },
       'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView' },
       '@/components/Input': { Input: 'Input' },
@@ -409,10 +409,10 @@ for (const [file, fill, failing] of [
 
 test('the Edit Item screen announces a missing item or failed load as an alert (final review I1)', () => {
   const announced = [];
-  const shared = makeShared(announced);
+  const shared = () => makeShared(announced);
   const constants = load('lib/constants.ts');
   const data = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
-  const { default: Screen } = load('app/edit-item/[id].tsx', { ...shared,
+  const { default: Screen } = load('app/edit-item/[id].tsx', { ...shared(),
     'expo-router': { useRouter: () => ({ back: () => {} }), useLocalSearchParams: () => ({ id: '1' }),
       useFocusEffect: callback => React.useEffect(callback, [callback]) },
     '@/components/AuthGate': { AuthGate: ({ children }) => children },
@@ -446,7 +446,7 @@ test('the Edit Item screen announces a missing item or failed load as an alert (
 // until the user opens that tab.
 test('a pantry load error on an unfocused tab is announced only once the tab is focused', () => {
   const announced = [];
-  const shared = makeShared(announced);
+  const shared = () => makeShared(announced);
   let setFocused;
   const focusable = load('hooks/useErrorAnnouncement.ts', {
     '@/lib/accessibility': load('lib/accessibility.ts', { 'react-native': { Platform: { OS: 'android' }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } } }),
@@ -455,7 +455,7 @@ test('a pantry load error on an unfocused tab is announced only once the tab is 
       setFocused = set;
       React.useEffect(() => (focused ? callback() : undefined), [focused, callback]);
     } } });
-  const { default: Screen } = load('app/(tabs)/index.tsx', { ...shared, '@/hooks/useErrorAnnouncement': focusable,
+  const { default: Screen } = load('app/(tabs)/index.tsx', { ...shared(), '@/hooks/useErrorAnnouncement': focusable,
     ...routerStubs(() => {}), '@expo/vector-icons': { Ionicons: 'Icon' },
     '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/PantryItem': { PantryItem: 'Item' },
     '@/hooks/usePantryItems': { usePantryItems: () => ({ items: [], loading: false, error: 'err_load_items', retry: () => {} }) },

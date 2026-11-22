@@ -17,9 +17,7 @@ function loadInput() {
   });
   return { Input, announced };
 }
-const { Input } = loadInput();
-
-function render(error) {
+function render(error, { Input } = loadInput()) {
   let renderer;
   act(() => { renderer = create(React.createElement(Input, { error, testID: 'field' })); });
   return renderer;
@@ -51,7 +49,8 @@ test('without an error the live region is rendered empty', () => {
 });
 
 test('a changed error replaces the text inside the live region', () => {
-  const renderer = render('Name is required.');
+  const { Input } = loadInput();
+  const renderer = render('Name is required.', { Input });
   try {
     act(() => renderer.update(React.createElement(Input, { error: 'This item is already on your shopping list.', testID: 'field' })));
     const regions = liveRegion(renderer);
@@ -62,7 +61,8 @@ test('a changed error replaces the text inside the live region', () => {
 });
 
 test('the field gets the error border only while an error is shown', () => {
-  const renderer = render('Name is required.');
+  const { Input } = loadInput();
+  const renderer = render('Name is required.', { Input });
   try {
     const field = () => renderer.root.findByType('TextInput');
     assert.equal(flat(field().props.style).borderColor, theme.colors.danger);
