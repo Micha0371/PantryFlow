@@ -42,19 +42,17 @@ async function buildDatabase(through) {
   }
 }
 
-// One migrated template per schema version. A template is never queried or
-// changed by a test: each test works on its own clone, so no state is shared.
-const templates = new Map();
-function template(through) {
-  if (!templates.has(through)) templates.set(through, buildDatabase(through));
-  return templates.get(through);
-}
-test.after(async () => {
-  for (const pending of templates.values()) await (await pending.catch(() => null))?.close();
-});
+// One migrated template, for the schema version most tests share. It is never
+// queried or changed by a test: each test works on its own clone, so no state
+// is shared. Versions used by a single test are built directly and not cached,
+// so their ~300 MB instances are released with that test.
+const CACHED = '00004';
+let cachedTemplate;
+const template = () => (cachedTemplate ??= buildDatabase(CACHED));
+test.after(async () => { await (await cachedTemplate?.catch(() => null))?.close(); });
 
 async function freshDatabase({ through }) {
-  const db = await (await template(through)).clone();
+  const db = through === CACHED ? await (await template()).clone() : await buildDatabase(through);
   try {
     const households = await db.query('SELECT id, owner_id FROM public.pantry_households');
     const home = id => households.rows.find(row => row.owner_id === id).id;
@@ -74,18 +72,20 @@ async function freshDatabase({ through }) {
   }
 }
 
-test('a fresh database starts as alice regardless of earlier tests', async () => {
+test('a raw clone starts like a new database and open databases stay independent', async () => {
   const sessionState = db => db.query("SELECT current_user AS who, current_setting('request.jwt.claim.sub', true) AS sub")
     .then(result => result.rows[0]);
   // A raw clone, without the helper's as(alice), must start with no role or JWT state.
+  // The brand-new instance is closed before cloning so only one is open at a time.
   const pristine = new PGlite();
-  const raw = await (await template('00004')).clone();
+  let bootstrap;
+  try { bootstrap = (await sessionState(pristine)).who; } finally { await pristine.close(); }
+  const raw = await (await template()).clone();
   try {
-    const bootstrap = (await sessionState(pristine)).who;
     const rawState = await sessionState(raw);
     assert.equal(rawState.who, bootstrap);
     assert.ok(!rawState.sub, `clone inherited a JWT subject: ${rawState.sub}`);
-  } finally { await raw.close(); await pristine.close(); }
+  } finally { await raw.close(); }
   // Two live databases are independent: switching A never changes B.
   const a = await freshDatabase({ through: '00004' });
   let b;
@@ -112,6 +112,11 @@ test('00003 aborts on legacy duplicate names without merging or deleting', async
     // Explicit test-fixture cleanup, never performed by the migration.
     await db.exec('DELETE FROM public.pantry_items');
     await db.exec(migration('00003_strict_duplicate_prevention.sql'));
+    // The re-applied guard must work: a normalized duplicate is now rejected.
+    await db.query("INSERT INTO public.pantry_items (household_id,name,created_by) VALUES ($1,'Milk',$2)", [home(alice), alice]);
+    await assert.rejects(
+      db.query("INSERT INTO public.pantry_items (household_id,name,created_by) VALUES ($1,' milk ',$2)", [home(alice), alice]),
+      error => error.code === '23505');
   } finally { await close(); }
 });
 
