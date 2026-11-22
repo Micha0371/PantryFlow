@@ -9,11 +9,11 @@ const native = { Keyboard: { dismiss: () => {} }, Text: 'Text', View: 'View', Ac
   Platform: { OS: 'ios' }, StyleSheet: { create: styles => styles } };
 const t = key => key;
 // KAN-39: the real announcement hook and live region, with a recording AccessibilityInfo.
-const announced = [];
+const inlineError = load('components/InlineError.tsx', { 'react-native': { Text: 'Text', View: 'View' } });
+const makeShared = announced => {
 const announcement = load('hooks/useErrorAnnouncement.ts', {
   '@/lib/accessibility': load('lib/accessibility.ts', { 'react-native': { Platform: { OS: 'android' }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } } }),
   'expo-router': { useFocusEffect: callback => React.useEffect(callback, [callback]) } });
-const inlineError = load('components/InlineError.tsx', { 'react-native': { Text: 'Text', View: 'View' } });
 const shared = { 'react-native': native, '@/lib/theme': theme,
   '@/components/MissingItemState': load('components/MissingItemState.tsx', { 'react-native': native, '@/lib/theme': theme, '@/components/Button': { Button: 'Button' }, '@/lib/i18n': { useTranslation: () => ({ t }) } }),
   '@/components/FormFooter': { FormFooter: 'FormFooter' }, '@/hooks/useKeyboardOverlap': { useKeyboardOverlap: () => 0 },
@@ -30,6 +30,9 @@ const shared = { 'react-native': native, '@/lib/theme': theme,
   '@/components/SearchField': { SearchField: 'SearchField' },
   '@/lib/pantry-search': { filterItemsByName: items => items },
   '@/hooks/useItemMutation': load('hooks/useItemMutation.ts', { 'expo-router': { useFocusEffect: callback => React.useEffect(callback, [callback]) } }), };
+return shared;
+};
+const shared = makeShared([]);
 const politeRegions = renderer => renderer.root.findAll(n => n.type === 'View' && n.props.accessibilityLiveRegion === 'polite');
 // The real single-open hook runs with the same router stub; the list stays focused.
 const routerStubs = push => {
@@ -237,13 +240,14 @@ for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit
 }
 
 test('a failed pantry load is announced on the focused tab after the tab is spoken (KAN-39)', () => {
+  const announced = [];
+  const shared = makeShared(announced);
   const { default: Screen } = load('app/(tabs)/index.tsx', { ...shared,
     ...routerStubs(() => {}), '@expo/vector-icons': { Ionicons: 'Icon' },
     '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/PantryItem': { PantryItem: 'Item' },
     '@/hooks/usePantryItems': { usePantryItems: () => ({ items: [], loading: false, error: 'err_load_items', retry: () => {} }) },
   });
   mock.timers.enable({ apis: ['setTimeout'] });
-  announced.length = 0;
   let renderer;
   try {
     act(() => { renderer = create(React.createElement(Screen)); });
@@ -275,13 +279,14 @@ test('a sign-out failure appears inside a live region that was already mounted (
 });
 
 test('a session restore failure is announced without a screen focus (KAN-39)', () => {
+  const announced = [];
+  const shared = makeShared(announced);
   let state = { loading: true, error: null, session: null };
   const { AuthGate } = load('components/AuthGate.tsx', { ...shared,
     'expo-router': { Redirect: 'Redirect' }, './Button': { Button: 'Button' },
     '@/lib/auth': { useAuth: () => ({ ...state, retrySession: async () => {} }) },
   });
   const tree = () => React.createElement(AuthGate, null, React.createElement('Private'));
-  announced.length = 0;
   let renderer;
   act(() => { renderer = create(tree()); });
   try {
@@ -328,6 +333,8 @@ test('an Add Item load error appears inside a live region that was already mount
 
 for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit-item/[id].tsx', 'item_save_button']]) {
   test(`${file}: Save twice with the same validation error announces it the second time (KAN-84)`, async () => {
+  const announced = [];
+  const shared = makeShared(announced);
     const constants = load('lib/constants.ts');
     const data = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
     const { en } = load('lib/i18n/en.ts');
@@ -362,7 +369,6 @@ for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit
     try {
       act(() => renderer.root.findByType('TextInput').props.onChangeText('   '));
       const save = () => renderer.root.findAllByType('Button').find(button => button.props.label === en[label]).props.onPress();
-      announced.length = 0;
       await act(async () => save());
       assert.equal(renderer.root.findByType(input.Input).props.error, en.err_required_name);
       assert.deepEqual(announced, [], 'the first error is spoken by the live region');
@@ -402,6 +408,8 @@ for (const [file, fill, failing] of [
 }
 
 test('the Edit Item screen announces a missing item or failed load as an alert (final review I1)', () => {
+  const announced = [];
+  const shared = makeShared(announced);
   const constants = load('lib/constants.ts');
   const data = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
   const { default: Screen } = load('app/edit-item/[id].tsx', { ...shared,
@@ -424,7 +432,6 @@ test('the Edit Item screen announces a missing item or failed load as an alert (
       retry: () => {}, updateItem: async () => ({}), deleteItem: async () => {}, getItem: () => undefined }) },
   });
   mock.timers.enable({ apis: ['setTimeout'] });
-  announced.length = 0;
   let renderer;
   try {
     act(() => { renderer = create(React.createElement(Screen)); });
@@ -438,6 +445,8 @@ test('the Edit Item screen announces a missing item or failed load as an alert (
 // Package 5 review M4: a Pantry load error on an unfocused tab is not announced
 // until the user opens that tab.
 test('a pantry load error on an unfocused tab is announced only once the tab is focused', () => {
+  const announced = [];
+  const shared = makeShared(announced);
   let setFocused;
   const focusable = load('hooks/useErrorAnnouncement.ts', {
     '@/lib/accessibility': load('lib/accessibility.ts', { 'react-native': { Platform: { OS: 'android' }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } } }),
@@ -452,7 +461,6 @@ test('a pantry load error on an unfocused tab is announced only once the tab is 
     '@/hooks/usePantryItems': { usePantryItems: () => ({ items: [], loading: false, error: 'err_load_items', retry: () => {} }) },
   });
   mock.timers.enable({ apis: ['setTimeout'] });
-  announced.length = 0;
   let renderer;
   try {
     act(() => { renderer = create(React.createElement(Screen)); });

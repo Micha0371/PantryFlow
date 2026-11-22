@@ -1,12 +1,12 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const { renamePackageOnDiskForType } = require('@expo/config-plugins/build/android/Package');
 
 test('Expo prebuild refactors debug package files from a Windows-compatible glob', async () => {
-  const parent = path.resolve(__dirname, '../.verification');
-  fs.mkdirSync(parent, { recursive: true });
+  const parent = fs.mkdtempSync(path.join(os.tmpdir(), 'pf-native-tooling-'));
   const fixture = fs.mkdtempSync(path.join(parent, 'native-package-'));
   const originalCwd = process.cwd();
   try {
@@ -21,6 +21,6 @@ test('Expo prebuild refactors debug package files from a Windows-compatible glob
   } finally {
     process.chdir(originalCwd);
     assert.equal(path.dirname(fixture), parent);
-    fs.rmSync(fixture, { recursive: true, force: true });
+    fs.rmSync(parent, { recursive: true, force: true });
   }
 });
