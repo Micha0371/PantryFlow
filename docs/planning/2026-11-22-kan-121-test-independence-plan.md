@@ -68,6 +68,7 @@ Branch `pantryflow/kan-121-test-independence` (holds the design and this plan).
   - Temporarily replace `isEmailShape` in the test with `s => { for (let i = 0; i < s.length; i++) s.indexOf('@', i); return true; }`.
   - Run `node --test tests/email-confirmation.test.cjs`. Expected: FAIL on the linear-time test.
   - Revert the stub.
+  - Note (2026-11-22): this stand-in discards the `indexOf` result, so V8 removes the loop and it cannot fail the check; use a stand-in that consumes the result (for example accumulating `c += s.indexOf('@', i)` and returning `c >= 0`).
 - [ ] **Step 3: Same change in Python.** Use `statistics.median` over 5 `time.perf_counter()` runs, with the same sizes and the same bound (`large < 40 * small + 0.005`).
   - Prove it fails with a quadratic stand-in passed to the same helper.
   - Run `python -m unittest discover -s tools/jira -p test_*.py`. Expected: all pass.

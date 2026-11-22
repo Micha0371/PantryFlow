@@ -1,6 +1,6 @@
 # KAN-121 TEST-04 — independent tests (design)
 
-**Status:** for owner approval, 2026-11-22.
+**Status:** approved by the owner, 2026-11-22 (including D1, D2 and both owner calls).
 
 ## Rule (owner, 2026-11-22)
 
@@ -40,7 +40,7 @@ A test is one `test(...)` (node), one `it(...)` (jest), one pgTAP file, or one M
 | **P4 Guards** | `--test-randomize` (seed printed) for node unit and integration tests, and `jest --randomize`, in the npm scripts used by the local gate and CI. A check script fails on nested subtests (`t.test(` inside a test) and runs in `test:fast` and CI. A reviewer-brief line for this smell is added to the repo's review checklist | Partly (the integration run needs Docker) |
 | **P5 E2E flows** | Per-flow seed steps in `scripts/e2e-fixtures.ts`; each flow's header lists its seed; a reserved-account lock against a second run. Verified by running each flow alone once, then the full suite | Needs Docker and the phone or emulator |
 
-## Owner calls (proposed; not yet confirmed)
+## Owner calls (approved 2026-11-22)
 
 - pgTAP files (`supabase/tests/database/*.sql`) count as one test each: steps run in one transaction that is rolled back. They meet the rule as written.
 - `environment.test.sql` asserts Postgres 17 on purpose, as a guard on the local stack, so it stays.
