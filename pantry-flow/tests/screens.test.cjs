@@ -20,6 +20,8 @@ const shared = { 'react-native': native, '@/lib/theme': theme,
   '@/lib/i18n': { useTranslation: () => ({ t }) }, '@/components/Button': { Button: 'Button' },
   '@/hooks/useErrorAnnouncement': announcement, '@/components/InlineError': inlineError,
   '@/hooks/useFormError': load('hooks/useFormError.ts'),
+  // KAN-61: the Settings language row is inert in the sign-out tests.
+  '@/components/OptionChips': { OptionChips: 'OptionChips' }, '@/lib/language': load('lib/language.ts'), '@/lib/profile-language': {},
   // UX-01B list wiring: modules the pantry list imports, inert in these tests.
   '@/components/StatusSelector': { StatusSelector: 'StatusSelector' },
   '@/hooks/useShoppingPrompt': { useShoppingPrompt: () => ({ prompting: false, offer: () => {}, invalidate: () => {} }), notice: () => {} },

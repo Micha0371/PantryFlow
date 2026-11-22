@@ -8,6 +8,7 @@ import { PantryProvider } from '@/hooks/usePantryItems';
 import { ShoppingProvider } from '@/hooks/useShoppingItems';
 import { HouseholdProvider } from '@/hooks/household-scope';
 import { AuthProvider } from '@/lib/auth';
+import { LanguageSync } from '@/components/LanguageSync';
 import { colors } from '@/lib/theme';
 
 export default function RootLayout() {
@@ -16,6 +17,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <I18nProvider>
           <AuthProvider>
+            <LanguageSync />
             <HouseholdProvider>
             <PantryProvider>
               <ShoppingProvider>

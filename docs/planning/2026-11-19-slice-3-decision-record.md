@@ -15,7 +15,7 @@ The decisions resolve:
 - S3-Q14 (KAN-6 closed);
 - the Slice 3 development authorization and phase order 3.1–3.8 of 2026-11-18.
 
-**Still open:** S3-Q8 (first-launch and language precedence, KAN-61; website stack, KAN-71) and S3-Q9 to S3-Q13 and S3-Q15.
+**Still open:** S3-Q8's website-stack part (KAN-71) and S3-Q9 to S3-Q13 and S3-Q15. S3-Q8's language part was decided on 2026-11-22 (Amendment 2).
 
 This record authorizes none of the following. Each needs its own separate approval:
 - an implementation of authentication or account-deletion changes, before its technical design is reviewed;
@@ -239,3 +239,12 @@ Each issue below gets a dated comment pointing here; descriptions stay unchanged
 
 Corrective comments on **KAN-81** (session rule) and **KAN-57** (execution path), previewed before posting.
 
+## Amendment 2 — 2026-11-22 (S3-Q8, language precedence)
+
+**Decided by the owner on 2026-11-22** (KAN-61):
+- **First start:** follow the phone's language (German phone → German, otherwise English); no first-launch language screen.
+- **Saving:** a choice made in Settings is saved on the device and in the account's profile.
+- **Sign-in:** the account's saved choice applies.
+- **Detection:** `expo-localization` (new dependency approved).
+
+Design: [KAN-61 language selection](2026-11-22-kan-61-language-selection-design.md).
