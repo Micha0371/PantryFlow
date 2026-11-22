@@ -75,16 +75,28 @@ async function freshDatabase({ through }) {
 }
 
 test('a fresh database starts as alice regardless of earlier tests', async () => {
-  const first = await freshDatabase({ through: '00004' });
+  const sessionState = db => db.query("SELECT current_user AS who, current_setting('request.jwt.claim.sub', true) AS sub")
+    .then(result => result.rows[0]);
+  // A raw clone, without the helper's as(alice), must start with no role or JWT state.
+  const pristine = new PGlite();
+  const raw = await (await template('00004')).clone();
   try {
-    await first.as(bob, 'anon');
-    await first.as(null, 'anon');
-  } finally { await first.close(); }
-  const second = await freshDatabase({ through: '00004' });
+    const bootstrap = (await sessionState(pristine)).who;
+    const rawState = await sessionState(raw);
+    assert.equal(rawState.who, bootstrap);
+    assert.ok(!rawState.sub, `clone inherited a JWT subject: ${rawState.sub}`);
+  } finally { await raw.close(); await pristine.close(); }
+  // Two live databases are independent: switching A never changes B.
+  const a = await freshDatabase({ through: '00004' });
+  let b;
   try {
-    const state = (await second.db.query("SELECT current_user AS who, current_setting('request.jwt.claim.sub', true) AS sub")).rows[0];
-    assert.deepEqual(state, { who: 'authenticated', sub: alice });
-  } finally { await second.close(); }
+    await a.as(bob);
+    await a.as(null, 'anon');
+    await a.as(bob);
+    b = await freshDatabase({ through: '00004' });
+    assert.deepEqual(await sessionState(b.db), { who: 'authenticated', sub: alice });
+    assert.deepEqual(await sessionState(a.db), { who: 'authenticated', sub: bob });
+  } finally { await a.close(); await b?.close(); }
 });
 
 test('00003 aborts on legacy duplicate names without merging or deleting', async () => {
