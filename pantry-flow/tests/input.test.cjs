@@ -6,16 +6,18 @@ const { load } = require('./helpers.cjs');
 
 // KAN-34: an error shown under a form field must be announced by screen readers.
 const theme = load('lib/theme.ts');
-const announced = [];
-const { Input } = load('components/Input.tsx', {
-  'react-native': { Text: 'Text', TextInput: 'TextInput', View: 'View', StyleSheet: { create: s => s } },
-  '@/lib/theme': theme,
-  '@/lib/accessibility': load('lib/accessibility.ts', { 'react-native': { Platform: { OS: 'android' },
-    AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } } }),
-  './InlineError': load('components/InlineError.tsx', { 'react-native': { Text: 'Text', View: 'View' } }),
-});
-
-function render(error) {
+function loadInput() {
+  const announced = [];
+  const { Input } = load('components/Input.tsx', {
+    'react-native': { Text: 'Text', TextInput: 'TextInput', View: 'View', StyleSheet: { create: s => s } },
+    '@/lib/theme': theme,
+    '@/lib/accessibility': load('lib/accessibility.ts', { 'react-native': { Platform: { OS: 'android' },
+      AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } } }),
+    './InlineError': load('components/InlineError.tsx', { 'react-native': { Text: 'Text', View: 'View' } }),
+  });
+  return { Input, announced };
+}
+function render(error, { Input } = loadInput()) {
   let renderer;
   act(() => { renderer = create(React.createElement(Input, { error, testID: 'field' })); });
   return renderer;
@@ -47,7 +49,8 @@ test('without an error the live region is rendered empty', () => {
 });
 
 test('a changed error replaces the text inside the live region', () => {
-  const renderer = render('Name is required.');
+  const { Input } = loadInput();
+  const renderer = render('Name is required.', { Input });
   try {
     act(() => renderer.update(React.createElement(Input, { error: 'This item is already on your shopping list.', testID: 'field' })));
     const regions = liveRegion(renderer);
@@ -58,7 +61,8 @@ test('a changed error replaces the text inside the live region', () => {
 });
 
 test('the field gets the error border only while an error is shown', () => {
-  const renderer = render('Name is required.');
+  const { Input } = loadInput();
+  const renderer = render('Name is required.', { Input });
   try {
     const field = () => renderer.root.findByType('TextInput');
     assert.equal(flat(field().props.style).borderColor, theme.colors.danger);
@@ -71,7 +75,7 @@ test('the field gets the error border only while an error is shown', () => {
 // KAN-84 item 3: a failed submit that leaves the same error does not change the
 // live region, so TalkBack would stay silent. A new announceKey speaks it once.
 test('an unchanged error is announced again when announceKey changes', () => {
-  announced.length = 0;
+  const { Input, announced } = loadInput();
   let renderer;
   const el = (error, announceKey) => React.createElement(Input, { error, announceKey, testID: 'field' });
   act(() => { renderer = create(el('Name is required.', 1)); });

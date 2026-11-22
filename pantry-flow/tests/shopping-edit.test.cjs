@@ -1,4 +1,4 @@
-const { test, mock } = require('node:test');
+const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const React = require('react');
 const { create, act } = require('react-test-renderer');
@@ -8,15 +8,15 @@ const theme = load('lib/theme.ts');
 const data = load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') });
 const mutation = load('hooks/useItemMutation.ts', { 'expo-router': { useFocusEffect: () => {} } });
 const t = key => key;
-const announced = [];
-const announcement = load('hooks/useErrorAnnouncement.ts', {
-  '@/lib/accessibility': load('lib/accessibility.ts', { 'react-native': { Platform: { OS: 'android' }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } } }),
-  'expo-router': { useFocusEffect: callback => React.useEffect(callback, [callback]) } });
 const existing = { id: '1', household_id: 'h', pantry_item_id: null, name: 'Milk', is_checked: false,
   completed_at: null, created_by: 'u', created_at: '2026-01-01', updated_at: '2026-01-01' };
 
 function render({ state = {} } = {}) {
   const log = { back: 0, alerts: [] };
+  const announced = [];
+  const announcement = load('hooks/useErrorAnnouncement.ts', {
+    '@/lib/accessibility': load('lib/accessibility.ts', { 'react-native': { Platform: { OS: 'android' }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } } }),
+    'expo-router': { useFocusEffect: callback => React.useEffect(callback, [callback]) } });
   const native = { Text: 'Text', View: 'View', ActivityIndicator: 'Spinner', Pressable: 'Pressable',
     ScrollView: 'ScrollView', KeyboardAvoidingView: 'KeyboardAvoidingView', Platform: { OS: 'android' },
     Alert: { alert: (...args) => log.alerts.push(args) }, StyleSheet: { create: s => s } };
@@ -34,7 +34,7 @@ function render({ state = {} } = {}) {
   let renderer;
   act(() => { renderer = create(React.createElement(Screen)); });
   const by = id => renderer.root.findByProps({ testID: id });
-  return { renderer, log, by, field: () => by('shopping-edit-name') };
+  return { renderer, log, by, announced, field: () => by('shopping-edit-name') };
 }
 const destructive = log => log.alerts.at(-1)[2].find(b => b.style === 'destructive');
 
@@ -193,21 +193,20 @@ test('cancel closes without writing', () => {
   try { act(() => by('shopping-edit-cancel').props.onPress()); assert.equal(log.back, 1); } finally { act(() => renderer.unmount()); }
 });
 
-test('a missing item or failed load is announced on the detail screen (KAN-39)', () => {
-  mock.timers.enable({ apis: ['setTimeout'] });
-  announced.length = 0;
-  const { renderer } = render({ state: { getItem: () => undefined, error: 'err_load_shopping' } });
+test('a missing item or failed load is announced on the detail screen (KAN-39)', t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { renderer, announced } = render({ state: { getItem: () => undefined, error: 'err_load_shopping' } });
   try {
-    act(() => mock.timers.tick(1000));
+    act(() => t.mock.timers.tick(1000));
     assert.deepEqual(announced, ['err_load_shopping']);
-  } finally { act(() => renderer.unmount()); mock.timers.reset(); }
-  announced.length = 0;
-  mock.timers.enable({ apis: ['setTimeout'] });
+  } finally { act(() => renderer.unmount()); }
+  t.mock.timers.reset();
+  t.mock.timers.enable({ apis: ['setTimeout'] });
   const ok = render();
   try {
-    act(() => mock.timers.tick(1000));
-    assert.deepEqual(announced, []);
-  } finally { act(() => ok.renderer.unmount()); mock.timers.reset(); }
+    act(() => t.mock.timers.tick(1000));
+    assert.deepEqual(ok.announced, []);
+  } finally { act(() => ok.renderer.unmount()); }
 });
 
 test('each failed rename gives the field a new announceKey, so a repeated error is spoken (final review M3)', async () => {

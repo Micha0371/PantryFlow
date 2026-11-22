@@ -4,20 +4,19 @@ const React = require('react');
 const { create, act } = require('react-test-renderer');
 const { load, deferred } = require('./helpers.cjs');
 const theme = load('lib/theme.ts');
+const dismissOnly = r => r.filter(x => x !== 'keyboard-dismiss');
+const t = key => key;
+const makeShared = (announced, pushes) => {
 const native = { Text: 'Text', View: 'View', ActivityIndicator: 'Spinner', SectionList: 'SectionList',
   Pressable: 'Pressable', StyleSheet: { create: styles => styles },
   Keyboard: { dismiss: () => { pushes.push('keyboard-dismiss'); } } };
-const dismissOnly = r => r.filter(x => x !== 'keyboard-dismiss');
-const t = key => key;
-const pushes = [];
 // The real single-open hook runs with the same router stub; the list stays focused.
 const routerStubs = push => {
   const expoRouter = { useRouter: () => ({ push }), useFocusEffect: callback => React.useEffect(callback, [callback]) };
   return { 'expo-router': expoRouter, '@/hooks/useSingleOpen': load('hooks/useSingleOpen.ts', { 'expo-router': expoRouter }) };
 };
-const announced = [];
 const announcing = { Platform: { OS: 'android' }, AccessibilityInfo: { announceForAccessibility: m => announced.push(m) } };
-const shared = { ...routerStubs(route => pushes.push(route)), 'react-native': native,
+return { ...routerStubs(route => pushes.push(route)), 'react-native': native,
   '@/hooks/useErrorAnnouncement': load('hooks/useErrorAnnouncement.ts', { '@/lib/accessibility': load('lib/accessibility.ts', { 'react-native': announcing }),
     'expo-router': { useFocusEffect: callback => React.useEffect(callback, [callback]) } }),
   '@/components/InlineError': load('components/InlineError.tsx', { 'react-native': { Text: 'Text', View: 'View' } }),
@@ -25,13 +24,14 @@ const shared = { ...routerStubs(route => pushes.push(route)), 'react-native': na
   '@/lib/i18n': { useTranslation: () => ({ t }) }, '@/components/Button': { Button: 'Button' }, '@/components/Input': { Input: 'Input' },
   '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/ShoppingItem': { ShoppingItem: 'Row' },
   '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }) };
+};
 
 const row = (id, over = {}) => ({ id, household_id: 'h', pantry_item_id: null, name: id, is_checked: false,
   completed_at: null, created_by: 'u', created_at: '2026-01-01', updated_at: '2026-01-01', ...over });
 const done = (id, at) => row(id, { is_checked: true, completed_at: at });
 
-function render(state) {
-  const { default: Screen } = load('app/(tabs)/shopping.tsx', { ...shared,
+function render(state, announced = []) {
+  const { default: Screen } = load('app/(tabs)/shopping.tsx', { ...makeShared(announced, []),
     '@/hooks/useShoppingItems': { useShoppingItems: () => ({ items: [], loading: false, error: null, retry: () => {}, ...state }) } });
   let renderer;
   act(() => { renderer = create(React.createElement(Screen)); });
@@ -70,18 +70,18 @@ test('a failed load shows the error with retry, not an empty list', () => {
 test('a failed load is announced to TalkBack once, after the tab is spoken (KAN-39)', () => {
   mock.timers.enable({ apis: ['setTimeout'] });
   try {
-    announced.length = 0;
-    const r = render({ error: 'err_load_shopping' });
+    const announced = [];
+    const r = render({ error: 'err_load_shopping' }, announced);
     try {
       assert.deepEqual(announced, []);
       act(() => mock.timers.tick(1000));
       assert.deepEqual(announced, ['err_load_shopping']);
     } finally { act(() => r.unmount()); }
-    announced.length = 0;
-    const ok = render({ items: [row('a')] });
+    const okAnnounced = [];
+    const ok = render({ items: [row('a')] }, okAnnounced);
     try {
       act(() => mock.timers.tick(1000));
-      assert.deepEqual(announced, []);
+      assert.deepEqual(okAnnounced, []);
     } finally { act(() => ok.unmount()); }
   } finally { mock.timers.reset(); }
 });
@@ -118,13 +118,14 @@ test('open items come before completed items, each under its heading', () => {
 // Node string stubs: these pin the screen's wiring and contract props. They do not
 // establish real Android keyboard behaviour (Maestro covers that).
 function renderAdd(state) {
+  const pushes = [];
   const focusCalls = [];
   const focusStub = React.forwardRef((props, ref) => {
     const handle = { focus: () => focusCalls.push('focus') };
     if (typeof ref === 'function') ref(handle); else if (ref) ref.current = handle;
     return React.createElement('Input', props);
   });
-  const { default: Screen } = load('app/(tabs)/shopping.tsx', { ...shared,
+  const { default: Screen } = load('app/(tabs)/shopping.tsx', { ...makeShared([], pushes),
     '@/components/Input': { Input: focusStub },
     '@/hooks/useShoppingItems': { useShoppingItems: () => ({ householdId: 'h', items: [], loading: false,
       error: null, retry: () => {}, addItem: async () => row('new'), ...state }) } });
@@ -132,7 +133,7 @@ function renderAdd(state) {
   act(() => { renderer = create(React.createElement(Screen)); });
   const input = () => renderer.root.findByType('Input');
   const submit = () => renderer.root.findByProps({ testID: 'shopping-add-submit' });
-  return { renderer, input, submit, focusCalls };
+  return { renderer, input, submit, focusCalls, pushes };
 }
 
 test('adding submits the typed name once, clears the field and keeps focus', async () => {
@@ -416,8 +417,8 @@ test('pending toggles on different items run independently', async () => {
 test('pressing a row name opens the edit modal for that item', () => {
   const item = row('1');
   const r = renderAdd({ items: [item] });
+  const { pushes } = r;
   try {
-    pushes.length = 0;
     const props = r.renderer.root.findByType('SectionList').props.renderItem({ item }).props;
     act(() => props.onPress());
     assert.deepEqual(pushes, ['keyboard-dismiss', '/shopping-item/1']);
@@ -427,8 +428,8 @@ test('pressing a row name opens the edit modal for that item', () => {
 test('fast repeated row taps open one edit screen, even on different rows (KAN-33)', () => {
   const a = row('a'); const b = row('b');
   const r = renderAdd({ items: [a, b] });
+  const { pushes } = r;
   try {
-    pushes.length = 0;
     const tap = item => r.renderer.root.findByType('SectionList').props.renderItem({ item }).props.onPress();
     act(() => { tap(a); tap(a); tap(b); });
     assert.deepEqual(dismissOnly(pushes), ['/shopping-item/a']);
