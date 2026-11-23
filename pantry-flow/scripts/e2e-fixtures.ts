@@ -12,7 +12,7 @@ const stack = localStack();
 const command = process.argv[2];
 if (command === 'prepare') {
   // Refuse while another runner is live; the runner's own child is allowed through.
-  assertNoOtherRun(lockFile(appRoot), Number(process.env.PANTRY_E2E_RUNNER_PID) || null, isAlive);
+  assertNoOtherRun(lockFile(), Number(process.env.PANTRY_E2E_RUNNER_PID) || null, isAlive);
   try {
     const target = process.env.PANTRY_TEST_TARGET ?? 'emulator';
     assert.ok(['emulator', 'device'].includes(target), 'Expected emulator or device test target');

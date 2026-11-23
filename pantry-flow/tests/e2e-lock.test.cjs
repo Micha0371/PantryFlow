@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { acquireRunLock, releaseRunLock, assertNoOtherRun } = require('../scripts/e2e-lock.cjs');
+const { lockFile, acquireRunLock, releaseRunLock, assertNoOtherRun } = require('../scripts/e2e-lock.cjs');
 
 // Each test owns a fresh folder, so no lock state is shared between tests.
 function withLock(body) {
@@ -23,9 +23,40 @@ test('acquiring writes a fresh lock with pid and start time', () => withLock(fil
 
 test('a lock held by a live pid blocks another run', () => withLock(file => {
   acquireRunLock(file, 111, alive);
-  assert.throws(() => acquireRunLock(file, 222, alive), { message: 'Another e2e run is active (pid 111)' });
+  assert.throws(() => acquireRunLock(file, 222, alive, 'C:/other'), { message: /^Another e2e run is active \(pid 111\)\. If no e2e run is active, delete .+e2e-run\.lock\.$/ });
   assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).pid, 111);
 }));
+
+test('the error names the holder root and the lock file', () => withLock(file => {
+  acquireRunLock(file, 111, alive, 'C:/wt-a/pantry-flow');
+  assert.throws(() => acquireRunLock(file, 222, alive, 'C:/wt-b'), error =>
+    error.message.startsWith('Another e2e run is active (pid 111, C:/wt-a/pantry-flow)') && error.message.includes(file));
+  assert.throws(() => assertNoOtherRun(file, null, alive), /pid 111, C:\/wt-a\/pantry-flow/);
+}));
+
+test('a corrupt lock file is taken over', () => withLock(file => {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, 'not json');
+  acquireRunLock(file, 222, alive);
+  assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).pid, 222);
+}));
+
+test('two acquires in a row: the second is refused', () => withLock(file => {
+  acquireRunLock(file, 111, alive);
+  assert.throws(() => acquireRunLock(file, 111, alive), /^Error: Another e2e run is active/);
+}));
+
+test('the lock path is machine-wide by default and overridable', () => {
+  const saved = process.env.PANTRY_E2E_LOCK_FILE;
+  try {
+    delete process.env.PANTRY_E2E_LOCK_FILE;
+    assert.equal(lockFile(), path.join(os.tmpdir(), 'pantryflow-e2e-run.lock'));
+    process.env.PANTRY_E2E_LOCK_FILE = 'X:/custom.lock';
+    assert.equal(lockFile(), 'X:/custom.lock');
+  } finally {
+    if (saved === undefined) delete process.env.PANTRY_E2E_LOCK_FILE; else process.env.PANTRY_E2E_LOCK_FILE = saved;
+  }
+});
 
 test('a lock held by a dead pid is replaced', () => withLock(file => {
   acquireRunLock(file, 111, alive);
@@ -53,8 +84,8 @@ test('assertNoOtherRun allows the allowed pid', () => withLock(file => {
 
 test('assertNoOtherRun throws for another live pid, also without an allowed pid', () => withLock(file => {
   acquireRunLock(file, 111, alive);
-  assert.throws(() => assertNoOtherRun(file, 222, alive), { message: 'Another e2e run is active (pid 111)' });
-  assert.throws(() => assertNoOtherRun(file, null, alive), { message: 'Another e2e run is active (pid 111)' });
+  assert.throws(() => assertNoOtherRun(file, 222, alive), { message: /^Another e2e run is active \(pid 111\)\. If no e2e run is active, delete .+e2e-run\.lock\.$/ });
+  assert.throws(() => assertNoOtherRun(file, null, alive), { message: /^Another e2e run is active \(pid 111\)\. If no e2e run is active, delete .+e2e-run\.lock\.$/ });
 }));
 
 test('assertNoOtherRun ignores a dead pid and a missing file', () => withLock(file => {

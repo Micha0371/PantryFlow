@@ -27,9 +27,10 @@ const run = (exe, args, options = {}) => {
 // The fixture commands may run while this runner holds the lock; they must know it is theirs.
 const fixture = command => run(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'scripts/e2e-fixtures.ts', command],
   { env: { ...process.env, PANTRY_E2E_RUNNER_PID: String(process.pid) } });
+let proxy;
 async function runAll() {
 let failure;
-const proxy = fork(path.join(__dirname, 'e2e-proxy.cjs'), { cwd: root, stdio: ['ignore', 'inherit', 'inherit', 'ipc'] });
+proxy = fork(path.join(__dirname, 'e2e-proxy.cjs'), { cwd: root, stdio: ['ignore', 'inherit', 'inherit', 'ipc'] });
 try {
 await new Promise((resolve, reject) => {
  const timer = setTimeout(() => { proxy.kill(); reject(Error('Local test proxy did not start')); }, 10000);
@@ -109,8 +110,12 @@ if (failure) { console.error(failure.message); process.exitCode = 1; }
 // One e2e run at a time: the lock is taken before the proxy or any fixture reset and
 // released on every exit path (a killed runner leaves a dead pid, which the next run replaces).
 async function main() {
-  const lock = lockFile(root);
-  acquireRunLock(lock, process.pid, isAlive);
+  const lock = lockFile();
+  acquireRunLock(lock, process.pid, isAlive, root);
+  // Ctrl-C / termination: free the lock and the proxy before exiting with the conventional code.
+  for (const [signal, code] of [['SIGINT', 130], ['SIGTERM', 143]]) {
+    process.once(signal, () => { proxy?.kill(); releaseRunLock(lock, process.pid); process.exit(code); });
+  }
   try { await runAll(); } finally { releaseRunLock(lock, process.pid); }
 }
 main().catch(error => { console.error(error.message); process.exitCode = 1; });
