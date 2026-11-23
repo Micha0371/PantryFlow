@@ -107,6 +107,13 @@ Maestro favors existing testIDs. Approved English messages are asserted for visi
 
 Diagnostics: ignored `.verification/maestro/results.xml`, `debug/`, screenshots and `android-logcat.txt`. Do not upload .env, e2e-env.json, APK/build folders, or local Supabase status keys. Failed cleanup is a failed run. For multiple devices set `ANDROID_SERIAL`; set `ADB` or `MAESTRO` for executable paths if needed.
 
+## Manual checks on a phone
+
+- A manual check with a test build needs the local e2e proxy running: `node scripts/e2e-proxy.cjs` from `pantry-flow` (127.0.0.1:54329), plus `adb reverse tcp:54329 tcp:54329`. `npm run test:e2e` starts and stops it itself.
+- Without the proxy every sign-in fails and the app currently shows the wrong-credentials message (KAN-122 UX-09 tracks the misleading message).
+- `adb shell input text` inside single quotes must not escape `!`.
+- Fixture accounts are created server-side, so their account language is `en`.
+
 ## CI and release gate
 
 `.github/workflows/pantryflow-tests.yml` runs fast and disposable-database jobs on PRs. Manual dispatch and weekly scheduled runs additionally build an Android test APK and run Maestro on an accelerated emulator. CI has read-only repository permissions and needs no Supabase/GitHub secrets. Android diagnostics are retained for seven days. With the workflow integrated on `main`, scheduled and manual dispatch runs are active. Manual dispatch can select a follow-up branch for full Android validation before its PR is merged.

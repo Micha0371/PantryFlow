@@ -61,7 +61,19 @@ const stocked = [{ name: 'Rice', category: 'other', status: 'in_stock' }, { name
 
 // Each seed builds exactly the starting state its flow's header comment names.
 const seeds: Record<string, (stack: ReturnType<typeof localStack>, alice: Alice) => Promise<void>> = {
-  'slice-1-1': async (stack, alice) => assertSeeded(stack, alice, { pantry: [], shopping: [] }),
+  'slice-1-1': async (stack, alice) => {
+    await assertSeeded(stack, alice, { pantry: [], shopping: [] });
+    // Both households start empty: read Bob's side through Bob's own client.
+    const bob = stack.client();
+    assert.equal((await bob.auth.signInWithPassword({ email: emails[1], password })).error, null);
+    const bobPantry = await bob.from('pantry_items').select('id');
+    assert.equal(bobPantry.error, null);
+    assert.deepEqual(bobPantry.data, [], "Bob's pantry must start empty");
+    const bobShopping = await bob.from('pantry_shopping_items').select('id');
+    assert.equal(bobShopping.error, null);
+    assert.deepEqual(bobShopping.data, [], "Bob's shopping list must start empty");
+    await bob.auth.signOut();
+  },
   'slice-2-shopping': async (stack, alice) => {
     await addPantry(alice, [{ name: 'Milk', category: 'dairy', status: 'low' }]);
     await assertSeeded(stack, alice, { pantry: [milkLow], shopping: [] });
@@ -150,7 +162,7 @@ if (seedMatch) {
   assert.equal(pantry.data?.length, 1, 'The shopping journey must not add or remove pantry items');
   const milk = pantry.data![0];
   assert.deepEqual({ name: milk.name, category: milk.category, status: milk.status },
-    { name: 'Milk', category: 'dairy', status: 'low' }, 'The pantry row must stay as the prompt flow last saved it');
+    { name: 'Milk', category: 'dairy', status: 'low' }, 'The pantry row must stay as this flow saved it');
   const shopping = await alice.from('pantry_shopping_items').select('name, is_checked, completed_at, pantry_item_id').order('name');
   assert.equal(shopping.error, null);
   assert.deepEqual(shopping.data?.map(row => row.name), ['Milk', 'Rye bread'], 'Expected exactly Milk and Rye bread');

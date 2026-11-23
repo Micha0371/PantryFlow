@@ -1,22 +1,30 @@
 appId: com.pantryflow.test
 ---
-- tapOn:
-    id: login-email
-    point: "95%,50%"
-- eraseText
-- inputText: ${EMAIL}
-- assertVisible:
-    id: login-email
-    text: ${EMAIL}
-- tapOn:
-    id: login-password
-    point: "95%,50%"
-- eraseText
-- inputText: PF-local-test-only-9281!
-- hideKeyboard
-- tapOn:
-    id: login-submit
-- extendedWaitUntil:
-    visible:
-      id: pantry-screen
-    timeout: 30000
+# Wi-Fi ADB sometimes makes the phone keyboard double a typed character
+# (2026-11-23: the email field held ppf.test.alice@example.com). The exact-text
+# email assertion catches a doubled email character; a doubled password character
+# leaves the pantry screen unreached. Either way the whole sequence is retried from
+# clean fields (eraseText). A genuinely broken login still fails all three attempts.
+- retry:
+    maxRetries: 2
+    commands:
+      - tapOn:
+          id: login-email
+          point: "95%,50%"
+      - eraseText
+      - inputText: ${EMAIL}
+      - assertVisible:
+          id: login-email
+          text: ${EMAIL}
+      - tapOn:
+          id: login-password
+          point: "95%,50%"
+      - eraseText
+      - inputText: PF-local-test-only-9281!
+      - hideKeyboard
+      - tapOn:
+          id: login-submit
+      - extendedWaitUntil:
+          visible:
+            id: pantry-screen
+          timeout: 30000
