@@ -4,12 +4,15 @@ import path from 'node:path';
 import { localStack, fixtures, cleanup, appRoot, emails, password } from '../tests/integration/local-stack';
 import { confirmationLink, messages, openVerification } from '../tests/integration/confirmation-mail';
 import { e2eLocaleEnv } from './e2e-locale';
+import { assertNoOtherRun, isAlive, lockFile } from './e2e-lock.cjs';
 import { setTimeout as delay } from 'node:timers/promises';
 
 async function main() {
 const stack = localStack();
 const command = process.argv[2];
 if (command === 'prepare') {
+  // Refuse while another runner is live; the runner's own child is allowed through.
+  assertNoOtherRun(lockFile(appRoot), Number(process.env.PANTRY_E2E_RUNNER_PID) || null, isAlive);
   try {
     const target = process.env.PANTRY_TEST_TARGET ?? 'emulator';
     assert.ok(['emulator', 'device'].includes(target), 'Expected emulator or device test target');

@@ -1,5 +1,6 @@
 const { spawnSync, fork } = require('node:child_process');
 const fs = require('node:fs');
+const { lockFile, isAlive, acquireRunLock, releaseRunLock } = require('./e2e-lock.cjs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const out = path.join(root, '.verification/maestro');
@@ -23,8 +24,10 @@ const run = (exe, args, options = {}) => {
   if (result.status !== 0) throw Error(`${path.basename(exe)} exited ${result.status}`);
   return result;
 };
-const fixture = command => run(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'scripts/e2e-fixtures.ts', command]);
-async function main() {
+// The fixture commands may run while this runner holds the lock; they must know it is theirs.
+const fixture = command => run(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'scripts/e2e-fixtures.ts', command],
+  { env: { ...process.env, PANTRY_E2E_RUNNER_PID: String(process.pid) } });
+async function runAll() {
 let failure;
 const proxy = fork(path.join(__dirname, 'e2e-proxy.cjs'), { cwd: root, stdio: ['ignore', 'inherit', 'inherit', 'ipc'] });
 try {
@@ -102,5 +105,12 @@ finally {
 }
 if (failure) { console.error(failure.message); process.exitCode = 1; }
 
+}
+// One e2e run at a time: the lock is taken before the proxy or any fixture reset and
+// released on every exit path (a killed runner leaves a dead pid, which the next run replaces).
+async function main() {
+  const lock = lockFile(root);
+  acquireRunLock(lock, process.pid, isAlive);
+  try { await runAll(); } finally { releaseRunLock(lock, process.pid); }
 }
 main().catch(error => { console.error(error.message); process.exitCode = 1; });
