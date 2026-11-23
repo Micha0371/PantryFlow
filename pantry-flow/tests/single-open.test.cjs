@@ -35,19 +35,21 @@ function harness() {
 
 test('a second open before the first navigation finishes is ignored', () => {
   mock.timers.enable({ apis: ['setTimeout'] });
-  const h = harness();
+  let h;
   try {
+    h = harness();
     h.open('/edit-item/a');
     h.open('/edit-item/a');
     h.open('/edit-item/b');
     assert.deepEqual(h.pushes, ['/edit-item/a']);
-  } finally { h.unmount(); mock.timers.reset(); }
+  } finally { if (h) h.unmount(); mock.timers.reset(); }
 });
 
 test('after the edit screen closes and the list is focused again, a tap opens it again', () => {
   mock.timers.enable({ apis: ['setTimeout'] });
-  const h = harness();
+  let h;
   try {
+    h = harness();
     h.open('/edit-item/a');
     h.blur();
     mock.timers.tick(5000); // a long-open edit screen keeps the lock
@@ -56,13 +58,14 @@ test('after the edit screen closes and the list is focused again, a tap opens it
     h.focus();
     h.open('/edit-item/a');
     assert.deepEqual(h.pushes, ['/edit-item/a', '/edit-item/a']);
-  } finally { h.unmount(); mock.timers.reset(); }
+  } finally { if (h) h.unmount(); mock.timers.reset(); }
 });
 
 test('a navigation that never moved focus releases the lock after a second', () => {
   mock.timers.enable({ apis: ['setTimeout'] });
-  const h = harness();
+  let h;
   try {
+    h = harness();
     h.open('/edit-item/a');
     act(() => mock.timers.tick(999));
     h.open('/edit-item/a');
@@ -70,17 +73,19 @@ test('a navigation that never moved focus releases the lock after a second', () 
     act(() => mock.timers.tick(1));
     h.open('/edit-item/a');
     assert.deepEqual(h.pushes, ['/edit-item/a', '/edit-item/a']);
-  } finally { h.unmount(); mock.timers.reset(); }
+  } finally { if (h) h.unmount(); mock.timers.reset(); }
 });
 
 test('unmounting clears the pending fallback timer', () => {
   mock.timers.enable({ apis: ['setTimeout'] });
-  const cleared = mock.method(globalThis, 'clearTimeout');
-  const h = harness();
+  let cleared;
+  let h;
   try {
+    cleared = mock.method(globalThis, 'clearTimeout');
+    h = harness();
     h.open('/edit-item/a');
     const before = cleared.mock.callCount();
     h.unmount();
     assert.ok(cleared.mock.callCount() > before, 'the fallback timer is cleared on unmount');
-  } finally { cleared.mock.restore(); mock.timers.reset(); }
+  } finally { if (cleared) cleared.mock.restore(); mock.timers.reset(); }
 });
