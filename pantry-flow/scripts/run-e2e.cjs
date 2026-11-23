@@ -2,6 +2,7 @@ const { spawnSync, fork } = require('node:child_process');
 const fs = require('node:fs');
 const { lockFile, isAlive, acquireRunLock, releaseRunLock } = require('./e2e-lock.cjs');
 const path = require('node:path');
+const { selectFlows } = require('./e2e-flows.cjs');
 const root = path.resolve(__dirname, '..');
 const out = path.join(root, '.verification/maestro');
 fs.mkdirSync(out, { recursive: true });
@@ -28,7 +29,7 @@ const run = (exe, args, options = {}) => {
 const fixture = command => run(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'scripts/e2e-fixtures.ts', command],
   { env: { ...process.env, PANTRY_E2E_RUNNER_PID: String(process.pid) } });
 let proxy;
-async function runAll() {
+async function runAll(flows) {
 let failure;
 proxy = fork(path.join(__dirname, 'e2e-proxy.cjs'), { cwd: root, stdio: ['ignore', 'inherit', 'inherit', 'ipc'] });
 try {
@@ -40,58 +41,33 @@ await new Promise((resolve, reject) => {
 });
   // prepare resets only the four reserved fixture accounts, not the database.
   // Build before invocation using e2e:prepare + e2e:build, then fresh fixtures here.
+  // prepare writes the env file (baked into the APK build); each flow then gets its own seed.
   fixture('prepare');
   run(adb, ['install', '-r', apk]);
   run(adb, ['logcat', '-c']);
-  run(maestro, [...maestroDevice, 'test', ...testOptions, '--format', 'junit', '--output', '.verification/maestro/results.xml',
-    '--debug-output', '.verification/maestro/debug', '.maestro/slice-1-1.yaml'], {
-      shell: process.platform === 'win32',
-      env: { ...process.env, MAESTRO_CLI_NO_ANALYTICS: '1', MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: 'true' },
-    });
-  fixture('verify');
-  run(maestro, [...maestroDevice, 'test', ...testOptions, '--format', 'junit', '--output', '.verification/maestro/slice-2-shopping.xml',
-    '--debug-output', '.verification/maestro/slice-2-shopping', '.maestro/slice-2-shopping.yaml'], {
-      shell: process.platform === 'win32',
-      env: { ...process.env, MAESTRO_CLI_NO_ANALYTICS: '1', MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: 'true' },
-    });
-  fixture('shopping-verify');
-  run(maestro, [...maestroDevice, 'test', ...testOptions, '--format', 'junit', '--output', '.verification/maestro/slice-3-status.xml',
-    '--debug-output', '.verification/maestro/slice-3-status', '.maestro/slice-3-status.yaml'], {
-      shell: process.platform === 'win32',
-      env: { ...process.env, MAESTRO_CLI_NO_ANALYTICS: '1', MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: 'true' },
-    });
-  fixture('status-verify');
-  fixture('search-seed');
-  run(maestro, [...maestroDevice, 'test', ...testOptions, '--format', 'junit', '--output', '.verification/maestro/slice-3-search.xml',
-    '--debug-output', '.verification/maestro/slice-3-search', '.maestro/slice-3-search.yaml'], {
-      shell: process.platform === 'win32',
-      env: { ...process.env, MAESTRO_CLI_NO_ANALYTICS: '1', MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: 'true' },
-    });
-  fixture('search-verify');
-  run(maestro, [...maestroDevice, 'test', ...testOptions, '--format', 'junit', '--output', '.verification/maestro/slice-3-entry.xml',
-    '--debug-output', '.verification/maestro/slice-3-entry', '.maestro/slice-3-entry.yaml'], {
-      shell: process.platform === 'win32',
-      env: { ...process.env, MAESTRO_CLI_NO_ANALYTICS: '1', MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: 'true' },
-    });
-  fixture('entry-verify');
-  const confirmationFlow = (file, callback, report = file) => run(maestro, [...maestroDevice, 'test', ...testOptions, '--format', 'junit',
-    '--output', `.verification/maestro/${report}.xml`, '--debug-output', `.verification/maestro/${report}`,
-    `.maestro/${file}.yaml`], { shell: process.platform === 'win32',
-    env: { ...process.env, MAESTRO_CLI_NO_ANALYTICS: '1', MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: 'true',
-      ...(callback ? { MAESTRO_CONFIRMATION_URL: callback } : {}) } });
-  confirmationFlow('confirmation-register');
-  fixture('confirmation-first');
-  let state = JSON.parse(fs.readFileSync(path.join(root, '.verification/confirmation-state.json'), 'utf8'));
-  confirmationFlow('confirmation-complete', state.confirmed, 'confirmation-first-complete');
-  fixture('confirmation-reset');
-  confirmationFlow('confirmation-register');
-  fixture('confirmation-expired');
-  state = JSON.parse(fs.readFileSync(path.join(root, '.verification/confirmation-state.json'), 'utf8'));
-  confirmationFlow('confirmation-resend', state.expired);
-  fixture('confirmation-resent');
-  state = JSON.parse(fs.readFileSync(path.join(root, '.verification/confirmation-state.json'), 'utf8'));
-  confirmationFlow('confirmation-complete', state.confirmed);
-  fixture('confirmation-verify');
+  const maestroEnv = extra => ({ ...process.env, MAESTRO_CLI_NO_ANALYTICS: '1', MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: 'true', ...extra });
+  const maestroFlow = (file, report, extra) => run(maestro, [...maestroDevice, 'test', ...testOptions, '--format', 'junit',
+    '--output', `.verification/maestro/${report.xml}`, '--debug-output', `.verification/maestro/${report.debug}`,
+    `.maestro/${file}.yaml`], { shell: process.platform === 'win32', env: maestroEnv(extra) });
+  const readState = () => JSON.parse(fs.readFileSync(path.join(root, '.verification/confirmation-state.json'), 'utf8'));
+  for (const flow of flows) {
+    fixture(`seed:${flow.name}`);
+    if (flow.name === 'confirmation') {
+      // One test: the PKCE link only opens in the app that registered, so the steps run as a unit.
+      maestroFlow('confirmation-register', { xml: 'confirmation-register.xml', debug: 'confirmation-register' });
+      fixture('confirmation-first');
+      maestroFlow('confirmation-complete', { xml: 'confirmation-first-complete.xml', debug: 'confirmation-first-complete' }, { MAESTRO_CONFIRMATION_URL: readState().confirmed });
+      fixture('confirmation-reset');
+      maestroFlow('confirmation-register', { xml: 'confirmation-register.xml', debug: 'confirmation-register' });
+      fixture('confirmation-expired');
+      maestroFlow('confirmation-resend', { xml: 'confirmation-resend.xml', debug: 'confirmation-resend' }, { MAESTRO_CONFIRMATION_URL: readState().expired });
+      fixture('confirmation-resent');
+      maestroFlow('confirmation-complete', { xml: 'confirmation-complete.xml', debug: 'confirmation-complete' }, { MAESTRO_CONFIRMATION_URL: readState().confirmed });
+    } else {
+      maestroFlow(flow.file, { xml: flow.xml, debug: flow.debug });
+    }
+    fixture(`verify:${flow.name}`);
+  }
 } catch (error) { failure = error; }
 finally {
   const logs = spawnSync(adb, ['logcat', '-d', '-v', 'threadtime'], { cwd: root, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
@@ -110,12 +86,13 @@ if (failure) { console.error(failure.message); process.exitCode = 1; }
 // One e2e run at a time: the lock is taken before the proxy or any fixture reset and
 // released on every exit path (a killed runner leaves a dead pid, which the next run replaces).
 async function main() {
+  const flows = selectFlows(process.argv.slice(2));
   const lock = lockFile();
   acquireRunLock(lock, process.pid, isAlive, root);
   // Ctrl-C / termination: free the lock and the proxy before exiting with the conventional code.
   for (const [signal, code] of [['SIGINT', 130], ['SIGTERM', 143]]) {
     process.once(signal, () => { proxy?.kill(); releaseRunLock(lock, process.pid); process.exit(code); });
   }
-  try { await runAll(); } finally { releaseRunLock(lock, process.pid); }
+  try { await runAll(flows); } finally { releaseRunLock(lock, process.pid); }
 }
 main().catch(error => { console.error(error.message); process.exitCode = 1; });

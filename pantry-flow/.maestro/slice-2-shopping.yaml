@@ -1,8 +1,8 @@
 appId: com.pantryflow.test
 name: Slice 2 shopping journey
 ---
-# Runs after slice-1-1.yaml and its verify step: Alice owns one pantry item,
-# Milk (Dairy, Low). shopping-verify reads the final rows back afterwards.
+# Seed: seed:slice-2-shopping. Starting state: Alice owns one pantry item,
+# Milk (Dairy, Low). verify:slice-2-shopping reads the final rows back afterwards.
 # Clears a fault a failed earlier attempt may have left on a standalone proxy.
 - runScript: helpers/restore.js
 - launchApp:

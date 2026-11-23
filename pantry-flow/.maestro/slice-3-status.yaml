@@ -1,10 +1,10 @@
 appId: com.pantryflow.test
 name: Slice 3 pantry status journey
 ---
-# Runs after slice-2-shopping.yaml and shopping-verify. Starting state: Alice's
+# Seed: seed:slice-3-status. Starting state: Alice's
 # pantry has Milk (Dairy, Low); shopping has Milk open and linked, and Rye bread
 # completed. Milk is the only pantry row, so the status control is matched by
-# its id pattern. status-verify reads the final rows back afterwards.
+# its id pattern. verify:slice-3-status reads the final rows back afterwards.
 - runScript: helpers/restore.js
 - launchApp:
     clearState: true
