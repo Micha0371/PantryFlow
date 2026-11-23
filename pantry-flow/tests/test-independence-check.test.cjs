@@ -4,13 +4,21 @@ const { findViolations, analyze } = require('../scripts/check-test-independence.
 
 const check = (text, path = 'fixture.test.cjs') => findViolations([{ path, text }]);
 const rules = text => check(text).map(v => v.rule);
+// Each case is [source, expected rule names]; the source is the failure message.
+const expectRules = cases => {
+  for (const [source, expected] of cases) assert.deepEqual(rules(source), expected, source);
+};
 
 test('module-state flags a file-level array mutated in a test', () => {
-  assert.deepEqual(rules("const announced = [];\ntest('a', () => { announced.push(1); });"), ['module-state']);
+  expectRules([
+    ["const announced = [];\ntest('a', () => { announced.push(1); });", ['module-state']],
+  ]);
 });
 
 test('module-state flags a file-level let that a test reassigns', () => {
-  assert.deepEqual(rules("let n = 0;\ntest('a', () => { n++; });"), ['module-state']);
+  expectRules([
+    ["let n = 0;\ntest('a', () => { n++; });", ['module-state']],
+  ]);
 });
 
 test('module-state follows a call from a test into a file-level function', () => {
@@ -19,60 +27,80 @@ test('module-state follows a call from a test into a file-level function', () =>
 });
 
 test('module-state allows read-only constants, per-test arrays and subtests sharing constants', () => {
-  assert.deepEqual(rules("const theme = load('x');\ntest('a', () => { use(theme); });"), []);
-  assert.deepEqual(rules("test('a', () => { const arr = []; arr.push(1); });"), []);
-  assert.deepEqual(rules("const base = { a: 1 };\ntest('p', async t => {\n  await t.test('x', () => { use(base.a); });\n  await t.test('y', () => { use(base.a); });\n});"), []);
+  expectRules([
+    ["const theme = load('x');\ntest('a', () => { use(theme); });", []],
+    ["test('a', () => { const arr = []; arr.push(1); });", []],
+    ["const base = { a: 1 };\ntest('p', async t => {\n  await t.test('x', () => { use(base.a); });\n  await t.test('y', () => { use(base.a); });\n});", []],
+  ]);
 });
 
 test('module-state ignores a file with no tests (a helper module)', () => {
-  assert.deepEqual(rules('const cache = [];\nfunction remember(x) { cache.push(x); }\nmodule.exports = { remember };'), []);
+  expectRules([
+    ['const cache = [];\nfunction remember(x) { cache.push(x); }\nmodule.exports = { remember };', []],
+  ]);
 });
 
 test('global-patch flags an unrestored assignment, including in a called helper', () => {
-  assert.deepEqual(rules("test('a', () => { global.fetch = f; });"), ['global-patch']);
-  assert.deepEqual(rules("function setup() { process.env.X = '1'; }\ntest('a', () => { setup(); });"), ['global-patch']);
+  expectRules([
+    ["test('a', () => { global.fetch = f; });", ['global-patch']],
+    ["function setup() { process.env.X = '1'; }\ntest('a', () => { setup(); });", ['global-patch']],
+  ]);
 });
 
 test('global-patch allows a restore in finally, t.after or a file-level afterEach', () => {
-  assert.deepEqual(rules("test('a', () => { const original = global.fetch; global.fetch = f; try { run(); } finally { global.fetch = original; } });"), []);
-  assert.deepEqual(rules("test('a', t => { const original = globalThis.fetch; globalThis.fetch = f; t.after(() => { globalThis.fetch = original; }); });"), []);
-  assert.deepEqual(rules("afterEach(() => { global.fetch = original; });\ntest('a', () => { global.fetch = f; });"), []);
-  assert.deepEqual(rules("test('a', () => { process.env.X = '1'; try { run(); } finally { delete process.env.X; } });"), []);
+  expectRules([
+    ["test('a', () => { const original = global.fetch; global.fetch = f; try { run(); } finally { global.fetch = original; } });", []],
+    ["test('a', t => { const original = globalThis.fetch; globalThis.fetch = f; t.after(() => { globalThis.fetch = original; }); });", []],
+    ["afterEach(() => { global.fetch = original; });\ntest('a', () => { global.fetch = f; });", []],
+    ["test('a', () => { process.env.X = '1'; try { run(); } finally { delete process.env.X; } });", []],
+  ]);
 });
 
 test('global-patch ignores strings, load-time normalisation and per-test restore of another property', () => {
-  assert.deepEqual(rules("test('a', () => { fs.writeFileSync(p, 'global.fetch = 1'); });"), []);
-  assert.deepEqual(rules("delete process.env.EXPO_PUBLIC_DEFAULT_LOCALE;\ntest('a', () => {});"), []);
-  assert.deepEqual(rules("test('a', () => { global.fetch = f; try { run(); } finally { global.other = o; } });"), ['global-patch']);
+  expectRules([
+    ["test('a', () => { fs.writeFileSync(p, 'global.fetch = 1'); });", []],
+    ["delete process.env.EXPO_PUBLIC_DEFAULT_LOCALE;\ntest('a', () => {});", []],
+    ["test('a', () => { global.fetch = f; try { run(); } finally { global.other = o; } });", ['global-patch']],
+  ]);
 });
 
 test('fake-timers flags enable that is not directly followed by a protecting try', () => {
-  assert.deepEqual(rules("test('a', () => { mock.timers.enable(); render(); try { go(); } finally { mock.timers.reset(); } });"), ['fake-timers']);
+  expectRules([
+    ["test('a', () => { mock.timers.enable(); render(); try { go(); } finally { mock.timers.reset(); } });", ['fake-timers']],
+  ]);
 });
 
 test('fake-timers allows a protecting try and t.mock', () => {
-  assert.deepEqual(rules("test('a', () => { mock.timers.enable(); try { render(); go(); } finally { mock.timers.reset(); } });"), []);
-  assert.deepEqual(rules("test('a', t => { t.mock.timers.enable(); render(); });"), []);
+  expectRules([
+    ["test('a', () => { mock.timers.enable(); try { render(); go(); } finally { mock.timers.reset(); } });", []],
+    ["test('a', t => { t.mock.timers.enable(); render(); });", []],
+  ]);
 });
 
 test('fake-timers: jest.useFakeTimers needs useRealTimers in finally or afterEach', () => {
-  assert.deepEqual(rules("test('a', () => { jest.useFakeTimers(); run(); });"), ['fake-timers']);
-  assert.deepEqual(rules("afterEach(() => { jest.useRealTimers(); });\ntest('a', () => { jest.useFakeTimers(); run(); });"), []);
+  expectRules([
+    ["test('a', () => { jest.useFakeTimers(); run(); });", ['fake-timers']],
+    ["afterEach(() => { jest.useRealTimers(); });\ntest('a', () => { jest.useFakeTimers(); run(); });", []],
+  ]);
 });
 
 test('invisible-whitespace flags a literal no-break space and allows escapes, umlauts, emoji and a BOM', () => {
-  assert.deepEqual(rules("const s = 'a\u00A0b';"), ['invisible-whitespace']);
-  assert.deepEqual(rules("const s = 'a\\u00A0b';"), []);
-  assert.deepEqual(rules("const s = 'M\u00FCsli \u{1F95B}';"), []);
-  assert.deepEqual(rules("\uFEFFconst s = 1;"), []);
-  assert.deepEqual(rules("const s = 1;\uFEFF"), ['invisible-whitespace']);
+  expectRules([
+    ["const s = 'a\u00A0b';", ['invisible-whitespace']],
+    ["const s = 'a\\u00A0b';", []],
+    ["const s = 'M\u00FCsli \u{1F95B}';", []],
+    ["\uFEFFconst s = 1;", []],
+    ["const s = 1;\uFEFF", ['invisible-whitespace']],
+  ]);
 });
 
 test('focused-test flags only forms', () => {
-  assert.deepEqual(rules("test.only('a', () => {});"), ['focused-test']);
-  assert.deepEqual(rules("describe.only('a', () => {});"), ['focused-test']);
-  assert.deepEqual(rules("test('a', { only: true }, () => {});"), ['focused-test']);
-  assert.deepEqual(rules("// test.only is banned\nconst s = 'it.only(';"), []);
+  expectRules([
+    ["test.only('a', () => {});", ['focused-test']],
+    ["describe.only('a', () => {});", ['focused-test']],
+    ["test('a', { only: true }, () => {});", ['focused-test']],
+    ["// test.only is banned\nconst s = 'it.only(';", []],
+  ]);
 });
 
 test('an independence-ok exemption with a reason is listed, without a reason it is still flagged', () => {
@@ -92,36 +120,50 @@ test('CRLF and LF fixtures report the same line numbers', () => {
 });
 
 test('global-patch accepts a computed-key restore loop; fake-timers allows non-throwing declarations before the try', () => {
-  assert.deepEqual(rules("afterEach(() => { for (const [name, o] of pairs) { global[name] = o; } });\ntest('a', () => { global.raf = f; });"), []);
-  assert.deepEqual(rules("test('a', () => { mock.timers.enable(); let r; try { r = go(); } finally { mock.timers.reset(); } });"), []);
-  assert.deepEqual(rules("test('a', () => { mock.timers.enable(); const h = harness(); try { h.go(); } finally { mock.timers.reset(); } });"), ['fake-timers']);
+  expectRules([
+    ["afterEach(() => { for (const [name, o] of pairs) { global[name] = o; } });\ntest('a', () => { global.raf = f; });", []],
+    ["test('a', () => { mock.timers.enable(); let r; try { r = go(); } finally { mock.timers.reset(); } });", []],
+    ["test('a', () => { mock.timers.enable(); const h = harness(); try { h.go(); } finally { mock.timers.reset(); } });", ['fake-timers']],
+  ]);
 });
 
 test('module-state: describe-level bindings are shared by every test in the describe', () => {
-  assert.deepEqual(rules("describe('d', () => {\n  let n = 0;\n  const seen = [];\n  it('a', () => { n++; seen.push(1); });\n});"), ['module-state', 'module-state']);
-  assert.deepEqual(rules("describe('d', () => {\n  const base = { a: 1 };\n  it('a', () => { use(base.a); });\n  it('b', () => { const own = []; own.push(1); });\n});"), []);
+  expectRules([
+    ["describe('d', () => {\n  let n = 0;\n  const seen = [];\n  it('a', () => { n++; seen.push(1); });\n});", ['module-state', 'module-state']],
+    ["describe('d', () => {\n  const base = { a: 1 };\n  it('a', () => { use(base.a); });\n  it('b', () => { const own = []; own.push(1); });\n});", []],
+  ]);
 });
 
 test('module-state: a parent test local mutated inside a nested subtest is shared state', () => {
-  assert.deepEqual(rules("test('p', async t => {\n  const a = [];\n  await t.test('x', () => a.push(1));\n  await t.test('y', () => assert.equal(a.length, 1));\n});"), ['module-state']);
-  assert.deepEqual(rules("test('p', async t => {\n  let n = 0;\n  await t.test('x', () => { n += 1; });\n});"), ['module-state']);
+  expectRules([
+    ["test('p', async t => {\n  const a = [];\n  await t.test('x', () => a.push(1));\n  await t.test('y', () => assert.equal(a.length, 1));\n});", ['module-state']],
+    ["test('p', async t => {\n  let n = 0;\n  await t.test('x', () => { n += 1; });\n});", ['module-state']],
+  ]);
 });
 
 test('module-state allows legitimate subtest structure', () => {
   // subtests that only read parent constants
-  assert.deepEqual(rules("test('p', async t => {\n  const base = [1];\n  await t.test('x', () => use(base[0]));\n  await t.test('y', () => use(base.length));\n});"), []);
+  expectRules([
+    ["test('p', async t => {\n  const base = [1];\n  await t.test('x', () => use(base[0]));\n  await t.test('y', () => use(base.length));\n});", []],
+  ]);
   // the parent mutating its own locals outside any subtest
-  assert.deepEqual(rules("test('p', async t => {\n  const a = [];\n  a.push(1);\n  let n = 0;\n  n++;\n  await t.test('x', () => use(a));\n});"), []);
+  expectRules([
+    ["test('p', async t => {\n  const a = [];\n  a.push(1);\n  let n = 0;\n  n++;\n  await t.test('x', () => use(a));\n});", []],
+  ]);
   // a binding declared and mutated inside the same subtest
-  assert.deepEqual(rules("test('p', async t => {\n  await t.test('x', () => { const a = []; a.push(1); let n = 0; n++; });\n});"), []);
+  expectRules([
+    ["test('p', async t => {\n  await t.test('x', () => { const a = []; a.push(1); let n = 0; n++; });\n});", []],
+  ]);
 });
 
 test('invisible-whitespace allows ZWJ/ZWNJ between visible characters but flags them at an edge', () => {
-  assert.deepEqual(rules("const family = '\u{1F468}\u200D\u{1F469}';"), []);
-  assert.deepEqual(rules("const s = '\u200Dabc';"), ['invisible-whitespace']);
-  assert.deepEqual(rules("const s = 'abc\u200D';"), ['invisible-whitespace']);
-  assert.deepEqual(rules("const s = 'a \u200Db';"), ['invisible-whitespace']);
-  assert.deepEqual(rules("const s = 'a\u200Bb';"), ['invisible-whitespace']);
+  expectRules([
+    ["const family = '\u{1F468}\u200D\u{1F469}';", []],
+    ["const s = '\u200Dabc';", ['invisible-whitespace']],
+    ["const s = 'abc\u200D';", ['invisible-whitespace']],
+    ["const s = 'a \u200Db';", ['invisible-whitespace']],
+    ["const s = 'a\u200Bb';", ['invisible-whitespace']],
+  ]);
 });
 
 test('fake-timers: negative numbers and empty literals may precede the try, side-effecting initialisers may not', () => {
@@ -157,32 +199,42 @@ test('global-patch covers built-in globals written without `global.`', () => {
   for (const code of ['console.error = f;', 'Date.now = f;', 'Math.random = f;', 'JSON.stringify = f;', 'Intl.DateTimeFormat = f;']) {
     assert.deepEqual(rules(`test('a', () => { ${code} });`), ['global-patch'], code);
   }
-  assert.deepEqual(rules("test('a', () => { const original = console.error; console.error = f; try { run(); } finally { console.error = original; } });"), []);
-  assert.deepEqual(rules("test('a', t => { const o = Date.now; Date.now = f; t.after(() => { Date.now = o; }); });"), []);
+  expectRules([
+    ["test('a', () => { const original = console.error; console.error = f; try { run(); } finally { console.error = original; } });", []],
+    ["test('a', t => { const o = Date.now; Date.now = f; t.after(() => { Date.now = o; }); });", []],
+  ]);
   // a local named console is not the global
-  assert.deepEqual(rules("test('a', () => { const console = {}; console.error = f; });"), []);
-  assert.deepEqual(rules("function run(Math) { Math.random = f; }\ntest('a', () => { run({}); });"), []);
+  expectRules([
+    ["test('a', () => { const console = {}; console.error = f; });", []],
+    ["function run(Math) { Math.random = f; }\ntest('a', () => { run({}); });", []],
+  ]);
 });
 
 test('global-patch: file-level mock.method on a global needs a restore, t.mock.method never does', () => {
-  assert.deepEqual(rules("test('a', () => { mock.method(console, 'error', f); });"), ['global-patch']);
-  assert.deepEqual(rules("test('a', () => { mock.method(globalThis, 'fetch', f); });"), ['global-patch']);
-  assert.deepEqual(rules("test('a', () => { mock.method(Date, 'now', f); });"), ['global-patch']);
-  assert.deepEqual(rules("test('a', t => { t.mock.method(console, 'error', f); });"), []);
-  assert.deepEqual(rules("test('a', () => { const m = mock.method(console, 'error', f); try { run(); } finally { m.mock.restore(); } });"), []);
-  assert.deepEqual(rules("test('a', () => { mock.method(console, 'error', f); try { run(); } finally { mock.restoreAll(); } });"), []);
-  assert.deepEqual(rules("afterEach(() => { mock.reset(); });\ntest('a', () => { mock.method(console, 'error', f); });"), []);
-  assert.deepEqual(rules("test('a', () => { const m = mock.method(console, 'error', f); try { run(); } finally { other.mock.restore(); } });"), ['global-patch']);
-  assert.deepEqual(rules("test('a', () => { let m; try { m = mock.method(console, 'error', f); run(); } finally { if (m) m.mock.restore(); } });"), []);
+  expectRules([
+    ["test('a', () => { mock.method(console, 'error', f); });", ['global-patch']],
+    ["test('a', () => { mock.method(globalThis, 'fetch', f); });", ['global-patch']],
+    ["test('a', () => { mock.method(Date, 'now', f); });", ['global-patch']],
+    ["test('a', t => { t.mock.method(console, 'error', f); });", []],
+    ["test('a', () => { const m = mock.method(console, 'error', f); try { run(); } finally { m.mock.restore(); } });", []],
+    ["test('a', () => { mock.method(console, 'error', f); try { run(); } finally { mock.restoreAll(); } });", []],
+    ["afterEach(() => { mock.reset(); });\ntest('a', () => { mock.method(console, 'error', f); });", []],
+    ["test('a', () => { const m = mock.method(console, 'error', f); try { run(); } finally { other.mock.restore(); } });", ['global-patch']],
+    ["test('a', () => { let m; try { m = mock.method(console, 'error', f); run(); } finally { if (m) m.mock.restore(); } });", []],
+  ]);
   // a non-global target is not this rule's business; a local `console` is not the global
-  assert.deepEqual(rules("test('a', () => { mock.method(service, 'call', f); });"), []);
-  assert.deepEqual(rules("test('a', () => { const console = mk(); mock.method(console, 'error', f); });"), []);
+  expectRules([
+    ["test('a', () => { mock.method(service, 'call', f); });", []],
+    ["test('a', () => { const console = mk(); mock.method(console, 'error', f); });", []],
+  ]);
 });
 
 test('global-patch: a file-level after hook runs once after all tests and is not a restore', () => {
-  assert.deepEqual(rules("test('a', () => { global.fetch = f; });\ntest('b', () => {});\nafter(() => { global.fetch = orig; });"), ['global-patch']);
-  assert.deepEqual(rules("test('a', () => { global.fetch = f; });\nafterAll(() => { global.fetch = orig; });"), ['global-patch']);
-  assert.deepEqual(rules("test('a', () => { global.fetch = f; });\nafterEach(() => { global.fetch = orig; });"), []);
+  expectRules([
+    ["test('a', () => { global.fetch = f; });\ntest('b', () => {});\nafter(() => { global.fetch = orig; });", ['global-patch']],
+    ["test('a', () => { global.fetch = f; });\nafterAll(() => { global.fetch = orig; });", ['global-patch']],
+    ["test('a', () => { global.fetch = f; });\nafterEach(() => { global.fetch = orig; });", []],
+  ]);
 });
 
 test('the CLI exits 1 when it finds no test files', () => {

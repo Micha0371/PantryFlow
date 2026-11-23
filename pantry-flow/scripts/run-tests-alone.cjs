@@ -10,12 +10,12 @@ const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
 function unescapeXml(text) {
   return text.replace(/&(#x[0-9a-fA-F]+|#\d+|amp|lt|gt|quot|apos);/g, (_, e) => {
     if (e[0] !== '#') return ENTITIES[e];
-    return String.fromCodePoint(e[1] === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10));
+    return String.fromCodePoint(e[1] === 'x' ? Number.parseInt(e.slice(2), 16) : Number.parseInt(e.slice(1), 10));
   });
 }
 
 function escapeName(name) {
-  return name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return name.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 }
 
 // Direct children of <testsuites>: leaf tests (<testcase>) and tests with subtests or describe

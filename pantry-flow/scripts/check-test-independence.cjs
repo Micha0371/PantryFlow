@@ -62,7 +62,8 @@ function suiteCallback(call) {
 
 function hookName(call) {
   const callee = call.expression;
-  return ts.isIdentifier(callee) ? callee.text : ts.isPropertyAccessExpression(callee) ? callee.name.text : '';
+  if (ts.isIdentifier(callee)) return callee.text;
+  return ts.isPropertyAccessExpression(callee) ? callee.name.text : '';
 }
 
 function hookCallback(call) {
@@ -75,29 +76,46 @@ function bindingNames(name, out = []) {
   return out;
 }
 
+const shadowedResult = () => ({ decl: null, shadowed: true });
+const declaredResult = (found, scope) => (found
+  ? { decl: found, scope, shadowed: true, isConst: !!(found.parent.flags & ts.NodeFlags.Const) }
+  : null);
+const findDeclaration = (declarations, name) => declarations.find(d => bindingNames(d.name).includes(name));
+const isForLoop = n => ts.isForStatement(n) || ts.isForOfStatement(n) || ts.isForInStatement(n);
+const isStatementScope = n => ts.isBlock(n) || ts.isSourceFile(n) || ts.isCaseClause(n) || ts.isDefaultClause(n);
+
+// Statements of one scope: the first variable declaration of `name`, or a same-named function or class.
+function lookupInStatements(statements, name) {
+  let found = null;
+  for (const st of statements) {
+    if (ts.isVariableStatement(st)) found = findDeclaration(st.declarationList.declarations, name);
+    else if ((ts.isFunctionDeclaration(st) || ts.isClassDeclaration(st)) && st.name?.text === name) return { shadow: true };
+    if (found) break;
+  }
+  return { found };
+}
+
+// What one ancestor node says about `name`: a result, or null when it does not declare it.
+function lookupInScope(p, name) {
+  if (isFn(p)) return p.parameters.some(par => bindingNames(par.name).includes(name)) ? shadowedResult() : null;
+  if (ts.isCatchClause(p)) {
+    return p.variableDeclaration && bindingNames(p.variableDeclaration.name).includes(name) ? shadowedResult() : null;
+  }
+  if (isForLoop(p) && p.initializer && ts.isVariableDeclarationList(p.initializer)) {
+    return declaredResult(findDeclaration(p.initializer.declarations, name), p);
+  }
+  if (isStatementScope(p)) {
+    const { shadow, found } = lookupInStatements(p.statements, name);
+    return shadow ? shadowedResult() : declaredResult(found, p);
+  }
+  return null;
+}
+
 // Finds the declaration an identifier refers to and the scope node (block, file) that declares it.
 function resolve(id) {
-  const name = id.text;
   for (let p = id.parent; p; p = p.parent) {
-    let found = null;
-    if (isFn(p)) {
-      if (p.parameters.some(par => bindingNames(par.name).includes(name))) return { decl: null, shadowed: true };
-    } else if (ts.isCatchClause(p)) {
-      if (p.variableDeclaration && bindingNames(p.variableDeclaration.name).includes(name)) return { decl: null, shadowed: true };
-    } else if ((ts.isForStatement(p) || ts.isForOfStatement(p) || ts.isForInStatement(p))
-      && p.initializer && ts.isVariableDeclarationList(p.initializer)) {
-      found = p.initializer.declarations.find(d => bindingNames(d.name).includes(name));
-    } else if (ts.isBlock(p) || ts.isSourceFile(p) || ts.isCaseClause(p) || ts.isDefaultClause(p)) {
-      for (const st of p.statements) {
-        if (ts.isVariableStatement(st)) found = st.declarationList.declarations.find(d => bindingNames(d.name).includes(name));
-        else if ((ts.isFunctionDeclaration(st) || ts.isClassDeclaration(st)) && st.name?.text === name) return { decl: null, shadowed: true };
-        else if (ts.isImportDeclaration(st) || ts.isImportEqualsDeclaration(st)) continue;
-        if (found) break;
-      }
-    }
-    if (found) {
-      return { decl: found, scope: p, shadowed: true, isConst: !!(found.parent.flags & ts.NodeFlags.Const) };
-    }
+    const hit = lookupInScope(p, id.text);
+    if (hit) return hit;
   }
   return { decl: null };
 }
@@ -120,12 +138,16 @@ const isAssignment = n => ts.isBinaryExpression(n)
 const isIncDec = n => (ts.isPrefixUnaryExpression(n) || ts.isPostfixUnaryExpression(n))
   && (n.operator === ts.SyntaxKind.PlusPlusToken || n.operator === ts.SyntaxKind.MinusMinusToken);
 
+function elementKey(e) {
+  if (ts.isPropertyAccessExpression(e)) return e.name.text;
+  return ts.isStringLiteralLike(e.argumentExpression) ? e.argumentExpression.text : '*';
+}
+
 // The property a write targets, e.g. "global.fetch" or "process.env.LOCALE"; null for anything else.
 function globalKey(target) {
   const e = unwrap(target);
   if (!ts.isPropertyAccessExpression(e) && !ts.isElementAccessExpression(e)) return null;
-  const prop = ts.isPropertyAccessExpression(e) ? e.name.text
-    : (ts.isStringLiteralLike(e.argumentExpression) ? e.argumentExpression.text : '*');
+  const prop = elementKey(e);
   const obj = unwrap(e.expression);
   if (ts.isIdentifier(obj) && (obj.text === 'global' || obj.text === 'globalThis')) return `global.${prop}`;
   if (ts.isIdentifier(obj) && BUILTIN_GLOBALS.has(obj.text) && !resolve(obj).shadowed) return `${obj.text}.${prop}`;
@@ -134,24 +156,24 @@ function globalKey(target) {
   return null;
 }
 
+const isProcessEnv = e => ts.isPropertyAccessExpression(e) && e.name.text === 'env' && ts.isIdentifier(e.expression)
+  && e.expression.text === 'process';
+const writeTo = (node, key) => (key ? { node, key } : null);
+
 // A write to a global-ish property: assignment or delete. Returns { node, key } or null.
 function globalWrite(node) {
   if (isAssignment(node)) {
     const left = unwrap(node.left);
-    if (ts.isPropertyAccessExpression(left) && left.name.text === 'env' && ts.isIdentifier(left.expression)
-      && left.expression.text === 'process') return { node, key: 'process.env' };
-    const key = globalKey(left);
-    return key && { node, key };
+    return isProcessEnv(left) ? { node, key: 'process.env' } : writeTo(node, globalKey(left));
   }
-  if (ts.isDeleteExpression(node)) {
-    const key = globalKey(node.expression);
-    return key && { node, key };
-  }
+  if (ts.isDeleteExpression(node)) return writeTo(node, globalKey(node.expression));
   return null;
 }
 
-const dotted = n => ts.isIdentifier(n) ? n.text
-  : ts.isPropertyAccessExpression(n) ? `${dotted(n.expression)}.${n.name.text}` : '?';
+function dotted(n) {
+  if (ts.isIdentifier(n)) return n.text;
+  return ts.isPropertyAccessExpression(n) ? `${dotted(n.expression)}.${n.name.text}` : '?';
+}
 
 function analyze(files) {
   const violations = [];
@@ -160,226 +182,335 @@ function analyze(files) {
   return { violations, exemptions };
 }
 
-function analyzeFile(file, text, violations, exemptions) {
+// Structure of one file, collected in a single walk.
+function isStringPiece(node) {
+  return ts.isStringLiteralLike(node) || ts.isTemplateHead(node) || ts.isTemplateMiddle(node) || ts.isTemplateTail(node);
+}
+
+function isTopLevelFunctionVariable(node) {
+  return ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && !!node.initializer
+    && ts.isVariableDeclarationList(node.parent) && ts.isVariableStatement(node.parent.parent)
+    && ts.isSourceFile(node.parent.parent.parent) && isFn(unwrap(node.initializer));
+}
+
+function recordCall(structure, node) {
+  structure.calls.push(node);
+  const test = testCallback(node);
+  if (test) structure.tests.add(test);
+  const hook = hookCallback(node);
+  if (hook) structure.hookCalls.push({ call: node, fn: hook });
+}
+
+function recordFileFunction(structure, node) {
+  if (ts.isFunctionDeclaration(node) && node.name && ts.isSourceFile(node.parent)) {
+    structure.fileFns.set(node.name.text, node);
+  } else if (isTopLevelFunctionVariable(node)) {
+    structure.fileFns.set(node.name.text, unwrap(node.initializer));
+  }
+}
+
+function collectStructure(sf) {
+  const structure = { tests: new Set(), hookCalls: [], fileFns: new Map(), calls: [], finallyBlocks: [], stringRanges: [] };
+  walk(sf, node => {
+    if (ts.isCallExpression(node)) recordCall(structure, node);
+    if (ts.isTryStatement(node) && node.finallyBlock) structure.finallyBlocks.push(node);
+    if (isStringPiece(node)) structure.stringRanges.push([node.getStart(sf), node.end]);
+    recordFileFunction(structure, node);
+  });
+  return structure;
+}
+
+// A test callback plus the same-file functions it calls, followed transitively.
+function followedFunctions(root, fileFns) {
+  const nodes = [root];
+  const seen = new Set([root]);
+  for (const current of nodes) {
+    walk(current, n => {
+      const callee = ts.isCallExpression(n) && ts.isIdentifier(n.expression) ? fileFns.get(n.expression.text) : undefined;
+      if (callee && !seen.has(callee)) { seen.add(callee); nodes.push(callee); }
+    });
+  }
+  return nodes;
+}
+
+function createContext(file, text) {
   const sf = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, scriptKindFor(file));
   const found = [];
-  const lineOf = pos => sf.getLineAndCharacterOfPosition(pos).line + 1;
-  const add = (pos, rule, detail) => found.push({ path: file, line: lineOf(pos), rule, detail });
+  const ctx = { file, text, sf, found, ...collectStructure(sf) };
+  ctx.add = (pos, rule, detail) => found.push({
+    path: file, line: sf.getLineAndCharacterOfPosition(pos).line + 1, rule, detail });
+  const testList = [...ctx.tests];
+  ctx.testAncestors = node => testList.filter(t => inside(node, t));
+  // Regions: each test callback plus the functions it reaches.
+  ctx.regions = testList.map(root => ({ root, nodes: followedFunctions(root, ctx.fileFns) }));
+  ctx.allWrites = [];
+  walk(sf, n => { const w = globalWrite(n); if (w) ctx.allWrites.push(w); });
+  ctx.moduleSeen = new Set();
+  return ctx;
+}
 
-  // Collect structure once.
-  const tests = new Set();
-  const hookCalls = [];
-  const fileFns = new Map();
-  const calls = [];
-  const finallyBlocks = [];
-  const stringRanges = [];
-  walk(sf, node => {
-    if (ts.isCallExpression(node)) {
-      calls.push(node);
-      const t = testCallback(node);
-      if (t) tests.add(t);
-      const h = hookCallback(node);
-      if (h) hookCalls.push({ call: node, fn: h });
-    }
-    if (ts.isTryStatement(node) && node.finallyBlock) finallyBlocks.push(node);
-    if (ts.isStringLiteralLike(node) || ts.isTemplateHead(node) || ts.isTemplateMiddle(node)
-      || ts.isTemplateTail(node)) stringRanges.push([node.getStart(sf), node.end]);
-    if (ts.isFunctionDeclaration(node) && node.name && ts.isSourceFile(node.parent)) fileFns.set(node.name.text, node);
-    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer
-      && ts.isVariableDeclarationList(node.parent) && ts.isVariableStatement(node.parent.parent)
-      && ts.isSourceFile(node.parent.parent.parent) && isFn(unwrap(node.initializer))) {
-      fileFns.set(node.name.text, unwrap(node.initializer));
-    }
-  });
-  const testList = [...tests];
-  const testAncestors = node => testList.filter(t => inside(node, t));
+// module-state ---------------------------------------------------------------------------------
 
-  // Regions: each test callback plus the same-file functions it calls, followed transitively.
-  const regions = testList.map(root => {
-    const nodes = [root];
-    const seen = new Set([root]);
-    for (let i = 0; i < nodes.length; i++) {
-      walk(nodes[i], n => {
-        if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && fileFns.has(n.expression.text)) {
-          const fn = fileFns.get(n.expression.text);
-          if (!seen.has(fn)) { seen.add(fn); nodes.push(fn); }
-        }
-      });
-    }
-    return { root, nodes };
-  });
-
-  // module-state
-  const moduleSeen = new Set();
-  // A binding is shared when some test callback that contains the mutation sits inside the binding's
-  // scope: file level and describe bodies are shared by every test, a parent test's locals by its subtests.
-  // `root` stands in for the test that reached a followed same-file function.
-  const checkModuleState = (node, root) => {
-    let target = null;
-    let method = null;
-    if (isAssignment(node)) target = node.left;
-    else if (isIncDec(node)) target = node.operand;
-    else if (ts.isDeleteExpression(node)) target = node.expression;
-    else if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)
-      && MUTATORS.has(node.expression.name.text)) { target = node.expression.expression; method = node.expression.name.text; }
-    if (!target) return;
-    const t = unwrap(target);
-    const direct = ts.isIdentifier(t);
-    const id = direct ? t : rootIdentifier(t);
-    if (!id) return;
-    const reassign = direct && !method;
-    if (direct && ts.isDeleteExpression(node)) return;
-    const info = resolve(id);
-    if (!info.decl) return;
-    const contexts = [...testAncestors(node), root];
-    if (!contexts.some(t => t !== info.scope && inside(t, info.scope))) return;
-    const key = `${node.pos}:${id.text}`;
-    if (moduleSeen.has(key)) return;
-    if (reassign) {
-      if (info.isConst) return;
-      moduleSeen.add(key);
-      add(node.getStart(sf), 'module-state', `test reassigns file-level \`${id.text}\``);
-    } else if (isContainer(info.decl.initializer)) {
-      moduleSeen.add(key);
-      add(node.getStart(sf), 'module-state', `test mutates file-level \`${id.text}\`${method ? ` (.${method})` : ''}`);
-    }
-  };
-
-  // global-patch
-  const inRestoringContext = (node, scopes) => {
-    for (const tryStmt of finallyBlocks) {
-      if (inside(node, tryStmt.finallyBlock) && scopes.some(s => inside(tryStmt, s))) return true;
-    }
-    // a hook outside every test restores per test only as afterEach; file-level `after` runs once, after all tests
-    return hookCalls.some(h => inside(node, h.fn)
-      && (testAncestors(h.call).length === 0 ? hookName(h.call) === 'afterEach' : scopes.some(s => inside(h.call, s))));
-  };
-  const inAnyRestoringContext = node => finallyBlocks.some(t => inside(node, t.finallyBlock))
-    || hookCalls.some(h => inside(node, h.fn));
-  const allWrites = [];
-  walk(sf, n => { const w = globalWrite(n); if (w) allWrites.push(w); });
-  const restored = (write, scopes) => allWrites.some(r => r.node !== write.node
-    && (r.key === write.key || (r.key === 'process.env' && write.key.startsWith('process.env.'))
-      // a computed key (`global[name] = original` in a loop) restores every property of that object
-      || (r.key.endsWith('.*') && write.key.startsWith(r.key.slice(0, -1))))
-    && inRestoringContext(r.node, scopes));
-  const patchSeen = new Set();
-
-  for (const { root, nodes } of regions) {
-    nodes.forEach(fn => walk(fn, n => checkModuleState(n, root)));
-    nodes.forEach(fn => walk(fn, n => {
-      const w = globalWrite(n);
-      if (!w || patchSeen.has(n) || inAnyRestoringContext(n)) return;
-      const scopes = [...nodes, ...testAncestors(n)];
-      if (restored(w, scopes)) return;
-      patchSeen.add(n);
-      add(n.getStart(sf), 'global-patch', `test changes \`${w.key}\` and never restores it (use try/finally, t.after or afterEach)`);
-    }));
+function mutationTarget(node) {
+  if (isAssignment(node)) return { target: node.left, method: null };
+  if (isIncDec(node)) return { target: node.operand, method: null };
+  if (ts.isDeleteExpression(node)) return { target: node.expression, method: null };
+  if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)
+    && MUTATORS.has(node.expression.name.text)) {
+    return { target: node.expression.expression, method: node.expression.name.text };
   }
+  return null;
+}
 
-  // global-patch via the file-level node:test `mock.method(<global>, ...)`; `t.mock.method` restores itself.
-  const globalTarget = arg => {
-    const e = unwrap(arg);
-    return ts.isIdentifier(e) && (e.text === 'global' || e.text === 'globalThis'
-      || (BUILTIN_GLOBALS.has(e.text) && !resolve(e).shadowed));
-  };
-  const restoreCall = (name, scopes) => calls.some(c => {
+// A binding is shared when some test callback that contains the mutation sits inside the binding's
+// scope: file level and describe bodies are shared by every test, a parent test's locals by its subtests.
+// `root` stands in for the test that reached a followed same-file function.
+function isSharedBinding(ctx, node, root, scope) {
+  return [...ctx.testAncestors(node), root].some(t => t !== scope && inside(t, scope));
+}
+
+function mutatesDetail(name, method) {
+  const via = method ? ` (.${method})` : '';
+  return `test mutates file-level \`${name}\`${via}`;
+}
+
+function checkModuleState(ctx, node, root) {
+  const mutation = mutationTarget(node);
+  if (!mutation) return;
+  const t = unwrap(mutation.target);
+  const direct = ts.isIdentifier(t);
+  const id = direct ? t : rootIdentifier(t);
+  if (!id || (direct && ts.isDeleteExpression(node))) return;
+  const info = resolve(id);
+  if (!info.decl || !isSharedBinding(ctx, node, root, info.scope)) return;
+  const key = `${node.pos}:${id.text}`;
+  if (ctx.moduleSeen.has(key)) return;
+  const report = detail => { ctx.moduleSeen.add(key); ctx.add(node.getStart(ctx.sf), 'module-state', detail); };
+  if (direct && !mutation.method) {
+    if (!info.isConst) report(`test reassigns file-level \`${id.text}\``);
+  } else if (isContainer(info.decl.initializer)) {
+    report(mutatesDetail(id.text, mutation.method));
+  }
+}
+
+// global-patch ---------------------------------------------------------------------------------
+
+// A file-level hook outside every test restores per test only as afterEach; file-level `after` runs
+// once, after all tests.
+function hookRestores(ctx, hook, scopes) {
+  if (ctx.testAncestors(hook.call).length === 0) return hookName(hook.call) === 'afterEach';
+  return scopes.some(s => inside(hook.call, s));
+}
+
+function inRestoringContext(ctx, node, scopes) {
+  const inFinally = ctx.finallyBlocks.some(tryStmt => inside(node, tryStmt.finallyBlock)
+    && scopes.some(s => inside(tryStmt, s)));
+  return inFinally || ctx.hookCalls.some(h => inside(node, h.fn) && hookRestores(ctx, h, scopes));
+}
+
+const inAnyRestoringContext = (ctx, node) => ctx.finallyBlocks.some(t => inside(node, t.finallyBlock))
+  || ctx.hookCalls.some(h => inside(node, h.fn));
+
+// A computed key (`global[name] = original` in a loop) restores every property of that object.
+const restoresKey = (restore, key) => restore.key === key
+  || (restore.key === 'process.env' && key.startsWith('process.env.'))
+  || (restore.key.endsWith('.*') && key.startsWith(restore.key.slice(0, -1)));
+
+const restored = (ctx, write, scopes) => ctx.allWrites.some(r => r.node !== write.node
+  && restoresKey(r, write.key) && inRestoringContext(ctx, r.node, scopes));
+
+function checkGlobalPatch(ctx, n, nodes, patchSeen) {
+  const write = globalWrite(n);
+  if (!write || patchSeen.has(n) || inAnyRestoringContext(ctx, n)) return;
+  if (restored(ctx, write, [...nodes, ...ctx.testAncestors(n)])) return;
+  patchSeen.add(n);
+  ctx.add(n.getStart(ctx.sf), 'global-patch',
+    `test changes \`${write.key}\` and never restores it (use try/finally, t.after or afterEach)`);
+}
+
+function checkRegions(ctx) {
+  const patchSeen = new Set();
+  for (const { root, nodes } of ctx.regions) {
+    nodes.forEach(fn => walk(fn, n => checkModuleState(ctx, n, root)));
+    nodes.forEach(fn => walk(fn, n => checkGlobalPatch(ctx, n, nodes, patchSeen)));
+  }
+}
+
+// global-patch via the file-level node:test `mock.method(<global>, ...)`; `t.mock.method` restores itself.
+function isGlobalTarget(arg) {
+  const e = unwrap(arg);
+  return ts.isIdentifier(e) && (e.text === 'global' || e.text === 'globalThis'
+    || (BUILTIN_GLOBALS.has(e.text) && !resolve(e).shadowed));
+}
+
+const isGlobalMockMethod = n => ts.isCallExpression(n) && dotted(n.expression) === 'mock.method'
+  && n.arguments.length > 0 && isGlobalTarget(n.arguments[0]);
+
+// The handle the result is kept in: `const m = mock.method(...)` or `m = mock.method(...)`.
+function mockHandle(n) {
+  const p = n.parent;
+  if (p && ts.isVariableDeclaration(p) && ts.isIdentifier(p.name)) return p.name.text;
+  if (p && isAssignment(p) && p.right === n && ts.isIdentifier(p.left)) return p.left.text;
+  return null;
+}
+
+function restoreCall(ctx, name, scopes) {
+  return ctx.calls.some(c => {
     const d = dotted(c.expression);
     return (d === 'mock.restoreAll' || d === 'mock.reset' || (name && d === `${name}.mock.restore`))
-      && inRestoringContext(c, scopes);
+      && inRestoringContext(ctx, c, scopes);
   });
-  const mockSeen = new Set();
-  for (const { nodes } of regions) {
-    nodes.forEach(fn => walk(fn, n => {
-      if (!ts.isCallExpression(n) || mockSeen.has(n) || dotted(n.expression) !== 'mock.method'
-        || !n.arguments.length || !globalTarget(n.arguments[0])) return;
-      if (inAnyRestoringContext(n)) return;
-      // the handle the result is kept in: `const m = mock.method(...)` or `m = mock.method(...)`
-      const p = n.parent;
-      const decl = p && ts.isVariableDeclaration(p) && ts.isIdentifier(p.name) ? p.name.text
-        : p && isAssignment(p) && p.right === n && ts.isIdentifier(p.left) ? p.left.text : null;
-      if (restoreCall(decl, [...nodes, ...testAncestors(n)])) return;
-      mockSeen.add(n);
-      add(n.getStart(sf), 'global-patch', 'test patches a global with the file-level `mock.method` and never restores it (use `t.mock.method`, or restore in finally, t.after or afterEach)');
-    }));
-  }
+}
 
-  // fake-timers
-  const resets = node => { let r = false; walk(node, n => { if (ts.isCallExpression(n) && dotted(n.expression) === 'mock.timers.reset') r = true; }); return r; };
-  const realTimers = node => { let r = false; walk(node, n => { if (ts.isCallExpression(n) && dotted(n.expression) === 'jest.useRealTimers') r = true; }); return r; };
-  for (const call of calls) {
+function checkMockMethod(ctx, n, nodes, mockSeen) {
+  if (mockSeen.has(n) || !isGlobalMockMethod(n) || inAnyRestoringContext(ctx, n)) return;
+  if (restoreCall(ctx, mockHandle(n), [...nodes, ...ctx.testAncestors(n)])) return;
+  mockSeen.add(n);
+  ctx.add(n.getStart(ctx.sf), 'global-patch',
+    'test patches a global with the file-level `mock.method` and never restores it (use `t.mock.method`, or restore in finally, t.after or afterEach)');
+}
+
+function checkMockMethods(ctx) {
+  const mockSeen = new Set();
+  for (const { nodes } of ctx.regions) nodes.forEach(fn => walk(fn, n => checkMockMethod(ctx, n, nodes, mockSeen)));
+}
+
+// fake-timers ----------------------------------------------------------------------------------
+
+function containsCall(node, name) {
+  let hit = false;
+  walk(node, n => { if (ts.isCallExpression(n) && dotted(n.expression) === name) hit = true; });
+  return hit;
+}
+
+const KEYWORD_LITERALS = new Set([ts.SyntaxKind.NullKeyword, ts.SyntaxKind.TrueKeyword, ts.SyntaxKind.FalseKeyword]);
+const isNegativeNumber = e => ts.isPrefixUnaryExpression(e) && e.operator === ts.SyntaxKind.MinusToken
+  && ts.isNumericLiteral(e.operand);
+const isEmptyArrayOrObject = e => (ts.isArrayLiteralExpression(e) && e.elements.length === 0)
+  || (ts.isObjectLiteralExpression(e) && e.properties.length === 0);
+const isNonThrowingLiteral = e => ts.isLiteralExpression(e) || KEYWORD_LITERALS.has(e.kind)
+  || isNegativeNumber(e) || isEmptyArrayOrObject(e);
+// only declarations that cannot throw (`let renderer;`, `let n = 0;`) may sit between enable and try
+const isSafeDeclaration = st => ts.isVariableStatement(st)
+  && st.declarationList.declarations.every(d => !d.initializer || isNonThrowingLiteral(d.initializer));
+
+const resetsInFinally = tryStmt => !!tryStmt.finallyBlock && containsCall(tryStmt.finallyBlock, 'mock.timers.reset');
+
+function enableIsProtected(call) {
+  const stmt = call.parent;
+  const block = stmt.parent;
+  if (!(ts.isExpressionStatement(stmt) && block?.statements)) return false;
+  let at = block.statements.indexOf(stmt) + 1;
+  while (block.statements[at] && isSafeDeclaration(block.statements[at])) at++;
+  const next = block.statements[at];
+  if (next && ts.isTryStatement(next) && resetsInFinally(next)) return true;
+  // enable as the first statement inside the try whose finally resets is equally safe
+  return ts.isTryStatement(block.parent) && block.parent.tryBlock === block && block.statements[0] === stmt
+    && resetsInFinally(block.parent);
+}
+
+function jestTimersRestored(ctx) {
+  return ctx.finallyBlocks.some(t => containsCall(t.finallyBlock, 'jest.useRealTimers'))
+    || ctx.hookCalls.some(h => /afterEach/.test(dotted(h.call.expression)) && containsCall(h.fn, 'jest.useRealTimers'));
+}
+
+function checkFakeTimers(ctx) {
+  for (const call of ctx.calls) {
     const name = dotted(call.expression);
     if (name === 'mock.timers.enable') {
-      const stmt = call.parent;
-      let ok = false;
-      const block = stmt.parent;
-      if (ts.isExpressionStatement(stmt) && block && block.statements) {
-        // only declarations that cannot throw (`let renderer;`, `let n = 0;`) may sit between enable and try
-        let at = block.statements.indexOf(stmt) + 1;
-        const literal = e => ts.isLiteralExpression(e) || e.kind === ts.SyntaxKind.NullKeyword
-          || e.kind === ts.SyntaxKind.TrueKeyword || e.kind === ts.SyntaxKind.FalseKeyword
-          || (ts.isPrefixUnaryExpression(e) && e.operator === ts.SyntaxKind.MinusToken && ts.isNumericLiteral(e.operand))
-          || (ts.isArrayLiteralExpression(e) && e.elements.length === 0)
-          || (ts.isObjectLiteralExpression(e) && e.properties.length === 0);
-        const safe = st => ts.isVariableStatement(st) && st.declarationList.declarations.every(d =>
-          !d.initializer || literal(d.initializer));
-        while (block.statements[at] && safe(block.statements[at])) at++;
-        const next = block.statements[at];
-        ok = !!next && ts.isTryStatement(next) && !!next.finallyBlock && resets(next.finallyBlock);
-        // enable as the first statement inside the try whose finally resets is equally safe
-        if (!ok && ts.isTryStatement(block.parent) && block.parent.tryBlock === block && block.statements[0] === stmt) {
-          ok = !!block.parent.finallyBlock && resets(block.parent.finallyBlock);
-        }
+      if (!enableIsProtected(call)) {
+        ctx.add(call.getStart(ctx.sf), 'fake-timers', '`mock.timers.enable` must be directly followed by a try whose finally calls `mock.timers.reset()`');
       }
-      if (!ok) add(call.getStart(sf), 'fake-timers', '`mock.timers.enable` must be directly followed by a try whose finally calls `mock.timers.reset()`');
-    } else if (name === 'jest.useFakeTimers') {
-      const ok = finallyBlocks.some(t => realTimers(t.finallyBlock))
-        || hookCalls.some(h => /afterEach/.test(dotted(h.call.expression)) && realTimers(h.fn));
-      if (!ok) add(call.getStart(sf), 'fake-timers', '`jest.useFakeTimers()` needs `jest.useRealTimers()` in a finally or afterEach');
+    } else if (name === 'jest.useFakeTimers' && !jestTimersRestored(ctx)) {
+      ctx.add(call.getStart(ctx.sf), 'fake-timers', '`jest.useFakeTimers()` needs `jest.useRealTimers()` in a finally or afterEach');
     }
   }
+}
 
-  // focused-test
-  walk(sf, n => {
-    if (ts.isPropertyAccessExpression(n) && n.name.text === 'only' && ts.isIdentifier(n.expression)
-      && (TEST_NAMES.has(n.expression.text) || SUITE_NAMES.has(n.expression.text))) {
-      add(n.getStart(sf), 'focused-test', `\`${n.expression.text}.only\` skips every other test`);
-    } else if (ts.isPropertyAssignment(n) && (ts.isIdentifier(n.name) || ts.isStringLiteral(n.name))
-      && n.name.text === 'only' && n.initializer.kind === ts.SyntaxKind.TrueKeyword) {
-      add(n.getStart(sf), 'focused-test', '`{ only: true }` skips every other test');
-    } else if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && (n.expression.text === 'fit' || n.expression.text === 'fdescribe')) {
-      add(n.getStart(sf), 'focused-test', `\`${n.expression.text}\` skips every other test`);
-    }
+// focused-test ---------------------------------------------------------------------------------
+
+const isFocusedAccess = n => ts.isPropertyAccessExpression(n) && n.name.text === 'only' && ts.isIdentifier(n.expression)
+  && (TEST_NAMES.has(n.expression.text) || SUITE_NAMES.has(n.expression.text));
+const isOnlyTrue = n => ts.isPropertyAssignment(n) && (ts.isIdentifier(n.name) || ts.isStringLiteral(n.name))
+  && n.name.text === 'only' && n.initializer.kind === ts.SyntaxKind.TrueKeyword;
+const isFocusedCall = n => ts.isCallExpression(n) && ts.isIdentifier(n.expression)
+  && (n.expression.text === 'fit' || n.expression.text === 'fdescribe');
+
+function focusedDetail(n) {
+  if (isFocusedAccess(n)) return `\`${n.expression.text}.only\` skips every other test`;
+  if (isOnlyTrue(n)) return '`{ only: true }` skips every other test';
+  if (isFocusedCall(n)) return `\`${n.expression.text}\` skips every other test`;
+  return null;
+}
+
+function checkFocusedTests(ctx) {
+  walk(ctx.sf, n => {
+    const detail = focusedDetail(n);
+    if (detail) ctx.add(n.getStart(ctx.sf), 'focused-test', detail);
   });
+}
 
-  // invisible-whitespace: literal code points only; escapes never match.
+// invisible-whitespace: literal code points only; escapes never match ---------------------------
+
+const isVisible = ch => ch !== undefined && /^[^\s'"`​-‏﻿]$/u.test(ch);
+
+// A leading BOM, or a ZWJ/ZWNJ joining two visible characters (emoji sequences, Persian/Indic text).
+function isLegitimateInvisible(text, m) {
+  if (m.index === 0 && m[0] === '﻿') return true;
+  const joiner = m[0] === '‍' || m[0] === '‌';
+  return joiner && isVisible(text[m.index - 1]) && isVisible(text[m.index + 1]);
+}
+
+function checkInvisibleWhitespace(ctx) {
   INVISIBLE.lastIndex = 0;
-  for (let m = INVISIBLE.exec(text); m; m = INVISIBLE.exec(text)) {
-    if (m.index === 0 && m[0] === '\uFEFF') continue;
-    // ZWJ/ZWNJ joining two visible characters (emoji sequences, Persian/Indic text) is legitimate
-    const visible = ch => ch !== undefined && /^[^\s'"`\u200B-\u200F\uFEFF]$/u.test(ch);
-    if ((m[0] === '\u200D' || m[0] === '\u200C') && visible(text[m.index - 1]) && visible(text[m.index + 1])) continue;
-    add(m.index, 'invisible-whitespace', `literal U+${m[0].codePointAt(0).toString(16).toUpperCase().padStart(4, '0')} (write it as an escape sequence)`);
+  for (let m = INVISIBLE.exec(ctx.text); m; m = INVISIBLE.exec(ctx.text)) {
+    if (isLegitimateInvisible(ctx.text, m)) continue;
+    const hex = m[0].codePointAt(0).toString(16).toUpperCase().padStart(4, '0');
+    ctx.add(m.index, 'invisible-whitespace', `literal U+${hex} (write it as an escape sequence)`);
   }
+}
 
-  // Exemptions: `// independence-ok: reason` on the finding's line or a comment-only line above it.
+// Exemptions: `// independence-ok: reason` on the finding's line or a comment-only line above it ---
+
+function collectWaivers(ctx) {
   const waivers = new Map();
-  const lineStarts = sf.getLineStarts();
-  text.split('\n').forEach((raw, i) => {
+  const lineStarts = ctx.sf.getLineStarts();
+  ctx.text.split('\n').forEach((raw, i) => {
     const m = EXEMPT.exec(raw);
     if (!m) return;
     const pos = lineStarts[i] + m.index;
-    if (stringRanges.some(([a, b]) => pos >= a && pos < b)) return;
+    if (ctx.stringRanges.some(([a, b]) => pos >= a && pos < b)) return;
     waivers.set(i + 1, { reason: m[1].trim(), alone: raw.slice(0, m.index).trim() === '' });
   });
-  for (const f of found.sort((a, b) => a.line - b.line)) {
-    // a trailing waiver covers only its own line; a comment-only waiver also covers the next line
-    const waiver = waivers.get(f.line) ?? (waivers.get(f.line - 1)?.alone ? waivers.get(f.line - 1) : undefined);
-    const reason = waiver?.reason;
+  return waivers;
+}
+
+// a trailing waiver covers only its own line; a comment-only waiver also covers the next line
+function waiverFor(waivers, line) {
+  const above = waivers.get(line - 1);
+  return waivers.get(line) ?? (above?.alone ? above : undefined);
+}
+
+const sameFinding = (a, b) => a.path === b.path && a.line === b.line && a.rule === b.rule && a.detail === b.detail;
+
+function settleFindings(ctx, violations, exemptions) {
+  const waivers = collectWaivers(ctx);
+  for (const f of ctx.found.sort((a, b) => a.line - b.line)) {
+    const reason = waiverFor(waivers, f.line)?.reason;
     if (reason) exemptions.push({ path: f.path, line: f.line, rule: f.rule, reason });
-    else if (violations.some(v => v.path === f.path && v.line === f.line && v.rule === f.rule && v.detail === f.detail)) continue;
+    else if (violations.some(v => sameFinding(v, f))) continue;
     else violations.push(reason === '' ? { ...f, detail: `${f.detail} (independence-ok needs a reason)` } : f);
   }
+}
+
+function analyzeFile(file, text, violations, exemptions) {
+  const ctx = createContext(file, text);
+  checkRegions(ctx);
+  checkMockMethods(ctx);
+  checkFakeTimers(ctx);
+  checkFocusedTests(ctx);
+  checkInvisibleWhitespace(ctx);
+  settleFindings(ctx, violations, exemptions);
 }
 
 function findViolations(files) {
@@ -398,8 +529,14 @@ function listFiles(dir, out = []) {
   return out;
 }
 
+// stands in for `**/` while a lone `*` is translated
+const GLOB_STAR_DIRS = '\u0000';
+
 function globToRegExp(glob) {
-  const body = glob.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*\//g, '\u0000').replace(/\*/g, '[^/]*').replace(/\u0000/g, '(?:.*/)?');
+  const body = glob.replace(/[.+^${}()|[\]\\]/g, String.raw`\$&`)
+    .replaceAll('**/', GLOB_STAR_DIRS)
+    .replaceAll('*', '[^/]*')
+    .replaceAll(GLOB_STAR_DIRS, '(?:.*/)?');
   return new RegExp(`^${body}$`);
 }
 
@@ -414,7 +551,8 @@ function collectTargets(root) {
       all.filter(f => regex.test(f)).forEach(f => targets.add(f));
     }
   }
-  return [...targets].sort();
+  // plain code-unit order, as the default sort gives, so the report order stays the same
+  return [...targets].sort((a, b) => Number(a > b) - Number(a < b));
 }
 
 function main() {
