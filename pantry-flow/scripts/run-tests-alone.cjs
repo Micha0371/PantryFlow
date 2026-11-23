@@ -37,9 +37,19 @@ function topLevelNames(junitXml) {
   return [...new Set(names)];
 }
 
-function reportedCount(junitXml) {
-  const m = /<!-- tests (\d+) -->/.exec(junitXml);
-  return m ? Number(m[1]) : 0;
+// An unmatched --test-name-pattern still reports the file itself as one passing test, so a
+// count cannot tell a miss from a hit. A real match yields a top-level entry with the name.
+function matchedName(junitXml, name) {
+  return topLevelNames(junitXml).includes(name);
+}
+
+// The child's junit <failure> text, else the tail of its output; at most 40 lines.
+function detail(child) {
+  const xml = child.stdout || '';
+  const texts = [...xml.matchAll(/<failure\b[^>]*>([\s\S]*?)<\/failure>/g)].map(m => unescapeXml(m[1]));
+  const raw = texts.length ? texts.join('\n') : `${xml}\n${child.stderr || ''}`;
+  const lines = raw.split(/\r?\n/).filter(l => l.trim() !== '');
+  return lines.slice(-40).map(l => `      ${l}`).join('\n');
 }
 
 function runNode(args) {
@@ -55,7 +65,7 @@ function main() {
     const rel = path.join('tests', file);
     const listing = runNode(['--test-reporter=junit', rel]);
     if (listing.status !== 0) {
-      failures.push(`${file} :: (whole file fails before running tests alone)`);
+      failures.push(`${file} :: (whole file fails before running tests alone)\n${detail(listing)}`);
       continue;
     }
     const names = topLevelNames(listing.stdout);
@@ -63,8 +73,8 @@ function main() {
     for (const name of names) {
       const alone = runNode(['--test-reporter=junit', '--test-name-pattern', `^${escapeName(name)}$`, rel]);
       runs++;
-      if (alone.status !== 0) failures.push(`${file} :: ${name}`);
-      else if (reportedCount(alone.stdout) === 0) failures.push(`${file} :: ${name} (matched no test)`);
+      if (alone.status !== 0) failures.push(`${file} :: ${name}\n${detail(alone)}`);
+      else if (!matchedName(alone.stdout, name)) failures.push(`${file} :: ${name} (matched no test)`);
     }
   }
   console.log(`test:isolated ran ${runs} top-level tests alone across ${files.length} files`);
@@ -76,4 +86,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { escapeName, topLevelNames, reportedCount };
+module.exports = { escapeName, topLevelNames, matchedName };

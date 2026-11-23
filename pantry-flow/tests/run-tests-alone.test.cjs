@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { escapeName, topLevelNames, reportedCount } = require('../scripts/run-tests-alone.cjs');
+const { escapeName, topLevelNames, matchedName } = require('../scripts/run-tests-alone.cjs');
 
 // Captured from `node --test --test-reporter=junit` on a file with a leaf test, a test with a
 // subtest, a describe block and XML-escaped characters. Nested testcases sit inside a testsuite.
@@ -30,9 +30,22 @@ test('topLevelNames de-duplicates repeated names', () => {
   assert.deepEqual(topLevelNames(xml), ['x']);
 });
 
-test('reportedCount reads the tests total from the junit trailer', () => {
-  assert.equal(reportedCount(SAMPLE), 5);
-  assert.equal(reportedCount('<testsuites></testsuites>'), 0);
+test('matchedName is true only when a top-level entry carries the name', () => {
+  assert.equal(matchedName(SAMPLE, 'plain'), true);
+  assert.equal(matchedName(SAMPLE, 'suite'), true);
+  assert.equal(matchedName(SAMPLE, 'sub'), false);
+});
+
+test('matchedName treats the file-only shape of an unmatched pattern as no match', () => {
+  // node 26 reports the file itself as one passing test when --test-name-pattern matches nothing.
+  const miss = [
+    '<testsuites>',
+    '\t<testcase name="s.test.cjs" time="0.1" classname="test" file="s.test.cjs"/>',
+    '\t<!-- tests 1 -->',
+    '\t<!-- pass 1 -->',
+    '</testsuites>',
+  ].join('\n');
+  assert.equal(matchedName(miss, 'x'), false);
 });
 
 test('escapeName makes names with regex characters match only themselves', () => {
