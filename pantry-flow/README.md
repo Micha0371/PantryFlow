@@ -7,8 +7,8 @@ future work. No separate API server is used.
 
 ## Local setup
 
-Use Node.js 22.13+ on the 22.x line (or a supported version listed in
-`package.json`), npm, and a native simulator or development client compatible
+Use Node.js 24.16+ on the 24.x line, 26.1+ or newer (the range in
+`package.json` `engines`; the randomized test scripts need `--test-randomize`), npm, and a native simulator or development client compatible
 with Expo SDK 58. SDK 58 requires a fresh native build. iOS requires 16.4+.
 The upgrade status and validation gates are recorded in
 [PF-SDK-001](../docs/sdk-upgrade/PF-SDK-001.md).

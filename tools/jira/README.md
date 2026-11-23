@@ -188,8 +188,14 @@ secret another person may put in an issue's normal content.
 ## Verification and maintenance
 
 ```text
+python tools/jira/run_tests.py
 python -m unittest discover -s tools/jira -p test_*.py -v
 ```
+
+`run_tests.py` is how CI runs these tests: random order, the seed is printed first,
+and `PF_TEST_SEED=<n> python tools/jira/run_tests.py` reproduces a run. Plain
+`unittest discover` (fixed order) remains available as an alternative. An empty
+discovery fails the run.
 
 Fixture tests cover credential-target restrictions, HTTPS/host boundaries,
 redirect rejection, scoped/classic routing, malformed tenant discovery, response

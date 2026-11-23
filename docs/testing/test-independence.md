@@ -17,7 +17,7 @@ Static check: `npm run test:independence` (`pantry-flow/scripts/check-test-indep
 | Rule | Catches |
 | --- | --- |
 | `module-state` | File-level, describe-level or parent-test bindings mutated inside a test or nested-subtest callback. Hooks such as `beforeEach` are not mutation regions. |
-| `global-patch` | `global`, `globalThis` or `process.env` changed in a test without a restore in `finally`, `t.after` or `afterEach`. |
+| `global-patch` | `global`, `globalThis`, `process.env` or a member of the unshadowed built-ins `console`, `Date`, `Math`, `JSON`, `Intl` assigned or deleted in a test, or the file-level `mock.method(<one of those>, ...)` from `node:test`, without a restore in `finally`, `t.after` or a describe-level/file-level `afterEach` (for `mock.method`: `<result>.mock.restore()`, `mock.restoreAll()` or `mock.reset()`). A file-level `after`/`afterAll` is not a restore (it runs once, after all tests). `t.mock.method` is always allowed. |
 | `fake-timers` | File-level `mock.timers.enable` not directly followed by a `try` whose `finally` resets it; jest `useFakeTimers` without `useRealTimers` in `finally` or `afterEach`. `t.mock.timers` is always allowed. |
 | `invisible-whitespace` | Literal U+00A0, U+00AD, U+2000-U+200F (except ZWJ/ZWNJ between two visible characters), U+2028/2029, U+202F, U+205F-U+2064, U+3000 and non-leading U+FEFF. Escapes and all other Unicode are allowed. |
 | `focused-test` | `.only`. |
@@ -29,7 +29,8 @@ Dynamic checks catch what static rules cannot:
 
 ### Known limits
 
-- `Object.assign` and `Object.defineProperty` on `global` or `process.env` are not detected.
+- `Object.assign` and `Object.defineProperty` on `global`, `process.env` or the built-ins are not detected, nor are writes through an alias (`const c = console; c.error = f`) or to nested members such as `Date.prototype`.
+- Global writes inside hooks (for example a describe-level `beforeEach` that patches a global) are not scanned.
 - Test callbacks passed by variable are not followed.
 - Cross-file helpers are not followed.
 - The jest fake-timer check is file-wide.
@@ -38,7 +39,7 @@ Dynamic checks catch what static rules cannot:
 
 ### Exemptions
 
-Any rule can be waived on one line (or the line above) with:
+Any rule can be waived on the finding's own line, or on a comment-only line directly above it, with (a trailing waiver covers only its own line):
 
 ```js
 // independence-ok: <reason>
@@ -50,9 +51,14 @@ The reason is required. Exemptions and their reasons are printed in the check's 
 
 A failing randomized run prints its seed first. Re-run with the same seed:
 
-- node: `node --test --test-randomize --test-random-seed=<n> tests/*.test.cjs` (with `tsx` for TypeScript tests)
-- jest: `jest --runInBand --randomize --seed=<n>`
+- node: `node --test --test-random-seed=<n> <same files>`
+- TypeScript tests: `npx tsx --test --test-random-seed=<n> <same files>`
+- jest: `npx jest --runInBand --randomize --seed=<n>` (the seed may be negative)
 - Python: `PF_TEST_SEED=<n> python tools/jira/run_tests.py`
+
+A node seed reproduces the order only with the same file list.
+
+Supported node range: `^24.16.0 || ^26.1.0 || >=27.0.0` (`--test-randomize` and `--test-random-seed` need node 26.1, or 24.16 on the 24 line). CI runs node 26.
 
 ## Reviewer checklist
 

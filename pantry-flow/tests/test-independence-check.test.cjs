@@ -129,3 +129,73 @@ test('fake-timers: negative numbers and empty literals may precede the try, side
   for (const ok of ['-1', '{}', '[]']) assert.deepEqual(rules(body(ok)), [], ok);
   for (const bad of ['render()', '{ a: f() }', '[f()]']) assert.deepEqual(rules(body(bad)), ['fake-timers'], bad);
 });
+
+test('independence-ok waivers work the same in LF and CRLF files', () => {
+  const lf = "let n = 0;\ntest('a', () => {\n  // independence-ok: counter only seeds unique ids\n  n++;\n});\n";
+  const crlf = lf.replace(/\n/g, '\r\n');
+  for (const text of [lf, crlf]) {
+    const r = analyze([{ path: 'a.test.cjs', text }]);
+    assert.deepEqual(r.violations, []);
+    assert.deepEqual(r.exemptions.map(e => e.reason), ['counter only seeds unique ids']);
+  }
+  const noReason = "let n = 0;\r\ntest('a', () => {\r\n  n++; // independence-ok:\r\n});\r\n";
+  const r = analyze([{ path: 'a.test.cjs', text: noReason }]);
+  assert.deepEqual(r.violations.map(v => v.rule), ['module-state']);
+  assert.deepEqual(r.exemptions, []);
+});
+
+test('independence-ok: a trailing waiver covers only its own line, a comment-only waiver also the next', () => {
+  const trailing = "let n = 0;\nlet m = 0;\ntest('a', () => {\n  n++; // independence-ok: seeds ids\n  m++;\n});";
+  const t = analyze([{ path: 'a.test.cjs', text: trailing }]);
+  assert.deepEqual(t.violations.map(v => v.line), [5]);
+  assert.deepEqual(t.exemptions.map(e => e.line), [4]);
+  const above = "let n = 0;\ntest('a', () => {\n  // independence-ok: seeds ids\n  n++;\n});";
+  assert.equal(analyze([{ path: 'a.test.cjs', text: above }]).violations.length, 0);
+});
+
+test('global-patch covers built-in globals written without `global.`', () => {
+  for (const code of ['console.error = f;', 'Date.now = f;', 'Math.random = f;', 'JSON.stringify = f;', 'Intl.DateTimeFormat = f;']) {
+    assert.deepEqual(rules(`test('a', () => { ${code} });`), ['global-patch'], code);
+  }
+  assert.deepEqual(rules("test('a', () => { const original = console.error; console.error = f; try { run(); } finally { console.error = original; } });"), []);
+  assert.deepEqual(rules("test('a', t => { const o = Date.now; Date.now = f; t.after(() => { Date.now = o; }); });"), []);
+  // a local named console is not the global
+  assert.deepEqual(rules("test('a', () => { const console = {}; console.error = f; });"), []);
+  assert.deepEqual(rules("function run(Math) { Math.random = f; }\ntest('a', () => { run({}); });"), []);
+});
+
+test('global-patch: file-level mock.method on a global needs a restore, t.mock.method never does', () => {
+  assert.deepEqual(rules("test('a', () => { mock.method(console, 'error', f); });"), ['global-patch']);
+  assert.deepEqual(rules("test('a', () => { mock.method(globalThis, 'fetch', f); });"), ['global-patch']);
+  assert.deepEqual(rules("test('a', () => { mock.method(Date, 'now', f); });"), ['global-patch']);
+  assert.deepEqual(rules("test('a', t => { t.mock.method(console, 'error', f); });"), []);
+  assert.deepEqual(rules("test('a', () => { const m = mock.method(console, 'error', f); try { run(); } finally { m.mock.restore(); } });"), []);
+  assert.deepEqual(rules("test('a', () => { mock.method(console, 'error', f); try { run(); } finally { mock.restoreAll(); } });"), []);
+  assert.deepEqual(rules("afterEach(() => { mock.reset(); });\ntest('a', () => { mock.method(console, 'error', f); });"), []);
+  assert.deepEqual(rules("test('a', () => { const m = mock.method(console, 'error', f); try { run(); } finally { other.mock.restore(); } });"), ['global-patch']);
+  assert.deepEqual(rules("test('a', () => { let m; try { m = mock.method(console, 'error', f); run(); } finally { if (m) m.mock.restore(); } });"), []);
+  // a non-global target is not this rule's business; a local `console` is not the global
+  assert.deepEqual(rules("test('a', () => { mock.method(service, 'call', f); });"), []);
+  assert.deepEqual(rules("test('a', () => { const console = mk(); mock.method(console, 'error', f); });"), []);
+});
+
+test('global-patch: a file-level after hook runs once after all tests and is not a restore', () => {
+  assert.deepEqual(rules("test('a', () => { global.fetch = f; });\ntest('b', () => {});\nafter(() => { global.fetch = orig; });"), ['global-patch']);
+  assert.deepEqual(rules("test('a', () => { global.fetch = f; });\nafterAll(() => { global.fetch = orig; });"), ['global-patch']);
+  assert.deepEqual(rules("test('a', () => { global.fetch = f; });\nafterEach(() => { global.fetch = orig; });"), []);
+});
+
+test('the CLI exits 1 when it finds no test files', () => {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const { spawnSync } = require('node:child_process');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'indep-empty-'));
+  try {
+    const r = spawnSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'check-test-independence.cjs'), dir], { encoding: 'utf8' });
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /No test files found/);
+  } finally {
+    fs.rmSync(dir, { recursive: true });
+  }
+});

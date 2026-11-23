@@ -26,6 +26,9 @@ def main():
     seed = int(raw) if raw else random.SystemRandom().randrange(2**32)
     print(f"Randomized test order seed: {seed}", flush=True)
     tests = list(flatten(unittest.defaultTestLoader.discover(HERE, pattern="test_*.py", top_level_dir=HERE)))
+    if not tests:
+        print(f"No tests discovered under {HERE}; refusing to report success for an empty run.", file=sys.stderr)
+        return 1
     random.Random(seed).shuffle(tests)
     result = unittest.TextTestRunner(verbosity=2).run(unittest.TestSuite(tests))
     return 0 if result.wasSuccessful() else 1

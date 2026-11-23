@@ -1,8 +1,8 @@
 'use strict';
 // Static test-independence check (KAN-121 TEST-04). Parses test sources with the
 // TypeScript compiler API, so strings and comments are never matched as code.
-// A finding can be waived on its line (or the line above) with
-// `// independence-ok: <reason>`; the reason is required and is printed.
+// A finding can be waived with `// independence-ok: <reason>` on its own line or on a comment-only
+// line directly above; the reason is required and is printed.
 const fs = require('node:fs');
 const path = require('node:path');
 const ts = require('typescript');
@@ -11,11 +11,13 @@ const TEST_NAMES = new Set(['test', 'it', 'fit']);
 const SUITE_NAMES = new Set(['describe', 'suite', 'fdescribe']);
 const MODIFIERS = new Set(['only', 'skip', 'todo']);
 const HOOKS = new Set(['after', 'afterEach', 'afterAll']);
+// Built-in objects whose members tests must not overwrite without restoring them.
+const BUILTIN_GLOBALS = new Set(['console', 'Date', 'Math', 'JSON', 'Intl']);
 const MUTATORS = new Set(['push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse', 'fill',
   'copyWithin', 'set', 'delete', 'clear', 'add']);
 const CONTAINERS = new Set(['Array', 'Map', 'Set', 'WeakMap', 'WeakSet']);
 const INVISIBLE = /[\u00A0\u00AD\u2000-\u200F\u2028\u2029\u202F\u205F-\u2064\u3000\uFEFF]/g;
-const EXEMPT = /\/\/\s*independence-ok:(.*)$/;
+const EXEMPT = /\/\/\s*independence-ok:([^\r\n]*)/;
 
 const KINDS = { '.cjs': ts.ScriptKind.JS, '.js': ts.ScriptKind.JS, '.jsx': ts.ScriptKind.JSX,
   '.ts': ts.ScriptKind.TS, '.tsx': ts.ScriptKind.TSX };
@@ -58,10 +60,13 @@ function suiteCallback(call) {
   return ts.isIdentifier(callee) && SUITE_NAMES.has(callee.text) ? lastFunctionArg(call) : null;
 }
 
-function hookCallback(call) {
+function hookName(call) {
   const callee = call.expression;
-  const name = ts.isIdentifier(callee) ? callee.text : ts.isPropertyAccessExpression(callee) ? callee.name.text : '';
-  return HOOKS.has(name) ? lastFunctionArg(call) : null;
+  return ts.isIdentifier(callee) ? callee.text : ts.isPropertyAccessExpression(callee) ? callee.name.text : '';
+}
+
+function hookCallback(call) {
+  return HOOKS.has(hookName(call)) ? lastFunctionArg(call) : null;
 }
 
 function bindingNames(name, out = []) {
@@ -76,22 +81,22 @@ function resolve(id) {
   for (let p = id.parent; p; p = p.parent) {
     let found = null;
     if (isFn(p)) {
-      if (p.parameters.some(par => bindingNames(par.name).includes(name))) return { decl: null };
+      if (p.parameters.some(par => bindingNames(par.name).includes(name))) return { decl: null, shadowed: true };
     } else if (ts.isCatchClause(p)) {
-      if (p.variableDeclaration && bindingNames(p.variableDeclaration.name).includes(name)) return { decl: null };
+      if (p.variableDeclaration && bindingNames(p.variableDeclaration.name).includes(name)) return { decl: null, shadowed: true };
     } else if ((ts.isForStatement(p) || ts.isForOfStatement(p) || ts.isForInStatement(p))
       && p.initializer && ts.isVariableDeclarationList(p.initializer)) {
       found = p.initializer.declarations.find(d => bindingNames(d.name).includes(name));
     } else if (ts.isBlock(p) || ts.isSourceFile(p) || ts.isCaseClause(p) || ts.isDefaultClause(p)) {
       for (const st of p.statements) {
         if (ts.isVariableStatement(st)) found = st.declarationList.declarations.find(d => bindingNames(d.name).includes(name));
-        else if ((ts.isFunctionDeclaration(st) || ts.isClassDeclaration(st)) && st.name?.text === name) return { decl: null };
+        else if ((ts.isFunctionDeclaration(st) || ts.isClassDeclaration(st)) && st.name?.text === name) return { decl: null, shadowed: true };
         else if (ts.isImportDeclaration(st) || ts.isImportEqualsDeclaration(st)) continue;
         if (found) break;
       }
     }
     if (found) {
-      return { decl: found, scope: p, isConst: !!(found.parent.flags & ts.NodeFlags.Const) };
+      return { decl: found, scope: p, shadowed: true, isConst: !!(found.parent.flags & ts.NodeFlags.Const) };
     }
   }
   return { decl: null };
@@ -123,6 +128,7 @@ function globalKey(target) {
     : (ts.isStringLiteralLike(e.argumentExpression) ? e.argumentExpression.text : '*');
   const obj = unwrap(e.expression);
   if (ts.isIdentifier(obj) && (obj.text === 'global' || obj.text === 'globalThis')) return `global.${prop}`;
+  if (ts.isIdentifier(obj) && BUILTIN_GLOBALS.has(obj.text) && !resolve(obj).shadowed) return `${obj.text}.${prop}`;
   if (ts.isPropertyAccessExpression(obj) && ts.isIdentifier(obj.expression) && obj.expression.text === 'process'
     && obj.name.text === 'env') return `process.env.${prop}`;
   return null;
@@ -244,8 +250,9 @@ function analyzeFile(file, text, violations, exemptions) {
     for (const tryStmt of finallyBlocks) {
       if (inside(node, tryStmt.finallyBlock) && scopes.some(s => inside(tryStmt, s))) return true;
     }
+    // a hook outside every test restores per test only as afterEach; file-level `after` runs once, after all tests
     return hookCalls.some(h => inside(node, h.fn)
-      && (testAncestors(h.call).length === 0 || scopes.some(s => inside(h.call, s))));
+      && (testAncestors(h.call).length === 0 ? hookName(h.call) === 'afterEach' : scopes.some(s => inside(h.call, s))));
   };
   const inAnyRestoringContext = node => finallyBlocks.some(t => inside(node, t.finallyBlock))
     || hookCalls.some(h => inside(node, h.fn));
@@ -267,6 +274,33 @@ function analyzeFile(file, text, violations, exemptions) {
       if (restored(w, scopes)) return;
       patchSeen.add(n);
       add(n.getStart(sf), 'global-patch', `test changes \`${w.key}\` and never restores it (use try/finally, t.after or afterEach)`);
+    }));
+  }
+
+  // global-patch via the file-level node:test `mock.method(<global>, ...)`; `t.mock.method` restores itself.
+  const globalTarget = arg => {
+    const e = unwrap(arg);
+    return ts.isIdentifier(e) && (e.text === 'global' || e.text === 'globalThis'
+      || (BUILTIN_GLOBALS.has(e.text) && !resolve(e).shadowed));
+  };
+  const restoreCall = (name, scopes) => calls.some(c => {
+    const d = dotted(c.expression);
+    return (d === 'mock.restoreAll' || d === 'mock.reset' || (name && d === `${name}.mock.restore`))
+      && inRestoringContext(c, scopes);
+  });
+  const mockSeen = new Set();
+  for (const { nodes } of regions) {
+    nodes.forEach(fn => walk(fn, n => {
+      if (!ts.isCallExpression(n) || mockSeen.has(n) || dotted(n.expression) !== 'mock.method'
+        || !n.arguments.length || !globalTarget(n.arguments[0])) return;
+      if (inAnyRestoringContext(n)) return;
+      // the handle the result is kept in: `const m = mock.method(...)` or `m = mock.method(...)`
+      const p = n.parent;
+      const decl = p && ts.isVariableDeclaration(p) && ts.isIdentifier(p.name) ? p.name.text
+        : p && isAssignment(p) && p.right === n && ts.isIdentifier(p.left) ? p.left.text : null;
+      if (restoreCall(decl, [...nodes, ...testAncestors(n)])) return;
+      mockSeen.add(n);
+      add(n.getStart(sf), 'global-patch', 'test patches a global with the file-level `mock.method` and never restores it (use `t.mock.method`, or restore in finally, t.after or afterEach)');
     }));
   }
 
@@ -328,7 +362,7 @@ function analyzeFile(file, text, violations, exemptions) {
     add(m.index, 'invisible-whitespace', `literal U+${m[0].codePointAt(0).toString(16).toUpperCase().padStart(4, '0')} (write it as an escape sequence)`);
   }
 
-  // Exemptions: `// independence-ok: reason` on the finding's line or the line above.
+  // Exemptions: `// independence-ok: reason` on the finding's line or a comment-only line above it.
   const waivers = new Map();
   const lineStarts = sf.getLineStarts();
   text.split('\n').forEach((raw, i) => {
@@ -336,11 +370,12 @@ function analyzeFile(file, text, violations, exemptions) {
     if (!m) return;
     const pos = lineStarts[i] + m.index;
     if (stringRanges.some(([a, b]) => pos >= a && pos < b)) return;
-    waivers.set(i + 1, m[1].trim());
+    waivers.set(i + 1, { reason: m[1].trim(), alone: raw.slice(0, m.index).trim() === '' });
   });
   for (const f of found.sort((a, b) => a.line - b.line)) {
-    const waiverLine = [f.line, f.line - 1].find(l => waivers.has(l));
-    const reason = waiverLine === undefined ? undefined : waivers.get(waiverLine);
+    // a trailing waiver covers only its own line; a comment-only waiver also covers the next line
+    const waiver = waivers.get(f.line) ?? (waivers.get(f.line - 1)?.alone ? waivers.get(f.line - 1) : undefined);
+    const reason = waiver?.reason;
     if (reason) exemptions.push({ path: f.path, line: f.line, rule: f.rule, reason });
     else if (violations.some(v => v.path === f.path && v.line === f.line && v.rule === f.rule && v.detail === f.detail)) continue;
     else violations.push(reason === '' ? { ...f, detail: `${f.detail} (independence-ok needs a reason)` } : f);
@@ -384,8 +419,12 @@ function collectTargets(root) {
 
 function main() {
   const started = Date.now();
-  const root = path.resolve(__dirname, '..');
+  const root = process.argv[2] ? path.resolve(process.argv[2]) : path.resolve(__dirname, '..');
   const targets = collectTargets(root);
+  if (!targets.length) {
+    console.error(`No test files found under ${root}; refusing to report a clean result for an empty scan.`);
+    process.exit(1);
+  }
   const { violations, exemptions } = analyze(targets.map(p => ({ path: p, text: fs.readFileSync(path.join(root, p), 'utf8') })));
   for (const v of violations) console.log(`${v.path}:${v.line} ${v.rule} ${v.detail}`);
   if (exemptions.length) {

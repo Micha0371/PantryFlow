@@ -12,4 +12,4 @@ Record the fast/database CI results and any relevant Android run.
 SDK or native dependency changes require the full harness, a fresh Android
 build, and a physical-device smoke test. Include links and observed results.
 
-Tests are independent ([test-independence](../docs/testing/test-independence.md)): no shared mutable state, no order, environment or timing dependence.
+Tests are independent (`docs/testing/test-independence.md`): no shared mutable state, no order, environment or timing dependence.
