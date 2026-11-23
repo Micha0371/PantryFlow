@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createClient } from '@supabase/supabase-js';
-import { localStack, fixtures, cleanup, emails, password, localUrl } from './local-stack';
+import { localStack, createTestUsers, removeTestUsers, type TestUser, password, localUrl } from './local-stack';
 import { writeItemStatus, PANTRY_MISSING, PANTRY_STATUS_UNKNOWN } from '../../lib/pantry-data';
 
 async function rejection(work: Promise<unknown>): Promise<unknown> {
@@ -12,10 +12,10 @@ async function rejection(work: Promise<unknown>): Promise<unknown> {
 // Each test gets its own stack fixtures and item, and cleans up after itself.
 async function scenario(run: (ctx: Awaited<ReturnType<typeof setup>>) => Promise<void>) {
   const stack = localStack();
-  try { await run(await setup(stack)); } finally { await cleanup(stack.admin); }
+  const users = await createTestUsers(stack, 2, 'pantry-status');
+  try { await run(await setup(stack, users)); } finally { await removeTestUsers(stack.admin, users); }
 }
-async function setup(stack: ReturnType<typeof localStack>) {
-  const [a, b] = await fixtures(stack);
+async function setup(stack: ReturnType<typeof localStack>, [a, b]: TestUser[]) {
   const add = async (name: string, status = 'in_stock') => {
     const result = await a.client.from('pantry_items').insert({
       household_id: a.household, created_by: a.id, name, status,
@@ -51,7 +51,7 @@ test('zero matched rows return null data without an error', () => scenario(async
 test('a concurrent rename survives a status write', () => scenario(async ({ stack, a, add, read }) => {
   const milk = await add('Milk', 'low');
   const rival = stack.client();
-  const login = await rival.auth.signInWithPassword({ email: emails[0], password });
+  const login = await rival.auth.signInWithPassword({ email: a.email, password });
   assert.equal(login.error, null);
   const renamed = await rival.from('pantry_items').update({ name: 'Oat milk' }).eq('id', milk.id);
   assert.equal(renamed.error, null);
@@ -101,7 +101,7 @@ test('a lost response after a committed write reports an unknown outcome and the
   const flaky = createClient(localUrl, stack.key, {
     auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: lossy },
   });
-  const login = await flaky.auth.signInWithPassword({ email: emails[0], password });
+  const login = await flaky.auth.signInWithPassword({ email: a.email, password });
   assert.equal(login.error, null);
   const error = await rejection(writeItemStatus(flaky, a.household, milk.id, 'in_stock', 'low')) as { code?: string };
   assert.equal(error.code, PANTRY_STATUS_UNKNOWN);
