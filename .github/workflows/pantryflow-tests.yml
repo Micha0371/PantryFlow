@@ -40,6 +40,7 @@ jobs:
           cache-dependency-path: pantry-flow/package-lock.json
       - run: npm ci
       - run: npm run test:fast 2>&1 | tee fast-tests.log
+      - run: npm run test:isolated
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:

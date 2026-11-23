@@ -25,7 +25,7 @@ Static check: `npm run test:independence` (`pantry-flow/scripts/check-test-indep
 Dynamic checks catch what static rules cannot:
 
 - Random order on every run: node (`--test-randomize`), jest (`--randomize --showSeed`) and the Jira Python tests (`tools/jira/run_tests.py`). Each prints its seed.
-- Running each top-level test alone in CI.
+- Running each top-level test alone in CI (`npm run test:isolated`).
 
 ### Known limits
 
