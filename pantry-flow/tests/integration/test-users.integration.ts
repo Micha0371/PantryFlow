@@ -38,3 +38,16 @@ test('withTestUsers removes its users when the body throws', async () => {
   const { data, error } = await stack.admin.auth.admin.getUserById(id);
   assert.ok(error || !data.user, 'user should be gone');
 });
+
+test('removeTestUsers tries every id even when one removal fails', async () => {
+  const stack = localStack();
+  const [user] = await createTestUsers(stack, 1, 'removeall');
+  try {
+    // A non-UUID id makes deleteUser fail with a genuine (non-404) error before any request is sent.
+    await assert.rejects(removeTestUsers(stack.admin, [{ id: 'not-a-uuid' }, user]), /UUID/);
+    const login = await stack.client().auth.signInWithPassword({ email: user.email, password });
+    assert.ok(login.error, 'the real user should be removed despite the earlier failure');
+  } finally {
+    await removeTestUsers(stack.admin, [user]);
+  }
+});

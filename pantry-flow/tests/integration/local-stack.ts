@@ -80,26 +80,60 @@ export async function createTestUsers(stack: ReturnType<typeof localStack>, coun
       Object.assign(entry, { client, email, household: membership.data.household_id as string });
     }
   } catch (error) {
-    await removeTestUsers(stack.admin, users);
+    await removeTestUsers(stack.admin, users).catch(cleanupError => attachCleanupError(error, cleanupError));
     throw error;
   }
   return users;
 }
 
-export async function removeTestUsers(admin: SupabaseClient, users: { id: string }[]) {
-  for (const user of users) {
-    const { error } = await admin.auth.admin.deleteUser(user.id);
-    if (error && !/not.?found/i.test(error.message) && error.status !== 404) throw error;
+const isNotFound = (error: { message: string; status?: number }) => /not.?found/iu.test(error.message) || error.status === 404;
+
+// A cleanup failure must never replace the error that made the test fail.
+export function attachCleanupError(error: unknown, cleanupError: unknown) {
+  if (error instanceof Error && error.cause === undefined) error.cause = cleanupError;
+}
+
+// Runs the body, then cleanup. Body error wins; a cleanup error alone is thrown.
+export async function runThenCleanup(body: () => Promise<void>, cleanup: () => Promise<void>) {
+  let failed = false;
+  let bodyError: unknown;
+  try { await body(); } catch (error) { failed = true; bodyError = error; }
+  try { await cleanup(); } catch (cleanupError) {
+    if (!failed) throw cleanupError;
+    attachCleanupError(bodyError, cleanupError);
   }
+  if (failed) throw bodyError;
+}
+
+// Attempts every id; non-not-found failures (returned or thrown) are collected and thrown after the loop.
+export async function removeTestUsers(admin: SupabaseClient, users: { id: string }[]) {
+  const failures: unknown[] = [];
+  for (const user of users) {
+    try {
+      const { error } = await admin.auth.admin.deleteUser(user.id);
+      if (error && !isNotFound(error)) failures.push(error);
+    } catch (error) { failures.push(error); }
+  }
+  if (failures.length === 1) throw failures[0];
+  if (failures.length > 1) throw new AggregateError(failures, `removeTestUsers failed for ${failures.length} users`);
+}
+
+// Deletes exactly one user created by a test: by id, else looked up by exact email. Tolerates "not found".
+export async function removeUserByEmail(admin: SupabaseClient, email: string, id?: string) {
+  let target = id;
+  if (!target) {
+    const { data, error } = await admin.auth.admin.listUsers({ perPage: 1000 });
+    if (error) throw error;
+    target = data.users.find(user => user.email === email)?.id;
+  }
+  if (!target) return;
+  const { error } = await admin.auth.admin.deleteUser(target);
+  if (error && !isNotFound(error)) throw error;
 }
 
 export async function withTestUsers(count: number, label: string,
   run: (users: TestUser[], stack: ReturnType<typeof localStack>) => Promise<void>) {
   const stack = localStack();
   const users = await createTestUsers(stack, count, label);
-  try {
-    await run(users, stack);
-  } finally {
-    await removeTestUsers(stack.admin, users);
-  }
+  await runThenCleanup(() => run(users, stack), () => removeTestUsers(stack.admin, users));
 }

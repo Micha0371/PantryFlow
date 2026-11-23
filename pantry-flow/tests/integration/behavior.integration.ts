@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { localStack, withTestUsers, password, type TestUser } from './local-stack';
+import { localStack, withTestUsers, password, removeUserByEmail, runThenCleanup, type TestUser } from './local-stack';
 import { isMissingPantryItem } from '../../lib/pantry-data';
 
 // Every test below owns its accounts (withTestUsers) and creates exactly the
@@ -20,7 +20,7 @@ const insertMilk = async (a: TestUser) => {
 test('direct API rejects duplicate creates and renames, permits self edits and distinct names', async () => {
   await withTestUsers(2, 'dup', async ([a, b]) => {
     const milk = await insertMilk(a);
-    for (const name of ['Milk', 'milk', ' MILK ', ' Milk ']) {
+    for (const name of ['Milk', 'milk', ' MILK ', '\u00a0Milk\u00a0']) {
       assert.equal((await insert(a, name, { category: 'grains', location: 'counter', status: 'out' })).error?.code, '23505');
     }
     const fridge = ok(await insert(a, 'Milk Fridge'));
@@ -131,7 +131,7 @@ test('real confirmation-required signup, rejection, confirmation, refresh and lo
   const stack = localStack();
   const email = `pf.test.signup.${randomUUID().slice(0, 8)}@example.com`;
   let createdId: string | undefined;
-  try {
+  await runThenCleanup(async () => {
     const client = stack.client();
     const signup = await client.auth.signUp({ email, password, options: { data: { name: 'Signup' } } });
     createdId = signup.data.user?.id;
@@ -148,13 +148,7 @@ test('real confirmation-required signup, rejection, confirmation, refresh and lo
     assert.equal(refresh.error, null); assert.ok(refresh.data.session);
     assert.equal((await restored.auth.signOut({ scope: 'local' })).error, null);
     assert.ok((await stack.client().auth.refreshSession({ refresh_token: refresh.data.session!.refresh_token })).error);
-  } finally {
-    // Delete exactly the account this test created, by id.
-    if (createdId) {
-      const { error } = await stack.admin.auth.admin.deleteUser(createdId);
-      if (error) throw error;
-    }
-  }
+  }, () => removeUserByEmail(stack.admin, email, createdId));
 });
 
 // Shopping persistence: each test builds its own pantry rows and shopping row.
@@ -168,7 +162,7 @@ const insertPantry = async (user: TestUser, name: string, extra = {}) => ok(awai
 // pantryA (low) + a linked shopping 'Milk' in a's household.
 const shoppingMilk = async (a: TestUser) => {
   const pantryA = await insertPantry(a, 'Pantry milk', { status: 'low' });
-  const milk = ok(await insertShopping(a, '  Milk  ', { pantry_item_id: pantryA.id }))!;
+  const milk = ok(await insertShopping(a, '\u00a0 Milk \u00a0', { pantry_item_id: pantryA.id }))!;
   return { pantryA, milk };
 };
 
@@ -176,10 +170,10 @@ test('direct API normalizes edge whitespace, rejects bad names and shares manual
   await withTestUsers(2, 'shopnorm', async ([a, b]) => {
     const { milk } = await shoppingMilk(a);
     assert.equal(milk.name, 'Milk');
-    for (const name of ['milk', ' MILK ', ' milk ']) {
+    for (const name of ['milk', ' MILK ', '\u00a0milk\u00a0']) {
       assert.equal((await insertShopping(a, name)).error?.code, '23505');
     }
-    for (const name of ['', ' \t\n', ' ', 'x'.repeat(121)]) {
+    for (const name of ['', ' \t\n', '\u00a0', 'x'.repeat(121)]) {
       assert.equal((await insertShopping(a, name)).error?.code, '23514');
     }
     assert.equal((await insertShopping(a, null)).error?.code, '23502');
@@ -299,11 +293,17 @@ test('pantry links are household-consistent and pantry deletion preserves shoppi
 test('another member may edit; deleting its author preserves the surviving household row', async () => {
   await withTestUsers(2, 'shopmember', async ([a, b], stack) => {
     // Admin only prepares the shared-membership fixture; assertions use member clients.
+    // b's own household keeps a pantry row and a shopping row, so deleting b covers an owner whose former household has rows.
+    const formerHousehold = b.household;
+    await insertPantry(b, 'Former pantry');
+    ok(await insertShopping(b, 'milk'));
     ok(await stack.admin.from('pantry_household_members').update({ household_id: a.household }).eq('user_id', b.id));
     const shared = ok(await insertShopping({ ...b, household: a.household }, 'Shared author'))!;
     ok(await a.client.from(table).update({ name: 'Shared edited' }).eq('id', shared.id));
     assert.equal((await shoppingRow(a, shared.id)).name, 'Shared edited');
     assert.equal((await stack.admin.auth.admin.deleteUser(b.id)).error, null);
+    assert.deepEqual(ok(await stack.admin.from('pantry_items').select().eq('household_id', formerHousehold)), []);
+    assert.deepEqual(ok(await stack.admin.from(table).select().eq('household_id', formerHousehold)), []);
     assert.equal((await shoppingRow(a, shared.id)).created_by, null);
     ok(await a.client.from(table).update({ is_checked: true }).eq('id', shared.id));
     assert.ok((await shoppingRow(a, shared.id)).completed_at);

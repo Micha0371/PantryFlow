@@ -9,7 +9,7 @@ async function rejection(work: Promise<unknown>): Promise<unknown> {
   assert.fail('expected the operation to be rejected');
 }
 
-// Each test gets its own stack fixtures and item, and cleans up after itself.
+// Each test gets its own unique accounts and item, and cleans up after itself.
 async function scenario(run: (ctx: Awaited<ReturnType<typeof setup>>) => Promise<void>) {
   const stack = localStack();
   const users = await createTestUsers(stack, 2, 'pantry-status');
