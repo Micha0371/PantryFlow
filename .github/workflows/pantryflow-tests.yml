@@ -26,6 +26,7 @@ jobs:
           node-version: '26'
           cache: npm
           cache-dependency-path: pantry-flow/package-lock.json
+      # keeps install scripts: the root postinstall patches Expo on Windows
       - run: npm ci
       - run: node --test tests/native-tooling.test.cjs
   fast:
@@ -38,7 +39,7 @@ jobs:
           node-version: '26'
           cache: npm
           cache-dependency-path: pantry-flow/package-lock.json
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npm run test:fast 2>&1 | tee fast-tests.log
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
@@ -67,7 +68,7 @@ jobs:
           node-version: '26'
           cache: npm
           cache-dependency-path: pantry-flow/package-lock.json
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: |
           set -o pipefail
           npm run db:start 2>&1 | tee db-start.log
@@ -112,7 +113,7 @@ jobs:
         with:
           packages: platform-tools
           log-accepted-android-sdk-licenses: false
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: |
           set -o pipefail
           npm run db:start 2>&1 | tee db-start.log
