@@ -96,3 +96,36 @@ test('global-patch accepts a computed-key restore loop; fake-timers allows non-t
   assert.deepEqual(rules("test('a', () => { mock.timers.enable(); let r; try { r = go(); } finally { mock.timers.reset(); } });"), []);
   assert.deepEqual(rules("test('a', () => { mock.timers.enable(); const h = harness(); try { h.go(); } finally { mock.timers.reset(); } });"), ['fake-timers']);
 });
+
+test('module-state: describe-level bindings are shared by every test in the describe', () => {
+  assert.deepEqual(rules("describe('d', () => {\n  let n = 0;\n  const seen = [];\n  it('a', () => { n++; seen.push(1); });\n});"), ['module-state', 'module-state']);
+  assert.deepEqual(rules("describe('d', () => {\n  const base = { a: 1 };\n  it('a', () => { use(base.a); });\n  it('b', () => { const own = []; own.push(1); });\n});"), []);
+});
+
+test('module-state: a parent test local mutated inside a nested subtest is shared state', () => {
+  assert.deepEqual(rules("test('p', async t => {\n  const a = [];\n  await t.test('x', () => a.push(1));\n  await t.test('y', () => assert.equal(a.length, 1));\n});"), ['module-state']);
+  assert.deepEqual(rules("test('p', async t => {\n  let n = 0;\n  await t.test('x', () => { n += 1; });\n});"), ['module-state']);
+});
+
+test('module-state allows legitimate subtest structure', () => {
+  // subtests that only read parent constants
+  assert.deepEqual(rules("test('p', async t => {\n  const base = [1];\n  await t.test('x', () => use(base[0]));\n  await t.test('y', () => use(base.length));\n});"), []);
+  // the parent mutating its own locals outside any subtest
+  assert.deepEqual(rules("test('p', async t => {\n  const a = [];\n  a.push(1);\n  let n = 0;\n  n++;\n  await t.test('x', () => use(a));\n});"), []);
+  // a binding declared and mutated inside the same subtest
+  assert.deepEqual(rules("test('p', async t => {\n  await t.test('x', () => { const a = []; a.push(1); let n = 0; n++; });\n});"), []);
+});
+
+test('invisible-whitespace allows ZWJ/ZWNJ between visible characters but flags them at an edge', () => {
+  assert.deepEqual(rules("const family = '\u{1F468}\u200D\u{1F469}';"), []);
+  assert.deepEqual(rules("const s = '\u200Dabc';"), ['invisible-whitespace']);
+  assert.deepEqual(rules("const s = 'abc\u200D';"), ['invisible-whitespace']);
+  assert.deepEqual(rules("const s = 'a \u200Db';"), ['invisible-whitespace']);
+  assert.deepEqual(rules("const s = 'a\u200Bb';"), ['invisible-whitespace']);
+});
+
+test('fake-timers: negative numbers and empty literals may precede the try, side-effecting initialisers may not', () => {
+  const body = init => "test('a', () => { mock.timers.enable(); const x = " + init + "; try { go(); } finally { mock.timers.reset(); } });";
+  for (const ok of ['-1', '{}', '[]']) assert.deepEqual(rules(body(ok)), [], ok);
+  for (const bad of ['render()', '{ a: f() }', '[f()]']) assert.deepEqual(rules(body(bad)), ['fake-timers'], bad);
+});

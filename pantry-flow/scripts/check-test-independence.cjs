@@ -70,9 +70,8 @@ function bindingNames(name, out = []) {
   return out;
 }
 
-// Finds the declaration an identifier refers to. `fileLevel` is true for bindings declared at the
-// top of the file or directly in a describe body (shared by every test in it).
-function resolve(id, suites) {
+// Finds the declaration an identifier refers to and the scope node (block, file) that declares it.
+function resolve(id) {
   const name = id.text;
   for (let p = id.parent; p; p = p.parent) {
     let found = null;
@@ -92,9 +91,7 @@ function resolve(id, suites) {
       }
     }
     if (found) {
-      const scope = p;
-      const fileLevel = ts.isSourceFile(scope) || (ts.isBlock(scope) && suites.has(scope.parent));
-      return { decl: found, fileLevel, isConst: !!(found.parent.flags & ts.NodeFlags.Const) };
+      return { decl: found, scope: p, isConst: !!(found.parent.flags & ts.NodeFlags.Const) };
     }
   }
   return { decl: null };
@@ -165,7 +162,6 @@ function analyzeFile(file, text, violations, exemptions) {
 
   // Collect structure once.
   const tests = new Set();
-  const suites = new Set();
   const hookCalls = [];
   const fileFns = new Map();
   const calls = [];
@@ -176,8 +172,6 @@ function analyzeFile(file, text, violations, exemptions) {
       calls.push(node);
       const t = testCallback(node);
       if (t) tests.add(t);
-      const s = suiteCallback(node);
-      if (s) suites.add(s.body);
       const h = hookCallback(node);
       if (h) hookCalls.push({ call: node, fn: h });
     }
@@ -211,7 +205,10 @@ function analyzeFile(file, text, violations, exemptions) {
 
   // module-state
   const moduleSeen = new Set();
-  const checkModuleState = node => {
+  // A binding is shared when some test callback that contains the mutation sits inside the binding's
+  // scope: file level and describe bodies are shared by every test, a parent test's locals by its subtests.
+  // `root` stands in for the test that reached a followed same-file function.
+  const checkModuleState = (node, root) => {
     let target = null;
     let method = null;
     if (isAssignment(node)) target = node.left;
@@ -226,8 +223,10 @@ function analyzeFile(file, text, violations, exemptions) {
     if (!id) return;
     const reassign = direct && !method;
     if (direct && ts.isDeleteExpression(node)) return;
-    const info = resolve(id, suites);
-    if (!info.decl || !info.fileLevel) return;
+    const info = resolve(id);
+    if (!info.decl) return;
+    const contexts = [...testAncestors(node), root];
+    if (!contexts.some(t => t !== info.scope && inside(t, info.scope))) return;
     const key = `${node.pos}:${id.text}`;
     if (moduleSeen.has(key)) return;
     if (reassign) {
@@ -259,8 +258,8 @@ function analyzeFile(file, text, violations, exemptions) {
     && inRestoringContext(r.node, scopes));
   const patchSeen = new Set();
 
-  for (const { nodes } of regions) {
-    nodes.forEach(fn => walk(fn, checkModuleState));
+  for (const { root, nodes } of regions) {
+    nodes.forEach(fn => walk(fn, n => checkModuleState(n, root)));
     nodes.forEach(fn => walk(fn, n => {
       const w = globalWrite(n);
       if (!w || patchSeen.has(n) || inAnyRestoringContext(n)) return;
@@ -283,8 +282,13 @@ function analyzeFile(file, text, violations, exemptions) {
       if (ts.isExpressionStatement(stmt) && block && block.statements) {
         // only declarations that cannot throw (`let renderer;`, `let n = 0;`) may sit between enable and try
         let at = block.statements.indexOf(stmt) + 1;
+        const literal = e => ts.isLiteralExpression(e) || e.kind === ts.SyntaxKind.NullKeyword
+          || e.kind === ts.SyntaxKind.TrueKeyword || e.kind === ts.SyntaxKind.FalseKeyword
+          || (ts.isPrefixUnaryExpression(e) && e.operator === ts.SyntaxKind.MinusToken && ts.isNumericLiteral(e.operand))
+          || (ts.isArrayLiteralExpression(e) && e.elements.length === 0)
+          || (ts.isObjectLiteralExpression(e) && e.properties.length === 0);
         const safe = st => ts.isVariableStatement(st) && st.declarationList.declarations.every(d =>
-          !d.initializer || ts.isLiteralExpression(d.initializer) || d.initializer.kind === ts.SyntaxKind.NullKeyword);
+          !d.initializer || literal(d.initializer));
         while (block.statements[at] && safe(block.statements[at])) at++;
         const next = block.statements[at];
         ok = !!next && ts.isTryStatement(next) && !!next.finallyBlock && resets(next.finallyBlock);
@@ -318,6 +322,9 @@ function analyzeFile(file, text, violations, exemptions) {
   INVISIBLE.lastIndex = 0;
   for (let m = INVISIBLE.exec(text); m; m = INVISIBLE.exec(text)) {
     if (m.index === 0 && m[0] === '\uFEFF') continue;
+    // ZWJ/ZWNJ joining two visible characters (emoji sequences, Persian/Indic text) is legitimate
+    const visible = ch => ch !== undefined && /^[^\s'"`\u200B-\u200F\uFEFF]$/u.test(ch);
+    if ((m[0] === '\u200D' || m[0] === '\u200C') && visible(text[m.index - 1]) && visible(text[m.index + 1])) continue;
     add(m.index, 'invisible-whitespace', `literal U+${m[0].codePointAt(0).toString(16).toUpperCase().padStart(4, '0')} (write it as an escape sequence)`);
   }
 
