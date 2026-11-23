@@ -117,7 +117,7 @@ test('blank/overlong names and unsupported values fail; all stock states persist
     const milk = await insertMilk(a);
     for (const name of ['', ' ', '\t\n', 'a'.repeat(121)]) assert.equal((await insert(a, name)).error?.code, '23514');
     for (const column of ['category', 'location', 'status']) assert.equal((await insert(a, 'Invalid', { [column]: 'invalid' })).error?.code, '23514');
-    for (const status of ['in_stock', 'low', 'out']) {
+    for (const status of ['low', 'in_stock', 'out']) { // fresh row is in_stock: every step is a real change
       const saved = ok(await a.client.from('pantry_items').update({ status }).eq('id', milk.id).select().single());
       assert.equal(saved.status, status);
       assert.equal(ok(await a.client.from('pantry_items').select('status').eq('id', milk.id).single())!.status, status);
