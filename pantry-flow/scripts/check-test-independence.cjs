@@ -452,12 +452,12 @@ function checkFocusedTests(ctx) {
 
 // invisible-whitespace: literal code points only; escapes never match ---------------------------
 
-const isVisible = ch => ch !== undefined && /^[^\s'"`​-‏﻿]$/u.test(ch);
+const isVisible = ch => ch !== undefined && /^[^\s'"`\u200B-\u200F\uFEFF]$/u.test(ch);
 
 // A leading BOM, or a ZWJ/ZWNJ joining two visible characters (emoji sequences, Persian/Indic text).
 function isLegitimateInvisible(text, m) {
-  if (m.index === 0 && m[0] === '﻿') return true;
-  const joiner = m[0] === '‍' || m[0] === '‌';
+  if (m.index === 0 && m[0] === '\uFEFF') return true;
+  const joiner = m[0] === '\u200D' || m[0] === '\u200C';
   return joiner && isVisible(text[m.index - 1]) && isVisible(text[m.index + 1]);
 }
 
