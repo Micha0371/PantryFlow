@@ -30,7 +30,7 @@ Do not disable hosted email confirmation to run the legacy account-creation flag
 
 ## Fast checks
 
-From `pantry-flow`, with Node 22.13+:
+From `pantry-flow`, with Node 24.16+, 26.1+ or newer (needed for `--test-randomize`):
 
 ```sh
 npm ci

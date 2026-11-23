@@ -8,15 +8,17 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/*.test.cjs",
-    "test:legacy": "node --test tests/*.test.cjs",
-    "test:components": "jest --runInBand",
-    "test:safety": "tsx --test tests/integration/local-stack.test.ts",
-    "test:fast": "npm run typecheck && npm run test:legacy && npm run test:components && npm run test:safety",
+    "test": "node --test --test-randomize tests/*.test.cjs",
+    "test:legacy": "node --test --test-randomize tests/*.test.cjs",
+    "test:components": "jest --runInBand --randomize --showSeed",
+    "test:safety": "tsx --test --test-randomize tests/integration/local-stack.test.ts",
+    "test:independence": "node scripts/check-test-independence.cjs",
+    "test:isolated": "node scripts/run-tests-alone.cjs",
+    "test:fast": "npm run test:independence && npm run typecheck && npm run test:legacy && npm run test:components && npm run test:safety",
     "db:start": "supabase start -x realtime,storage-api,imgproxy,edge-runtime,studio,logflare,vector,supavisor",
     "db:reset": "supabase db reset --local",
     "test:db": "supabase test db",
-    "test:integration": "tsx --test --test-concurrency=1 tests/integration/behavior.integration.ts tests/integration/email-confirmation.integration.ts tests/integration/shopping-data.integration.ts tests/integration/pantry-shopping.integration.ts tests/integration/pantry-status.integration.ts tests/integration/profile-language.integration.ts tests/integration/test-users.integration.ts",
+    "test:integration": "tsx --test --test-randomize --test-concurrency=1 tests/integration/behavior.integration.ts tests/integration/email-confirmation.integration.ts tests/integration/shopping-data.integration.ts tests/integration/pantry-shopping.integration.ts tests/integration/pantry-status.integration.ts tests/integration/profile-language.integration.ts tests/integration/test-users.integration.ts",
     "test:local": "npm run db:reset && npm run test:db && npm run test:integration",
     "e2e:prepare": "tsx scripts/e2e-fixtures.ts prepare",
     "e2e:verify": "tsx scripts/e2e-fixtures.ts verify",
@@ -65,6 +67,6 @@
   },
   "private": true,
   "engines": {
-    "node": "^22.13.0 || ^24.3.0 || ^26.0.0 || >=27.0.0"
+    "node": "^24.16.0 || ^26.1.0 || >=27.0.0"
   }
 }
