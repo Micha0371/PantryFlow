@@ -5,7 +5,7 @@
 **Goal:** every test is independent of order, of other tests and of its environment, and guards keep it that way.
 
 **Architecture:** five parts, one PR each, matching design packages P1–P5:
-- Parts 1, 2, 3 and 5 are independent of each other. Part 4 (guards) starts only after Parts 1–3 are merged, because its nested-subtest check fails until they land.
+- Parts 1, 2, 3 and 5 are independent of each other. Part 4 (guards) starts only after Parts 1–3 are merged, because its independence check runs against the converted suite.
 - Part 3 starts after KAN-61 (PR #60) is merged, because it converts `profile-language.integration.ts`.
 - Each part branches from current `main` and runs as its own SDD pass: its own ledger, its own final review and its own PR.
 
@@ -35,12 +35,12 @@
 
 1. **A split that silently drops a check.** Each converted file is compared before and after by the number of `assert` calls; Tasks 4, 7, 8 and 9 record both counts in the report.
 2. **Unique test accounts left behind after a failure.** The helper deletes them in `finally`. Task 5 has a test that removal deletes exactly the created accounts and keeps others.
-3. **The nested-subtest check misfiring:**
-   - a false positive on `/regex/.test('x')` or `pattern.test('x')`;
-   - a false negative on a context named other than `t`;
+3. **The independence check misfiring** (Part 4 as revised on 2026-11-23):
+   - a false positive on legitimate structure: nested subtests that share no mutable state, code inside strings, escaped Unicode fixtures, file-level setup;
+   - a false negative on a real violation from the project's history;
    - CRLF files.
 
-   All three are tests in Task 10.
+   Task 10 covers all three: unit fixtures for true and false positives, and a corpus of real historical versions.
 4. **A printed seed that doesn't reproduce the order.** Task 11 checks that running twice with the same seed gives the same order.
 5. **A test fixed for order but still reading the shell environment.** Task 2's tests run with conflicting `EXPO_PUBLIC_*` values set in the shell.
 
@@ -238,35 +238,90 @@ Part 3 gate: `npm run test:local` (database reset, SQL tests, integration tests)
 
 ---
 
-## Part 4 (P4): guards
+## Part 4 (P4): guards (revised 2026-11-23)
 
-Branch `pantryflow/kan-121-guards` from `main`, after Parts 1–3 are merged.
+Branch `pantryflow/kan-121-guards` from `main` (`b9d0a69`; Parts 1–3 merged, baseline green).
 
-### Task 10: Independence check script
+**Owner correction (2026-11-23), binding for this part:**
+- No blanket ban on nested node subtests. Target unintended shared state and order dependence, not legitimate test structure.
+- Reproducible random seeds where supported.
+- Address fake-timer leakage and accidental invisible whitespace, without prohibiting legitimate Unicode test fixtures.
+- Demonstrate that each permanent guard detects actual violations without producing unacceptable false positives.
+
+This replaces the earlier Tasks 10–12. The earlier "nested-subtest" rule is withdrawn.
+
+**Guard design:**
+- **Static checks** read the syntax tree through the TypeScript compiler API (`typescript`, already a dev dependency), not text patterns. Code inside strings or comments is never matched.
+- **Exemptions:** any rule can be waived on one line with `// independence-ok: <reason>`. The reason is required and is printed in the check's summary.
+- **Dynamic checks** catch what static rules can't: random order on every run, and each top-level test run alone in CI.
+
+### Task 10: Static independence check, proven on real history
 
 **Files:**
 - Create: `pantry-flow/scripts/check-test-independence.cjs`
 - Create: `pantry-flow/tests/test-independence-check.test.cjs`
 - Modify: `pantry-flow/package.json`: add `"test:independence": "node scripts/check-test-independence.cjs"`, and make `test:fast` start with `npm run test:independence &&`.
 
-**Interfaces:** Produces:
-- `findViolations(files: { path: string; text: string }[]): { path: string; line: number; rule: 'nested-subtest' | 'focused-test' }[]`, exported.
-- Running the script directly scans `pantry-flow/tests/**/*.{cjs,js,ts,tsx}` and any jest test directories from the jest config. It prints `path:line rule` per violation and exits 1 if there are any, 0 otherwise.
+**Interfaces:** Produces `findViolations(files: { path: string; text: string }[]): { path: string; line: number; rule: Rule; detail: string }[]`, exported. Run directly, the script:
+- scans `pantry-flow/tests/**/*.{cjs,js,ts,tsx}` and the jest test paths from `jest.config.cjs`;
+- skips helper modules that define no tests (for example `helpers.cjs`, `local-stack.ts`) for the `module-state` rule only;
+- prints `path:line rule detail` per finding and the list of exemptions with their reasons;
+- exits 1 on any finding.
 
-Rules:
-- `nested-subtest`: a call `<identifier>.test(` whose first argument is a string or template literal, where the identifier is not `node:test`'s import. Regex literals (`/x/.test(`) and calls whose first argument is not a literal are ignored.
-- `focused-test`: `test.only(`, `it.only(`, `describe.only(`, or `{ only: true }`.
-- A line ending in `// independence-ok: <reason>` (with a non-empty reason) is exempt.
+Rules (`Rule`):
+- **`module-state`:** a file-level `let`/`var` binding is reassigned, or a file-level array, `Map`, `Set` or object literal is mutated (`push`, `splice`, `set`, `delete`, `clear`, `length =`, property assignment), inside a `test`/`it` callback or in a function called from one. Read-only file-level constants, `require`s and pure helpers are allowed.
+- **`global-patch`:** inside a test callback, an assignment to `global.X`, `globalThis.X` or `process.env.X`, or a `delete` of one, with no restore of the same property in that test's `finally`, `t.after` or `afterEach`, or a file-level `afterEach`.
+  - File-level normalisation outside any test is allowed (for example `delete process.env.EXPO_PUBLIC_DEFAULT_LOCALE` at load).
+- **`fake-timers`:**
+  - node: `mock.timers.enable(…)` on the file-level `mock` from `node:test` must be directly followed by a `try` whose `finally` calls `mock.timers.reset()`. `t.mock.timers` is always allowed, because node resets it per test.
+  - jest: `jest.useFakeTimers()` requires `jest.useRealTimers()` in a `finally` or `afterEach` of the same file.
+- **`invisible-whitespace`:** a literal (not escaped) U+00A0, U+00AD, U+2000–U+200F, U+2028/2029, U+202F, U+205F–U+2064, U+3000, or a U+FEFF that isn't a leading BOM, anywhere in a test source. Escapes such as ` ` and every other Unicode character (umlauts, emoji, CJK) are allowed.
+- **`focused-test`:** `test.only`, `it.only`, `describe.only` or `{ only: true }`.
 
-- [ ] **Step 1: Write the failing tests:**
-  - `findViolations([{ path: 'a.cjs', text: "test('x', async t => {\n  await t.test('y', () => {});\n});" }])` deep-equals `[{ path: 'a.cjs', line: 2, rule: 'nested-subtest' }]`;
-  - the same with the context named `ctx`, and with CRLF line endings, gives line 2;
-  - `/abc/.test('abc')`, `pattern.test(value)` and `test('x', () => {})` give `[]`;
-  - `test.only('x', …)` gives `focused-test`;
-  - an exempt line with a reason gives `[]`; an exempt line without a reason is still flagged.
-- [ ] **Step 2: Run them.** `node --test tests/test-independence-check.test.cjs`. Expected: FAIL (module missing).
-- [ ] **Step 3: Implement.**
-- [ ] **Step 4: Run them, then the script on the repo.** Expected: tests PASS, and `npm run test:independence` exits 0 (Parts 1–3 removed every nested subtest). Any remaining hit is fixed or exempted with a reason that the final review sees.
+Nested subtests (`t.test`) are not a rule. They are flagged only through `module-state` or `global-patch` when they actually share mutable state.
+
+- [ ] **Step 1: Write the failing unit tests.** True and false positives per rule, each with fixture text in the test:
+  - `module-state`:
+    - flags `const announced = []; test('a', () => { announced.push(1); })`;
+    - flags `let n = 0; test('a', () => { n++; })`;
+    - does not flag `const theme = load(…); test('a', () => { use(theme); })`;
+    - does not flag a per-test `const arr = []` inside the callback;
+    - does not flag nested `t.test` subtests that share only read-only constants.
+  - `global-patch`:
+    - flags `test('a', () => { global.fetch = f; })`;
+    - does not flag the same with `finally { global.fetch = original; }`;
+    - does not flag with a file-level `afterEach` that restores the property;
+    - does not flag `fs.writeFileSync(p, 'global.fetch = 1')`, because it's a string.
+  - `fake-timers`:
+    - flags `mock.timers.enable(); render(); try { … } finally { mock.timers.reset(); }`, because render runs outside the try;
+    - does not flag `mock.timers.enable(); try { render(); … } finally { mock.timers.reset(); }`;
+    - does not flag `t.mock.timers.enable()`.
+  - `invisible-whitespace`:
+    - flags a literal U+00A0 inside a string;
+    - does not flag `' '`, `'Müsli 🥛'` or a leading BOM.
+  - `focused-test`: flags `test.only(`.
+  - Exemption:
+    - an exempt line with a reason is not flagged and appears in the exemption list;
+    - an exempt line without a reason is flagged;
+    - CRLF fixtures report the same line numbers as LF fixtures.
+
+  Run `node --test tests/test-independence-check.test.cjs`. Expected: FAIL (module missing).
+- [ ] **Step 2: Implement** `findViolations` and the script. Run the unit tests. Expected: PASS.
+- [ ] **Step 3: Detection on real history (true positives).** Run `findViolations` on these historical file versions, read with `git show <sha>:<path>`, and record the result in the report:
+
+  | Version | Expected rule |
+  |---|---|
+  | `0de9678:pantry-flow/tests/input.test.cjs` | `module-state` (file-level `announced`) |
+  | `0de9678:pantry-flow/tests/form-footer.test.cjs` | `global-patch` (`requestAnimationFrame` not restored) |
+  | `30651e2:pantry-flow/tests/shopping-edit.test.cjs` | `fake-timers` (render outside the try) |
+  | `9200940:pantry-flow/tests/integration/behavior.integration.ts` | `invisible-whitespace` |
+  | `17c2419:pantry-flow/tests/integration/email-confirmation.integration.ts` | `global-patch` (`globalThis.fetch`) |
+
+  Each must be flagged with the expected rule. If one isn't, fix the rule (not the expectation) or record why the history doesn't contain that violation.
+- [ ] **Step 4: False-positive check on the current suite.** Run `npm run test:independence` on `main`'s tests.
+  - Every finding is classified in the report as a real violation (fix it in this task, test-only change) or a false positive (fix the rule; exempt only if the rule can't express it, with the reason).
+  - Target: zero findings, and no more than 3 exemptions across the suite, each with a reason the final review accepts.
+  - Report the number of files scanned and the runtime.
 - [ ] **Step 5: Commit.**
 
 ### Task 11: Random order everywhere, with a reproducible seed
@@ -275,45 +330,57 @@ Rules:
 - Modify: `pantry-flow/package.json`:
   - `test` and `test:legacy` become `node --test --test-randomize tests/*.test.cjs`;
   - `test:components` becomes `jest --runInBand --randomize --showSeed`;
-  - `test:safety` and `test:integration` add `--test-randomize` after `--test`.
+  - `test:safety` and `test:integration` add `--test-randomize`.
 - Create: `tools/jira/run_tests.py`:
   - discovers `test_*.py` in `tools/jira`, flattens the suite and shuffles it with `random.Random(seed)`;
-  - the seed comes from env `PF_TEST_SEED` or is random;
-  - prints `Randomized test order seed: <seed>` first; exits non-zero on failure.
+  - takes the seed from env `PF_TEST_SEED`, or picks one at random;
+  - prints `Randomized test order seed: <seed>` first; exits non-zero on failure;
+  - puts `tools/jira` on `sys.path`, so `import jira` works from any working directory.
 - Modify: `.github/workflows/jira-tooling.yml`: the test step runs `python tools/jira/run_tests.py`.
 - Create: `docs/testing/test-independence.md`:
   - the rule and the definition of a test, from the design;
-  - the guards;
+  - each guard, what it catches, and its known limits;
+  - the exemption syntax;
   - how to reproduce a seed: node `--test-random-seed=<n>`, jest `--seed=<n>`, Python `PF_TEST_SEED=<n>`;
-  - the reviewer checklist line: "Each test sets up its own state; it passes alone, in any order, and with the shell environment changed."
-- Modify: `.github/pull_request_template.md`: under Validation add "Tests are independent ([test-independence](../docs/testing/test-independence.md)): no nested subtests, no shared state, no environment or timing dependence."
+  - the reviewer checklist line: "Each test sets up its own state; it passes alone, in any order, and with the shell environment changed; no fake timers, globals or env changes outlive the test."
+- Modify: `.github/pull_request_template.md`: under Validation add "Tests are independent ([test-independence](../docs/testing/test-independence.md)): no shared mutable state, no order, environment or timing dependence."
 
-- [ ] **Step 1: Check tsx forwards the flag.** Run `npx tsx --test --test-randomize tests/integration/local-stack.test.ts`. Expected: output contains `Randomized test order seed`. If not, use `node --import tsx --test --test-randomize` in the scripts and ledger the ruling.
-- [ ] **Step 2: Apply the script changes.**
-- [ ] **Step 3: Check seeds reproduce.** Run `node --test --test-random-seed=7 --test-reporter=spec tests/language.test.cjs` twice and diff the test-name order. Expected: identical. The same check for `run_tests.py` with `PF_TEST_SEED=7` (diff the `-v` order).
-- [ ] **Step 4: Gate.** `npm run test:fast` and `python tools/jira/run_tests.py`. Expected: PASS, with seeds printed. With Docker: `npm run test:local`. Expected: PASS, seed printed.
-  - Environment check (design acceptance): `EXPO_PUBLIC_DEFAULT_LOCALE=de EXPO_PUBLIC_SUPABASE_URL=https://example.supabase.co EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_secret_x npm run test:legacy`. Expected: PASS.
+- [ ] **Step 1: Check tsx forwards the flag.** Run `npx tsx --test --test-randomize tests/integration/local-stack.test.ts`. Expected: output contains `Randomized test order seed`. If not, use `node --import tsx --test --test-randomize` and ledger the ruling.
+- [ ] **Step 2: Apply the script and workflow changes.**
+- [ ] **Step 3: Check seeds reproduce.**
+  - Run `node --test --test-random-seed=7 --test-reporter=spec tests/language.test.cjs` twice and diff the test order. Expected: identical.
+  - Same for jest (`--seed=7`, compare the order with `--verbose`) and for `run_tests.py` with `PF_TEST_SEED=7`.
+- [ ] **Step 4: Gate.**
+  - `npm run test:fast` and `python tools/jira/run_tests.py`. Expected: PASS, with seeds printed.
+  - `npm run test:local`. Expected: PASS, seed printed.
+  - `EXPO_PUBLIC_DEFAULT_LOCALE=de EXPO_PUBLIC_SUPABASE_URL=https://example.supabase.co EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_secret_x npm run test:legacy`. Expected: PASS.
 - [ ] **Step 5: Commit.**
 
-### Task 12: Every node test alone, in CI
+### Task 12: Every top-level node test alone, in CI
 
 **Files:**
 - Create: `pantry-flow/scripts/run-tests-alone.cjs`:
   - for each `tests/*.test.cjs`, run it once with `--test-reporter=junit` to collect top-level test names;
   - rerun each name alone with `--test-name-pattern "^<regex-escaped name>$"`;
   - print failures as `file :: name`; exit 1 if any fail.
-- Create: `pantry-flow/tests/run-tests-alone.test.cjs`: unit tests for the exported `escapeName(name: string): string` (names with `(`, `[`, `.`, `+`, `?`, `$` and quotes match only themselves) and `topLevelNames(junitXml: string): string[]` (nested testcases excluded).
+- Create: `pantry-flow/tests/run-tests-alone.test.cjs`: unit tests for the exported `escapeName(name)` (names with `(`, `[`, `.`, `+`, `?`, `$` and quotes match only themselves) and `topLevelNames(junitXml)` (nested testcases excluded).
 - Modify: `pantry-flow/package.json`: `"test:isolated": "node scripts/run-tests-alone.cjs"`.
 - Modify: `.github/workflows/pantryflow-tests.yml`: the fast job runs `npm run test:isolated` after `test:fast`.
 
 - [ ] **Step 1: Write the failing unit tests, run them.** Expected: FAIL (module missing).
-- [ ] **Step 2: Implement; the unit tests pass.**
-- [ ] **Step 3: Run it.** Run `npm run test:isolated` locally once (it takes minutes; record the duration). Expected: exit 0.
-- [ ] **Step 4: Commit.**
+- [ ] **Step 2: Implement.** The unit tests pass.
+- [ ] **Step 3: Run it.** Run `npm run test:isolated` once locally (record the duration). Expected: exit 0.
+- [ ] **Step 4: Demonstrate detection.** Temporarily add a scratch test file with two tests where the second depends on the first (shared module variable). `test:isolated` must fail on the second. The independence check's `module-state` rule must flag it too. Remove the scratch file.
+- [ ] **Step 5: Commit.**
 
-The CI workflow change runs only when the owner runs CI. Report it as not run locally.
+The CI workflow change runs only when the owner runs CI; report it as not run locally.
 
----
+**Part 4 acceptance:**
+- Every rule has true-positive and true-negative unit tests.
+- The real-history corpus is flagged as expected.
+- The current suite has zero findings and at most 3 justified exemptions.
+- Seeds reproduce for node, jest and Python.
+- `test:isolated` passes locally and catches the scratch dependency.
 
 ## Part 5 (P5): e2e flows with their own seed (D2)
 
