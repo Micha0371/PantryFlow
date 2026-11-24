@@ -1,9 +1,10 @@
 # Pantry Flow
 
 Mobile household inventory with Expo, React Native, TypeScript, and Supabase.
-The implemented slice includes email/password auth, pantry CRUD, and stock
-statuses. Shopping lists, invitations, German content, and premium gating remain
-future work. No separate API server is used.
+The app includes email/password auth, pantry CRUD with search and direct stock
+status changes, a shopping list, and English and German with language selection.
+Password recovery, in-app account deletion and household invitations are not
+implemented yet, and premium is deferred. No separate API server is used.
 
 ## Local setup
 
@@ -33,13 +34,20 @@ is ignored by Git. Restart Metro after changing environment variables.
 
 ## Database setup and upgrades
 
-In the intended project's Supabase SQL Editor, apply migrations in order:
+For a new project, apply the migrations in order in its Supabase SQL Editor:
 
 1. `supabase/migrations/00001_first_slice.sql` — new projects only.
 2. `supabase/migrations/00002_review_hardening.sql` — new and existing projects.
 3. `supabase/migrations/00003_strict_duplicate_prevention.sql` — Slice 1.1.
+4. `supabase/migrations/00004_shopping_items.sql` — Slice 2 shopping list.
 
-For an existing installation, apply only missing migrations. Do not rerun the
+The hosted project already has 00001–00004, recorded in its migration history
+(last [verified on 2026-11-21](../docs/testing/2026-11-21-sec02-hosted-drift-check.md)).
+Do not apply migrations to it through the SQL Editor: every later hosted
+migration needs its own drift check, review and owner authorization, as described in
+[the hosted migration record](../docs/testing/hosted-shopping-migration.md).
+
+For any other existing installation, apply only missing migrations. Do not rerun the
 first migration over existing tables. Local tests do not apply migrations to the
 hosted project; a publishable key cannot run schema migrations.
 
@@ -163,8 +171,8 @@ actual grants, auth settings, migration state, and existing data.
 The app runs on Expo SDK 58 (PF-SDK-001, merged in PR #2 and tagged
 `pantryflow/sdk58-validated`), validated on Android emulator and a physical
 Android device; iOS compilation is not yet verified. The locked tree retains
-moderate/low tooling advisories with no high/critical findings; see the advisory
-review in [PF-SDK-001](../docs/sdk-upgrade/PF-SDK-001.md). Do not use
+tooling advisories, some of them rated high; the current assessment is the
+[advisory register](../docs/security/tooling-advisories.md). Do not use
 `npm audit fix --force` to clear them.
 
 ## Behavioral regression harness

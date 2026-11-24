@@ -1,6 +1,6 @@
 # Tooling advisory register
 
-Owner: repository maintainer **Micha0371**. Last assessed: **2026-11-18** (SEC-01, KAN-102). Next review: **2026-12-01**, then the first day of every month. Also reassess on each trigger listed below. The owner records the date, audit counts and decision in this register.
+Owner: repository maintainer **Micha0371**. Last assessed: **2026-11-18** (SEC-01, KAN-102). Next review: **2026-12-01**, then the first day of every month. **Reassessment due:** the lockfile changed on 2026-11-22 and 2026-11-23 (KAN-61, KAN-121), after this assessment. Also reassess on each trigger listed below. The owner records the date, audit counts and decision in this register.
 
 ## Current audit
 
