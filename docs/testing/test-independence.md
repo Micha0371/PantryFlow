@@ -26,6 +26,7 @@ Dynamic checks catch what static rules cannot:
 
 - Random order on every run: node (`--test-randomize`), jest (`--randomize --showSeed`) and the Jira Python tests (`tools/jira/run_tests.py`). Each prints its seed.
 - Running each top-level test alone in CI (`npm run test:isolated`).
+- A component run that matches no test fails, also in a checkout below a dot folder such as `.verification` (`pantry-flow/tests/jest-config.test.cjs`). The `jest-expo` preset would let an empty run pass.
 
 ### Known limits
 
