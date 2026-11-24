@@ -12,14 +12,14 @@ Nested subtests (`t.test`) are fine. They are a problem only when they share mut
 
 ## Guards
 
-Static check: `npm run test:independence` (`pantry-flow/scripts/check-test-independence.cjs`, the first step of `test:fast`). It parses test sources with the TypeScript compiler API, so strings and comments are never matched as code.
+Static check: `npm run test:independence` (`pantry-flow/scripts/check-test-independence.cjs`, the first step of `test:fast`). It parses test sources with the TypeScript compiler API, so strings and comments are never matched as code. It scans the test files with every rule below and, with the `invisible-whitespace` rule only, `pantry-flow/scripts/**/*.{cjs,js,mjs,ts,cts,mts,tsx}`. Scripts are not tests, so the other rules do not apply to them; the same `// independence-ok: <reason>` exemption works there. The scripts scan exists because PR #64 put literal invisible characters (U+200B, U+200F, U+FEFF, U+200D, U+200C) into `check-test-independence.cjs` itself and only a reviewer caught it. The summary line's file count includes the scripts.
 
 | Rule | Catches |
 | --- | --- |
 | `module-state` | File-level, describe-level or parent-test bindings mutated inside a test or nested-subtest callback. Hooks such as `beforeEach` are not mutation regions. |
 | `global-patch` | `global`, `globalThis`, `process.env` or a member of the unshadowed built-ins `console`, `Date`, `Math`, `JSON`, `Intl` assigned or deleted in a test, or the file-level `mock.method(<one of those>, ...)` from `node:test`, without a restore in `finally`, `t.after` or a describe-level/file-level `afterEach` (for `mock.method`: `<result>.mock.restore()`, `mock.restoreAll()` or `mock.reset()`). A file-level `after`/`afterAll` is not a restore (it runs once, after all tests). `t.mock.method` is always allowed. |
 | `fake-timers` | File-level `mock.timers.enable` not directly followed by a `try` whose `finally` resets it; jest `useFakeTimers` without `useRealTimers` in `finally` or `afterEach`. `t.mock.timers` is always allowed. |
-| `invisible-whitespace` | Literal U+00A0, U+00AD, U+2000-U+200F (except ZWJ/ZWNJ between two visible characters), U+2028/2029, U+202F, U+205F-U+2064, U+3000 and non-leading U+FEFF. Escapes and all other Unicode are allowed. |
+| `invisible-whitespace` (tests and `pantry-flow/scripts/`) | Literal U+00A0, U+00AD, U+2000-U+200F (except ZWJ/ZWNJ between two visible characters), U+2028/2029, U+202F, U+205F-U+2064, U+3000 and non-leading U+FEFF. Escapes and all other Unicode are allowed. |
 | `focused-test` | `.only`. |
 
 Dynamic checks catch what static rules cannot:
@@ -29,6 +29,7 @@ Dynamic checks catch what static rules cannot:
 
 ### Known limits
 
+- Only `invisible-whitespace` looks beyond tests (`pantry-flow/scripts/`); `module-state`, `global-patch`, `fake-timers` and `focused-test` check test files only. Other source folders are not scanned.
 - `Object.assign` and `Object.defineProperty` on `global`, `process.env` or the built-ins are not detected, nor are writes through an alias (`const c = console; c.error = f`) or to nested members such as `Date.prototype`.
 - Global writes inside hooks (for example a describe-level `beforeEach` that patches a global) are not scanned.
 - Test callbacks passed by variable are not followed.

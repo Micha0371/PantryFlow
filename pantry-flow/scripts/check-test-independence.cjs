@@ -19,7 +19,7 @@ const CONTAINERS = new Set(['Array', 'Map', 'Set', 'WeakMap', 'WeakSet']);
 const INVISIBLE = /[\u00A0\u00AD\u2000-\u200F\u2028\u2029\u202F\u205F-\u2064\u3000\uFEFF]/g;
 const EXEMPT = /\/\/\s*independence-ok:([^\r\n]*)/;
 
-const KINDS = { '.cjs': ts.ScriptKind.JS, '.js': ts.ScriptKind.JS, '.jsx': ts.ScriptKind.JSX,
+const KINDS = { '.cjs': ts.ScriptKind.JS, '.js': ts.ScriptKind.JS, '.mjs': ts.ScriptKind.JS, '.jsx': ts.ScriptKind.JSX,
   '.ts': ts.ScriptKind.TS, '.tsx': ts.ScriptKind.TSX };
 const scriptKindFor = file => KINDS[path.extname(file)] ?? ts.ScriptKind.TS;
 
@@ -178,7 +178,7 @@ function dotted(n) {
 function analyze(files) {
   const violations = [];
   const exemptions = [];
-  for (const { path: file, text } of files) analyzeFile(file, text, violations, exemptions);
+  for (const { path: file, text, rules } of files) analyzeFile(file, text, violations, exemptions, rules);
   return { violations, exemptions };
 }
 
@@ -503,13 +503,22 @@ function settleFindings(ctx, violations, exemptions) {
   }
 }
 
-function analyzeFile(file, text, violations, exemptions) {
+// Each check with the rule names it can report; a file may restrict itself to a subset of rules.
+const CHECKS = [
+  [['module-state', 'global-patch'], checkRegions],
+  [['global-patch'], checkMockMethods],
+  [['fake-timers'], checkFakeTimers],
+  [['focused-test'], checkFocusedTests],
+  [['invisible-whitespace'], checkInvisibleWhitespace],
+];
+
+// `rules` (optional) limits the file to those rules; without it every rule runs.
+function analyzeFile(file, text, violations, exemptions, rules) {
   const ctx = createContext(file, text);
-  checkRegions(ctx);
-  checkMockMethods(ctx);
-  checkFakeTimers(ctx);
-  checkFocusedTests(ctx);
-  checkInvisibleWhitespace(ctx);
+  for (const [names, check] of CHECKS) {
+    if (!rules || names.some(name => rules.includes(name))) check(ctx);
+  }
+  if (rules) ctx.found = ctx.found.filter(f => rules.includes(f.rule));
   settleFindings(ctx, violations, exemptions);
 }
 
@@ -540,6 +549,9 @@ function globToRegExp(glob) {
   return new RegExp(`^${body}$`);
 }
 
+const SCRIPT_FILE = /^scripts\/.*\.(cjs|js|mjs|ts|cts|mts|tsx)$/;
+const SCRIPT_RULES = ['invisible-whitespace'];
+
 function collectTargets(root) {
   const relative = full => path.relative(root, full).split(path.sep).join('/');
   const all = listFiles(root).filter(f => !relative(f).startsWith('.')).map(relative);
@@ -552,18 +564,23 @@ function collectTargets(root) {
     }
   }
   // plain code-unit order, as the default sort gives, so the report order stays the same
-  return [...targets].sort((a, b) => Number(a > b) - Number(a < b));
+  const byCodeUnit = (a, b) => Number(a > b) - Number(a < b);
+  const tests = [...targets].sort(byCodeUnit).map(p => ({ path: p }));
+  // scripts are not tests: only the invisible-whitespace rule applies (a file that is also a test keeps every rule)
+  const scripts = all.filter(f => SCRIPT_FILE.test(f) && !targets.has(f)).sort(byCodeUnit)
+    .map(p => ({ path: p, rules: SCRIPT_RULES }));
+  return [...tests, ...scripts];
 }
 
 function main() {
   const started = Date.now();
   const root = process.argv[2] ? path.resolve(process.argv[2]) : path.resolve(__dirname, '..');
   const targets = collectTargets(root);
-  if (!targets.length) {
+  if (!targets.some(t => !t.rules)) {
     console.error(`No test files found under ${root}; refusing to report a clean result for an empty scan.`);
     process.exit(1);
   }
-  const { violations, exemptions } = analyze(targets.map(p => ({ path: p, text: fs.readFileSync(path.join(root, p), 'utf8') })));
+  const { violations, exemptions } = analyze(targets.map(t => ({ ...t, text: fs.readFileSync(path.join(root, t.path), 'utf8') })));
   for (const v of violations) console.log(`${v.path}:${v.line} ${v.rule} ${v.detail}`);
   if (exemptions.length) {
     console.log(`\nExemptions (${exemptions.length}):`);

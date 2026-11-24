@@ -251,3 +251,68 @@ test('the CLI exits 1 when it finds no test files', () => {
     fs.rmSync(dir, { recursive: true });
   }
 });
+
+// scripts/ files get only the invisible-whitespace rule (KAN-121 follow-up to PR #64)
+const scriptRules = text => findViolations([{ path: 'scripts/x.cjs', text, rules: ['invisible-whitespace'] }]).map(v => v.rule);
+const scriptLines = text => findViolations([{ path: 'scripts/x.cjs', text, rules: ['invisible-whitespace'] }]).map(v => v.line);
+
+test('scripts scan flags a literal invisible character but no test-only rule', () => {
+  const testish = "const seen = [];\ntest('a', () => { seen.push(1); global.X = 1; });\ntest.only('b', () => {});\nmock.timers.enable();";
+  const cases = [
+    ["const s = 'a\u200Bb';", ['invisible-whitespace']],
+    [testish, []],
+    [testish + "\nconst s = '\u200F';", ['invisible-whitespace']],
+    ["const s = 'a\\u200Bb \\u00A0';", []],
+    ["const s = 'M\u00FCsli \u{1F95B} \u{1F468}\u200D\u{1F469}\u200D\u{1F467}';", []],
+  ];
+  for (const [source, expected] of cases) assert.deepEqual(scriptRules(source), expected, source);
+});
+
+test('scripts scan honours independence-ok with a reason and keeps CRLF line numbers', () => {
+  const waived = "// independence-ok: fixture needs the raw character\nconst s = '\u200B';\n";
+  assert.deepEqual(scriptRules(waived), []);
+  assert.deepEqual(scriptRules("const s = '\u200B'; // independence-ok:\n"), ['invisible-whitespace']);
+  const lf = "const a = 1;\n\nconst s = '\u200B';\n";
+  assert.deepEqual(scriptLines(lf), [3]);
+  assert.deepEqual(scriptLines(lf.replace(/\n/g, '\r\n')), [3]);
+});
+
+test('a file without a rules field still gets every rule', () => {
+  assert.deepEqual(rules("const seen = [];\ntest('a', () => { seen.push(1); });"), ['module-state']);
+});
+
+function runCli(files) {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const { spawnSync } = require('node:child_process');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'indep-scripts-'));
+  try {
+    for (const [name, text] of Object.entries(files)) {
+      fs.mkdirSync(path.dirname(path.join(dir, name)), { recursive: true });
+      fs.writeFileSync(path.join(dir, name), text);
+    }
+    return spawnSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'check-test-independence.cjs'), dir], { encoding: 'utf8' });
+  } finally {
+    fs.rmSync(dir, { recursive: true });
+  }
+}
+
+test('the CLI scans scripts/ for invisible whitespace and exits 1 naming the file', () => {
+  const r = runCli({ 'tests/ok.test.cjs': "test('a', () => {});\n", 'scripts/x.cjs': "const s = '\u200B';\n" });
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /scripts\/x\.cjs:1 invisible-whitespace/);
+  assert.match(r.stdout, /Checked 2 files/);
+});
+
+test('the CLI still exits 1 when only scripts exist and no test file', () => {
+  const r = runCli({ 'scripts/x.cjs': 'const a = 1;' });
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /No test files found/);
+});
+
+test('the CLI exits 0 for a clean scripts folder and ignores test-only rules there', () => {
+  const r = runCli({ 'tests/ok.test.cjs': "test('a', () => {});\n", 'scripts/x.mjs': "const seen = [];\ntest('a', () => { seen.push(1); });\n" });
+  assert.equal(r.status, 0, r.stdout);
+  assert.match(r.stdout, /Checked 2 files/);
+});
