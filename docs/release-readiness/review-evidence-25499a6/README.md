@@ -2,6 +2,8 @@
 
 Assessed source: `25499a656c1e419883d95b6e9ade8cd0fa4fc791`. Evidence is documentation material; it is not imported by the application or added to any CI/test runner. No hosted endpoint or live credential is needed for these probes.
 
+This exact snapshot is excluded from SonarCloud source analysis in `.sonarcloud.properties`: it preserves author-supplied scripts, deliberate policy weakenings and duplicate reproductions as evidence, rather than maintained application/tooling source. This exclusion does not certify the archived drivers as secure or production-ready. Keep their disposable-clone restrictions and baseline checks when reproducing results. Application code, product tests, maintained scripts and other documentation remain in their existing analysis scope. Promotion of a probe into maintained tooling requires a separately reviewed implementation; do not run frozen evidence as a production tool.
+
 ## Evidence accounting
 
 [probe-ledger.json](probe-ledger.json) accounts for **all 34 probes**: S1–S14, D1–D8, F1–F9 and A1–A3. There are 24 reported detections and 10 survivors. D2 changes both the legacy duplicate guard and the unique index and is excluded from the countable sample: **23 detections among 33 countable probes**. This is not a coverage percentage, a representative sample or proof of comprehensive assertion effectiveness.
