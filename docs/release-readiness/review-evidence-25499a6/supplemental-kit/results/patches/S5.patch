@@ -1,0 +1,16 @@
+diff --git a/pantry-flow/supabase/migrations/00002_review_hardening.sql b/pantry-flow/supabase/migrations/00002_review_hardening.sql
+index 4dc8f2e..e827645 100644
+--- a/pantry-flow/supabase/migrations/00002_review_hardening.sql
++++ b/pantry-flow/supabase/migrations/00002_review_hardening.sql
+@@ -33,10 +33,7 @@ ALTER TABLE public.pantry_items
+ DROP POLICY items_insert_member ON public.pantry_items;
+ CREATE POLICY items_insert_member ON public.pantry_items
+   FOR INSERT TO authenticated WITH CHECK (
+-    created_by = auth.uid() AND household_id IN (
+-      SELECT household_id FROM public.pantry_household_members
+-      WHERE user_id = auth.uid()
+-    )
++    created_by = auth.uid()
+   );
+ 
+ -- Clients cannot rewrite identity, ownership, attribution, or creation time.

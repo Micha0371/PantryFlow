@@ -1,0 +1,13 @@
+diff --git a/pantry-flow/hooks/useItemMutation.ts b/pantry-flow/hooks/useItemMutation.ts
+index f877b8d..9748303 100644
+--- a/pantry-flow/hooks/useItemMutation.ts
++++ b/pantry-flow/hooks/useItemMutation.ts
+@@ -22,7 +22,7 @@ export function useItemMutation() {
+     success: () => void,
+     failure: (error: unknown) => void,
+   ) => {
+-    if (locked.current) return;
++    
+     locked.current = true;
+     const started = focus.current;
+     const current = () => mounted.current && started === focus.current;

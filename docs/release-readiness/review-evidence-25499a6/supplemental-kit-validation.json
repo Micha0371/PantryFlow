@@ -1,0 +1,123 @@
+{
+  "kit_zip_sha256": "0ca2ca4fcd177cb1a46678330c0c3c7088628568b339f3670241108767d061cd",
+  "kit_file_count": 145,
+  "checksum_manifest_verified": true,
+  "zip_matches_local_kit": true,
+  "raw_node_summaries_checked": [
+    "baseline_before",
+    "S1",
+    "S2",
+    "S3",
+    "S4",
+    "S5",
+    "S6",
+    "S7",
+    "S8",
+    "S9",
+    "S10",
+    "S11",
+    "S12",
+    "S13",
+    "S14",
+    "D1",
+    "D2",
+    "D3",
+    "D4",
+    "D5",
+    "D6",
+    "D7",
+    "D8",
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6",
+    "F7",
+    "F8",
+    "F9",
+    "A1",
+    "A2",
+    "A3",
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5",
+    "C6",
+    "C7",
+    "X1",
+    "baseline_after"
+  ],
+  "original_34_change_lines_match": true,
+  "countable": {
+    "assertion_failures": 22,
+    "timeout_only": [
+      "S13"
+    ],
+    "survivors": 10,
+    "excluded": [
+      "D2"
+    ]
+  },
+  "supplemental": {
+    "C1": {
+      "verdict": "SURVIVED",
+      "node_failed": 0,
+      "node_cancelled": 0,
+      "restored": true
+    },
+    "C2": {
+      "verdict": "DETECTED",
+      "node_failed": 4,
+      "node_cancelled": 0,
+      "restored": true
+    },
+    "C3": {
+      "verdict": "SURVIVED",
+      "node_failed": 0,
+      "node_cancelled": 0,
+      "restored": true
+    },
+    "C4": {
+      "verdict": "DETECTED",
+      "node_failed": 4,
+      "node_cancelled": 0,
+      "restored": true
+    },
+    "C5": {
+      "verdict": "SURVIVED",
+      "node_failed": 0,
+      "node_cancelled": 0,
+      "restored": true
+    },
+    "C6": {
+      "verdict": "DETECTED",
+      "node_failed": 4,
+      "node_cancelled": 0,
+      "restored": true
+    },
+    "C7": {
+      "verdict": "SURVIVED",
+      "node_failed": 0,
+      "node_cancelled": 0,
+      "restored": true
+    },
+    "X1": {
+      "verdict": "DETECTED",
+      "node_failed": 1,
+      "node_cancelled": 0,
+      "restored": true
+    }
+  },
+  "limit": "Author-run campaign independently inspected, not fully re-executed by reviewer. Hash integrity does not by itself authenticate runtime history. Reviewer separately reproduces pgTAP in memory.",
+  "assertion_oracles": {
+    "explicit_assertion_error_original_countable": 21,
+    "expected_tree_query_failure": [
+      "S11"
+    ],
+    "timeout_only": [
+      "S13"
+    ]
+  }
+}

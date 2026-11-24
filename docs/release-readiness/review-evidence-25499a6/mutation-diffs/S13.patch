@@ -1,0 +1,11 @@
+--- a/pantry-flow/lib/email-confirmation.ts
++++ b/pantry-flow/lib/email-confirmation.ts
+@@ -19,7 +19,7 @@
+   const request = (async () => {
+     const current = await supabase.auth.getSession();
+     if (current.error) throw current.error;
+-    if (current.data.session) throw new Error('Already signed in');
++    
+     // The persisted PKCE verifier binds the email link to this app installation.
+     const result = await supabase.auth.exchangeCodeForSession(code);
+     if (result.error) throw result.error;

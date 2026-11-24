@@ -1,0 +1,388 @@
+{
+ "run": {
+  "id": 45312958112,
+  "name": "PantryFlow behavioral regression",
+  "event": "push",
+  "head_branch": "main",
+  "head_sha": "25499a656c1e419883d95b6e9ade8cd0fa4fc791",
+  "run_attempt": 1,
+  "status": "completed",
+  "conclusion": "success",
+  "run_started_at": "2026-11-24T02:31:03Z",
+  "updated_at": "2026-11-24T02:37:31Z",
+  "html_url": "https://github.com/Micha0371/PantryFlow/actions/runs/45312958112"
+ },
+ "jobs": [
+  {
+   "id": 138172904852,
+   "name": "database",
+   "status": "completed",
+   "conclusion": "success",
+   "started_at": "2026-11-24T02:31:05Z",
+   "completed_at": "2026-11-24T02:34:31Z",
+   "labels": [
+    "ubuntu-latest"
+   ],
+   "html_url": "https://github.com/Micha0371/PantryFlow/actions/runs/45312958112/job/138172904852",
+   "public_log_http_status": 403,
+   "steps": [
+    {
+     "number": 1,
+     "name": "Set up job",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:31:06Z",
+     "completed_at": "2026-11-24T02:31:07Z"
+    },
+    {
+     "number": 2,
+     "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:31:07Z",
+     "completed_at": "2026-11-24T02:31:08Z"
+    },
+    {
+     "number": 3,
+     "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:31:08Z",
+     "completed_at": "2026-11-24T02:31:14Z"
+    },
+    {
+     "number": 4,
+     "name": "Run npm ci --ignore-scripts",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:31:14Z",
+     "completed_at": "2026-11-24T02:31:28Z"
+    },
+    {
+     "number": 5,
+     "name": "Run set -o pipefail",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:31:28Z",
+     "completed_at": "2026-11-24T02:32:22Z"
+    },
+    {
+     "number": 6,
+     "name": "Redact startup diagnostics",
+     "conclusion": "skipped",
+     "started_at": "2026-11-24T02:32:22Z",
+     "completed_at": "2026-11-24T02:32:22Z"
+    },
+    {
+     "number": 7,
+     "name": "Run npm run test:local 2>&1 | tee database-tests.log",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:32:22Z",
+     "completed_at": "2026-11-24T02:34:24Z"
+    },
+    {
+     "number": 8,
+     "name": "Run npm run e2e:cleanup",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:34:24Z",
+     "completed_at": "2026-11-24T02:34:25Z"
+    },
+    {
+     "number": 9,
+     "name": "Run npx --no-install supabase stop --no-backup",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:34:25Z",
+     "completed_at": "2026-11-24T02:34:27Z"
+    },
+    {
+     "number": 10,
+     "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:34:27Z",
+     "completed_at": "2026-11-24T02:34:28Z"
+    },
+    {
+     "number": 11,
+     "name": "Upload failed startup diagnostics",
+     "conclusion": "skipped",
+     "started_at": "2026-11-24T02:34:28Z",
+     "completed_at": "2026-11-24T02:34:28Z"
+    },
+    {
+     "number": 21,
+     "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:34:28Z",
+     "completed_at": "2026-11-24T02:34:28Z"
+    },
+    {
+     "number": 22,
+     "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:34:28Z",
+     "completed_at": "2026-11-24T02:34:29Z"
+    },
+    {
+     "number": 23,
+     "name": "Complete job",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:34:29Z",
+     "completed_at": "2026-11-24T02:34:29Z"
+    }
+   ]
+  },
+  {
+   "id": 138172905181,
+   "name": "windows-tooling",
+   "status": "completed",
+   "conclusion": "success",
+   "started_at": "2026-11-24T02:31:07Z",
+   "completed_at": "2026-11-24T02:32:16Z",
+   "labels": [
+    "windows-latest"
+   ],
+   "html_url": "https://github.com/Micha0371/PantryFlow/actions/runs/45312958112/job/138172905181",
+   "public_log_http_status": 403,
+   "steps": [
+    {
+     "number": 1,
+     "name": "Set up job",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:31:08Z",
+     "completed_at": "2026-11-24T02:31:09Z"
+    },
+    {
+     "number": 2,
+     "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:31:09Z",
+     "completed_at": "2026-11-24T02:31:15Z"
+    },
+    {
+     "number": 3,
+     "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:31:15Z",
+     "completed_at": "2026-11-24T02:31:37Z"
+    },
+    {
+     "number": 4,
+     "name": "Run npm ci",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:31:37Z",
+     "completed_at": "2026-11-24T02:32:12Z"
+    },
+    {
+     "number": 5,
+     "name": "Run node --test tests/native-tooling.test.cjs",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:32:12Z",
+     "completed_at": "2026-11-24T02:32:12Z"
+    },
+    {
+     "number": 9,
+     "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:32:12Z",
+     "completed_at": "2026-11-24T02:32:12Z"
+    },
+    {
+     "number": 10,
+     "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:32:12Z",
+     "completed_at": "2026-11-24T02:32:14Z"
+    },
+    {
+     "number": 11,
+     "name": "Complete job",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:32:14Z",
+     "completed_at": "2026-11-24T02:32:14Z"
+    }
+   ]
+  },
+  {
+   "id": 138172905208,
+   "name": "fast",
+   "status": "completed",
+   "conclusion": "success",
+   "started_at": "2026-11-24T02:31:06Z",
+   "completed_at": "2026-11-24T02:32:35Z",
+   "labels": [
+    "ubuntu-latest"
+   ],
+   "html_url": "https://github.com/Micha0371/PantryFlow/actions/runs/45312958112/job/138172905208",
+   "public_log_http_status": 403,
+   "steps": [
+    {
+     "number": 1,
+     "name": "Set up job",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:31:07Z",
+     "completed_at": "2026-11-24T02:31:09Z"
+    },
+    {
+     "number": 2,
+     "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:31:09Z",
+     "completed_at": "2026-11-24T02:31:14Z"
+    },
+    {
+     "number": 3,
+     "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:31:14Z",
+     "completed_at": "2026-11-24T02:31:23Z"
+    },
+    {
+     "number": 4,
+     "name": "Run npm ci --ignore-scripts",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:31:23Z",
+     "completed_at": "2026-11-24T02:31:32Z"
+    },
+    {
+     "number": 5,
+     "name": "Run npm run test:fast 2>&1 | tee fast-tests.log",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:31:32Z",
+     "completed_at": "2026-11-24T02:32:30Z"
+    },
+    {
+     "number": 6,
+     "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:32:30Z",
+     "completed_at": "2026-11-24T02:32:32Z"
+    },
+    {
+     "number": 11,
+     "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:32:32Z",
+     "completed_at": "2026-11-24T02:32:32Z"
+    },
+    {
+     "number": 12,
+     "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:32:32Z",
+     "completed_at": "2026-11-24T02:32:32Z"
+    },
+    {
+     "number": 13,
+     "name": "Complete job",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:32:32Z",
+     "completed_at": "2026-11-24T02:32:32Z"
+    }
+   ]
+  },
+  {
+   "id": 138172905300,
+   "name": "isolated",
+   "status": "completed",
+   "conclusion": "success",
+   "started_at": "2026-11-24T02:31:05Z",
+   "completed_at": "2026-11-24T02:37:31Z",
+   "labels": [
+    "ubuntu-latest"
+   ],
+   "html_url": "https://github.com/Micha0371/PantryFlow/actions/runs/45312958112/job/138172905300",
+   "public_log_http_status": 403,
+   "steps": [
+    {
+     "number": 1,
+     "name": "Set up job",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:31:06Z",
+     "completed_at": "2026-11-24T02:31:07Z"
+    },
+    {
+     "number": 2,
+     "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:31:07Z",
+     "completed_at": "2026-11-24T02:31:07Z"
+    },
+    {
+     "number": 3,
+     "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:31:07Z",
+     "completed_at": "2026-11-24T02:31:13Z"
+    },
+    {
+     "number": 4,
+     "name": "Run npm ci --ignore-scripts",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:31:13Z",
+     "completed_at": "2026-11-24T02:31:32Z"
+    },
+    {
+     "number": 5,
+     "name": "Run npm run test:isolated",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:31:32Z",
+     "completed_at": "2026-11-24T02:37:29Z"
+    },
+    {
+     "number": 9,
+     "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:37:29Z",
+     "completed_at": "2026-11-24T02:37:29Z"
+    },
+    {
+     "number": 10,
+     "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:37:29Z",
+     "completed_at": "2026-11-24T02:37:29Z"
+    },
+    {
+     "number": 11,
+     "name": "Complete job",
+     "conclusion": "success",
+     "started_at": "2026-11-24T02:37:29Z",
+     "completed_at": "2026-11-24T02:37:29Z"
+    }
+   ]
+  },
+  {
+   "id": 138174288828,
+   "name": "android",
+   "status": "completed",
+   "conclusion": "skipped",
+   "started_at": "2026-11-24T02:34:31Z",
+   "completed_at": "2026-11-24T02:34:31Z",
+   "labels": [
+    "ubuntu-latest"
+   ],
+   "html_url": "https://github.com/Micha0371/PantryFlow/actions/runs/45312958112/job/138174288828",
+   "public_log_http_status": 403,
+   "steps": []
+  }
+ ],
+ "artifacts": [
+  {
+   "id": 14884356576,
+   "name": "database-test-diagnostics",
+   "size_in_bytes": 2847,
+   "digest": "sha256:768f77af80c7fdfa0f4e9c54bc4969cfa91a2f5ff43c1646a0a2ccd138e294a5",
+   "expired": false,
+   "created_at": "2026-11-24T02:34:28Z",
+   "expires_at": "2027-02-22T02:31:03Z"
+  },
+  {
+   "id": 14883634273,
+   "name": "fast-test-diagnostics",
+   "size_in_bytes": 17655,
+   "digest": "sha256:e84b950ac3bc057803e5041b64521b3c2b3a88a29b41e87339a631ffd3cdfce5",
+   "expired": false,
+   "created_at": "2026-11-24T02:32:32Z",
+   "expires_at": "2027-02-22T02:31:03Z"
+  }
+ ],
+ "not_available_without_sign_in": [
+  "job logs",
+  "artifact contents (test counts, Maestro JUnit results, logcat)"
+ ]
+}

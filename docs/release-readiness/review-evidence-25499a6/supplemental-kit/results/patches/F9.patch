@@ -1,0 +1,12 @@
+diff --git a/pantry-flow/lib/i18n/de.ts b/pantry-flow/lib/i18n/de.ts
+index 3adfc6f..9a64732 100644
+--- a/pantry-flow/lib/i18n/de.ts
++++ b/pantry-flow/lib/i18n/de.ts
+@@ -7,7 +7,6 @@ export const de: Record<TranslationKey, string> = {
+   nav_pantry: 'Vorrat',
+   nav_shopping: 'Einkauf',
+   nav_settings: 'Einstellungen',
+-  settings_language: 'Sprache',
+ 
+   // Auth
+   auth_login_title: 'Willkommen zurück',

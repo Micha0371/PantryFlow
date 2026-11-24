@@ -1,0 +1,45 @@
+baseline_before 526 18 passed, 18 total
+DETECTED S1 pantry SELECT policy open to all | node 1 failed of 526 | jest 18 passed, 18 total | restored True
+SURVIVED S2 pantry UPDATE policy open to all | node 0 failed of 526 | jest 18 passed, 18 total | restored True
+SURVIVED S3 pantry DELETE policy open to all | node 0 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED S4 pantry INSERT: creator not checked | node 1 failed of 526 | jest 18 passed, 18 total | restored True
+SURVIVED S5 pantry INSERT: household not checked | node 0 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED S6 premium flag writable by users | node 1 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED S7 creator column writable by users | node 1 failed of 526 | jest 18 passed, 18 total | restored True
+SURVIVED S8 profile SELECT policy open to all | node 0 failed of 526 | jest 18 passed, 18 total | restored True
+SURVIVED S9 household SELECT policy open to all | node 0 failed of 526 | jest 18 passed, 18 total | restored True
+SURVIVED S10 shopping SELECT policy open to all | node 0 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED S11 signed-out users reach protected routes | node 1 failed of 526 | jest 18 passed, 18 total | restored True
+SURVIVED S12 PKCE flow replaced by implicit | node 0 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED S13 confirmation link accepted while signed in | node 0 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED S14 error parameters in a confirmation link ignored | node 1 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED D1 duplicate index missing | node 3 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED D2 legacy duplicate guard in 00003 removed (CONFOUNDED: also removes the unique index, as in the original run) | node 3 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED D3 deleting an author deletes shared items | node 1 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED D4 status write without compare-and-set | node 2 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED D5 status write: uncoded failure treated as rejected | node 8 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED D6 delete of zero rows reported as success | node 4 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED D7 truncated list accepted as complete | node 3 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED D8 language save of zero rows reported as success | node 1 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED F1 late read of a previous user or household applied | node 4 failed of 526 | jest 18 passed, 18 total | restored True
+SURVIVED F2 rows of another household stay visible (row filter removed) | node 0 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED F3 older read overwrites newer one | node 9 failed of 526 | jest 18 passed, 18 total | restored True
+SURVIVED F4 pantry state not reset on user change (provider key removed) | node 0 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED F5 double submit not locked | node 3 failed of 523 | jest 18 passed, 18 total | restored True
+DETECTED F6 finished request navigates an abandoned screen | node 9 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED F7 failed sign-out shown as success | node 1 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED F8 failed session restore hidden | node 1 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED F9 missing German key | node 1 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED A1 chips lose the checked state | node 2 failed of 526 | jest 18 passed, 18 total | restored True
+SURVIVED A2 pantry row loses role | node 0 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED A3 field error not announced | node 5 failed of 526 | jest 18 passed, 18 total | restored True
+SURVIVED C1 clear-on-change removed | node 0 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED C2 row filter + clear removed | node 4 failed of 526 | jest 18 passed, 18 total | restored True
+SURVIVED C3 pantry provider key + row filter removed | node 0 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED C4 pantry provider key + row filter + clear removed | node 4 failed of 526 | jest 18 passed, 18 total | restored True
+SURVIVED C5 household provider key removed | node 0 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED C6 household key + pantry key + row filter + clear removed | node 4 failed of 526 | jest 18 passed, 18 total | restored True
+SURVIVED C7 shopping provider key removed | node 0 failed of 526 | jest 18 passed, 18 total | restored True
+DETECTED X1 legacy duplicate guard in 00003 removed, unique index kept | node 1 failed of 526 | jest 18 passed, 18 total | restored True
+baseline_after 526 18 passed, 18 total
+DONE

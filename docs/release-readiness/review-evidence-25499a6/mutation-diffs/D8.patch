@@ -1,0 +1,11 @@
+--- a/pantry-flow/lib/profile-language.ts
++++ b/pantry-flow/lib/profile-language.ts
+@@ -25,7 +25,7 @@
+   // PostgREST reports an RLS denial or a missing row as success with no rows.
+   const { data, error } = await supabase.from('profiles').update({ language: locale }).eq('id', userId).select('id');
+   if (error) throw error;
+-  if (!data || data.length === 0) throw new Error('Profile language was not saved: no profile row was updated.');
++  
+ }
+ 
+ export async function getPendingLanguage(userId: string): Promise<Locale | null> {

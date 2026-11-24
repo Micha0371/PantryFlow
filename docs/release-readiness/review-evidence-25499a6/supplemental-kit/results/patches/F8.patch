@@ -1,0 +1,13 @@
+diff --git a/pantry-flow/lib/auth.tsx b/pantry-flow/lib/auth.tsx
+index b4fb8d8..61b5cd1 100644
+--- a/pantry-flow/lib/auth.tsx
++++ b/pantry-flow/lib/auth.tsx
+@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
+       if (mounted.current && request === generation.current) setSession(data.session);
+     } catch {
+       if (mounted.current && request === generation.current) {
+-        setSession(null); setError('err_restore_session');
++        setSession(null);
+       }
+     } finally {
+       if (mounted.current && request === generation.current) setLoading(false);

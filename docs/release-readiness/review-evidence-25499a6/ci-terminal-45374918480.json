@@ -1,0 +1,394 @@
+{
+  "observed_at": "2026-11-24 11:50:26 UTC",
+  "run": {
+    "id": 45374918480,
+    "head_sha": "25499a656c1e419883d95b6e9ade8cd0fa4fc791",
+    "status": "completed",
+    "conclusion": "success",
+    "run_attempt": 1,
+    "url": "https://github.com/Micha0371/PantryFlow/actions/runs/45374918480"
+  },
+  "jobs": [
+    {
+      "id": 138378459761,
+      "name": "isolated",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-24T10:27:13Z",
+      "completed_at": "2026-11-24T10:33:37Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm ci --ignore-scripts",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run test:isolated",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 138378460195,
+      "name": "windows-tooling",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-24T10:27:12Z",
+      "completed_at": "2026-11-24T10:28:18Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm ci",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run node --test tests/native-tooling.test.cjs",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 138378460303,
+      "name": "database",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-24T10:27:13Z",
+      "completed_at": "2026-11-24T10:30:54Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm ci --ignore-scripts",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run set -o pipefail",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Redact startup diagnostics",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Run npm run test:local 2>&1 | tee database-tests.log",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run e2e:cleanup",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npx --no-install supabase stop --no-backup",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload failed startup diagnostics",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 138378460328,
+      "name": "fast",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-24T10:27:13Z",
+      "completed_at": "2026-11-24T10:28:39Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm ci --ignore-scripts",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run test:fast 2>&1 | tee fast-tests.log",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 138380547744,
+      "name": "android",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-24T10:30:56Z",
+      "completed_at": "2026-11-24T11:03:51Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm ci --ignore-scripts",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run set -o pipefail",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Redact startup diagnostics",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Run npm run db:reset",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run e2e:prepare",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run e2e:build",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install pinned Maestro CLI",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Enable emulator acceleration",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run reactivecircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run e2e:cleanup",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npx --no-install supabase stop --no-backup",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload failed startup diagnostics",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 14914315833,
+      "name": "android-e2e-diagnostics",
+      "size_in_bytes": 1163177,
+      "digest": "sha256:86b5decedbae6c254f0102afeaa84088f1f19b3aae21c19c7c839a88aaab0809",
+      "expires_at": "2026-12-01T11:03:48Z",
+      "expired": false
+    },
+    {
+      "id": 14910314656,
+      "name": "database-test-diagnostics",
+      "size_in_bytes": 2837,
+      "digest": "sha256:de5b605f4d6eb00aec7ce9b1e48409f6ffdfe14ed67c9c86e71b9613cd6e1a81",
+      "expires_at": "2027-02-22T10:27:10Z",
+      "expired": false
+    },
+    {
+      "id": 14909863928,
+      "name": "fast-test-diagnostics",
+      "size_in_bytes": 17584,
+      "digest": "sha256:055e1fa750195edf20f98594d9f38393c54fc84d606e494693ff827b44a75f09",
+      "expires_at": "2027-02-22T10:27:10Z",
+      "expired": false
+    }
+  ]
+}

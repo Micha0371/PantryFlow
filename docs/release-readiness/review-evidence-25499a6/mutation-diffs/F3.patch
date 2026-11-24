@@ -1,0 +1,19 @@
+--- a/pantry-flow/hooks/household-list.ts
++++ b/pantry-flow/hooks/household-list.ts
+@@ -42,13 +42,13 @@
+     setLoading(true); setError(null);
+     try {
+       const result = await load(supabase, householdId);
+-      if (isCurrent(scope) && request === generation.current) {
++      if (isCurrent(scope) && true) {
+         setItems(result); setLoadedScope(scope); setLoadCount(count => count + 1);
+       }
+     } catch {
+-      if (isCurrent(scope) && request === generation.current) setError(loadError);
++      if (isCurrent(scope) && true) setError(loadError);
+     } finally {
+-      if (isCurrent(scope) && request === generation.current) setLoading(false);
++      if (isCurrent(scope) && true) setLoading(false);
+     }
+   }, [householdId, user?.id, load, loadError]);
+ 

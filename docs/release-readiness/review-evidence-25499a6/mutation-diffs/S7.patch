@@ -1,0 +1,11 @@
+--- a/pantry-flow/supabase/migrations/00002_review_hardening.sql
++++ b/pantry-flow/supabase/migrations/00002_review_hardening.sql
+@@ -43,7 +43,7 @@
+ REVOKE INSERT, UPDATE ON public.pantry_items FROM PUBLIC, anon, authenticated;
+ GRANT INSERT (household_id, name, status, category, location, created_by)
+   ON public.pantry_items TO authenticated;
+-GRANT UPDATE (name, status, category, location)
++GRANT UPDATE (name, status, category, location, created_by)
+   ON public.pantry_items TO authenticated;
+ 
+ CREATE FUNCTION public.set_pantry_item_updated_at()

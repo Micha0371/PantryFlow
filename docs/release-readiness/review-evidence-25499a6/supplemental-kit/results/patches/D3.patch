@@ -1,0 +1,13 @@
+diff --git a/pantry-flow/supabase/migrations/00002_review_hardening.sql b/pantry-flow/supabase/migrations/00002_review_hardening.sql
+index 4dc8f2e..1f916e0 100644
+--- a/pantry-flow/supabase/migrations/00002_review_hardening.sql
++++ b/pantry-flow/supabase/migrations/00002_review_hardening.sql
+@@ -18,7 +18,7 @@ ALTER TABLE public.pantry_items
+   DROP CONSTRAINT pantry_items_created_by_fkey,
+   ALTER COLUMN created_by DROP NOT NULL,
+   ADD CONSTRAINT pantry_items_created_by_fkey FOREIGN KEY (created_by)
+-    REFERENCES auth.users(id) ON DELETE SET NULL,
++    REFERENCES auth.users(id) ON DELETE CASCADE,
+   ADD CONSTRAINT pantry_items_name_valid CHECK (
+     char_length(name) BETWEEN 1 AND 120 AND name ~ '[^[:space:]]'
+   ),

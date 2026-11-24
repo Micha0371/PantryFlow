@@ -1,0 +1,13 @@
+diff --git a/pantry-flow/hooks/household-list.ts b/pantry-flow/hooks/household-list.ts
+index 00cd525..aa16531 100644
+--- a/pantry-flow/hooks/household-list.ts
++++ b/pantry-flow/hooks/household-list.ts
+@@ -27,7 +27,7 @@ export function useHouseholdList<T extends { id: string; household_id: string }>
+   const scope = `${user?.id ?? ''}:${householdId ?? ''}`;
+   const currentScope = useRef(scope);
+   currentScope.current = scope;
+-  const isCurrent = (started: string) => mounted.current && currentScope.current === started;
++  const isCurrent = (started: string) => mounted.current;
+ 
+   useEffect(() => {
+     mounted.current = true;

@@ -1,0 +1,13 @@
+diff --git a/pantry-flow/supabase/migrations/00002_review_hardening.sql b/pantry-flow/supabase/migrations/00002_review_hardening.sql
+index 4dc8f2e..ee22654 100644
+--- a/pantry-flow/supabase/migrations/00002_review_hardening.sql
++++ b/pantry-flow/supabase/migrations/00002_review_hardening.sql
+@@ -3,7 +3,7 @@
+ BEGIN;
+ 
+ REVOKE UPDATE ON public.profiles FROM PUBLIC, anon, authenticated;
+-GRANT UPDATE (name, language) ON public.profiles TO authenticated;
++GRANT UPDATE (name, language, is_premium) ON public.profiles TO authenticated;
+ 
+ ALTER TABLE public.profiles
+   ADD CONSTRAINT profiles_name_length CHECK (char_length(name) <= 100),

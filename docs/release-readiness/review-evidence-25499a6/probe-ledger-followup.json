@@ -1,0 +1,476 @@
+{
+  "supersedes_current_interpretation_of": "probe-ledger.json (preserved as initial observation)",
+  "source": "supplemental-kit/results/results.json",
+  "assessed_commit": "25499a656c1e419883d95b6e9ade8cd0fa4fc791",
+  "original_sample": {
+    "total": 34,
+    "excluded": [
+      "D2"
+    ],
+    "countable": 33,
+    "assertion_failures": 22,
+    "timeout_only": 1,
+    "survived": 10,
+    "note": "No coverage percentage"
+  },
+  "probes": [
+    {
+      "id": "S1",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 1,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/S1.node.log",
+      "patch": "supplemental-kit/results/patches/S1.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "S2",
+      "countable": true,
+      "effectiveness": "survived",
+      "node_exit": 0,
+      "node_failed": 0,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/S2.node.log",
+      "patch": "supplemental-kit/results/patches/S2.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "S3",
+      "countable": true,
+      "effectiveness": "survived",
+      "node_exit": 0,
+      "node_failed": 0,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/S3.node.log",
+      "patch": "supplemental-kit/results/patches/S3.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "S4",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 1,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/S4.node.log",
+      "patch": "supplemental-kit/results/patches/S4.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "S5",
+      "countable": true,
+      "effectiveness": "survived",
+      "node_exit": 0,
+      "node_failed": 0,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/S5.node.log",
+      "patch": "supplemental-kit/results/patches/S5.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "S6",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 1,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/S6.node.log",
+      "patch": "supplemental-kit/results/patches/S6.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "S7",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 1,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/S7.node.log",
+      "patch": "supplemental-kit/results/patches/S7.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "S8",
+      "countable": true,
+      "effectiveness": "survived",
+      "node_exit": 0,
+      "node_failed": 0,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/S8.node.log",
+      "patch": "supplemental-kit/results/patches/S8.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "S9",
+      "countable": true,
+      "effectiveness": "survived",
+      "node_exit": 0,
+      "node_failed": 0,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/S9.node.log",
+      "patch": "supplemental-kit/results/patches/S9.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "S10",
+      "countable": true,
+      "effectiveness": "survived",
+      "node_exit": 0,
+      "node_failed": 0,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/S10.node.log",
+      "patch": "supplemental-kit/results/patches/S10.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "S11",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 1,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/S11.node.log",
+      "patch": "supplemental-kit/results/patches/S11.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "S12",
+      "countable": true,
+      "effectiveness": "survived",
+      "node_exit": 0,
+      "node_failed": 0,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/S12.node.log",
+      "patch": "supplemental-kit/results/patches/S12.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "S13",
+      "countable": true,
+      "effectiveness": "timeout_only",
+      "node_exit": 1,
+      "node_failed": 0,
+      "node_cancelled": 1,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/S13.node.log",
+      "patch": "supplemental-kit/results/patches/S13.patch",
+      "limit": "Timeout does not establish a failing property assertion"
+    },
+    {
+      "id": "S14",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 1,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/S14.node.log",
+      "patch": "supplemental-kit/results/patches/S14.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "D1",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 3,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/D1.node.log",
+      "patch": "supplemental-kit/results/patches/D1.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "D2",
+      "countable": false,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 3,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/D2.node.log",
+      "patch": "supplemental-kit/results/patches/D2.patch",
+      "limit": "Compound mutation; excluded from original countable sample"
+    },
+    {
+      "id": "D3",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 1,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/D3.node.log",
+      "patch": "supplemental-kit/results/patches/D3.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "D4",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 2,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/D4.node.log",
+      "patch": "supplemental-kit/results/patches/D4.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "D5",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 8,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/D5.node.log",
+      "patch": "supplemental-kit/results/patches/D5.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "D6",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 4,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/D6.node.log",
+      "patch": "supplemental-kit/results/patches/D6.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "D7",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 3,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/D7.node.log",
+      "patch": "supplemental-kit/results/patches/D7.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "D8",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 1,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/D8.node.log",
+      "patch": "supplemental-kit/results/patches/D8.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "F1",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 4,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/F1.node.log",
+      "patch": "supplemental-kit/results/patches/F1.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "F2",
+      "countable": true,
+      "effectiveness": "survived",
+      "node_exit": 0,
+      "node_failed": 0,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/F2.node.log",
+      "patch": "supplemental-kit/results/patches/F2.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "F3",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 9,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/F3.node.log",
+      "patch": "supplemental-kit/results/patches/F3.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "F4",
+      "countable": true,
+      "effectiveness": "survived",
+      "node_exit": 0,
+      "node_failed": 0,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/F4.node.log",
+      "patch": "supplemental-kit/results/patches/F4.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "F5",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 3,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/F5.node.log",
+      "patch": "supplemental-kit/results/patches/F5.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "F6",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 9,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/F6.node.log",
+      "patch": "supplemental-kit/results/patches/F6.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "F7",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 1,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/F7.node.log",
+      "patch": "supplemental-kit/results/patches/F7.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "F8",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 1,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/F8.node.log",
+      "patch": "supplemental-kit/results/patches/F8.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "F9",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 1,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/F9.node.log",
+      "patch": "supplemental-kit/results/patches/F9.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "A1",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 2,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/A1.node.log",
+      "patch": "supplemental-kit/results/patches/A1.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "A2",
+      "countable": true,
+      "effectiveness": "survived",
+      "node_exit": 0,
+      "node_failed": 0,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/A2.node.log",
+      "patch": "supplemental-kit/results/patches/A2.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    },
+    {
+      "id": "A3",
+      "countable": true,
+      "effectiveness": "assertion_failure",
+      "node_exit": 1,
+      "node_failed": 5,
+      "node_cancelled": 0,
+      "components_exit": 0,
+      "evidence": "supplemental-kit/results/logs/A3.node.log",
+      "patch": "supplemental-kit/results/patches/A3.patch",
+      "limit": "Supplied full-campaign run inspected, not re-executed in full by reviewer"
+    }
+  ],
+  "additional_experiments": {
+    "C1": {
+      "reported_outcome": "SURVIVED",
+      "failed_assertions": 0,
+      "evidence": "supplemental-kit/results/logs/C1.node.log",
+      "patch": "supplemental-kit/results/patches/C1.patch"
+    },
+    "C2": {
+      "reported_outcome": "DETECTED",
+      "failed_assertions": 4,
+      "evidence": "supplemental-kit/results/logs/C2.node.log",
+      "patch": "supplemental-kit/results/patches/C2.patch"
+    },
+    "C3": {
+      "reported_outcome": "SURVIVED",
+      "failed_assertions": 0,
+      "evidence": "supplemental-kit/results/logs/C3.node.log",
+      "patch": "supplemental-kit/results/patches/C3.patch"
+    },
+    "C4": {
+      "reported_outcome": "DETECTED",
+      "failed_assertions": 4,
+      "evidence": "supplemental-kit/results/logs/C4.node.log",
+      "patch": "supplemental-kit/results/patches/C4.patch"
+    },
+    "C5": {
+      "reported_outcome": "SURVIVED",
+      "failed_assertions": 0,
+      "evidence": "supplemental-kit/results/logs/C5.node.log",
+      "patch": "supplemental-kit/results/patches/C5.patch"
+    },
+    "C6": {
+      "reported_outcome": "DETECTED",
+      "failed_assertions": 4,
+      "evidence": "supplemental-kit/results/logs/C6.node.log",
+      "patch": "supplemental-kit/results/patches/C6.patch"
+    },
+    "C7": {
+      "reported_outcome": "SURVIVED",
+      "failed_assertions": 0,
+      "evidence": "supplemental-kit/results/logs/C7.node.log",
+      "patch": "supplemental-kit/results/patches/C7.patch"
+    },
+    "X1": {
+      "reported_outcome": "DETECTED",
+      "failed_assertions": 1,
+      "evidence": "supplemental-kit/results/logs/X1.node.log",
+      "patch": "supplemental-kit/results/patches/X1.patch"
+    }
+  }
+}

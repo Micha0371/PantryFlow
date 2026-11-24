@@ -1,0 +1,13 @@
+diff --git a/pantry-flow/lib/supabase.ts b/pantry-flow/lib/supabase.ts
+index 1ca40a5..4cb9f16 100644
+--- a/pantry-flow/lib/supabase.ts
++++ b/pantry-flow/lib/supabase.ts
+@@ -20,7 +20,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+     autoRefreshToken: true,
+     persistSession: true,
+     detectSessionInUrl: false,
+-    flowType: 'pkce',
++    flowType: 'implicit',
+   },
+ });
+ 

@@ -1,0 +1,11 @@
+--- a/pantry-flow/components/InlineError.tsx
++++ b/pantry-flow/components/InlineError.tsx
+@@ -14,7 +14,7 @@
+ export function InlineError({ message, style, testID }: Readonly<Props>) {
+   return (
+     <View accessibilityLiveRegion="polite" collapsable={false}>
+-      {message ? <Text style={style} accessibilityRole="alert" testID={testID}>{message}</Text> : null}
++      {message ? <Text style={style} testID={testID}>{message}</Text> : null}
+     </View>
+   );
+ }

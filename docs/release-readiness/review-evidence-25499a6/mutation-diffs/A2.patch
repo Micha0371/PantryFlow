@@ -1,0 +1,11 @@
+--- a/pantry-flow/components/PantryItem.tsx
++++ b/pantry-flow/components/PantryItem.tsx
+@@ -37,7 +37,7 @@
+       <Pressable
+         onPress={onPress}
+         disabled={editDisabled}
+-        accessibilityRole="button"
++        
+         accessibilityLabel={`${item.name}, ${t(`cat_${item.category}`)}, ${t(`loc_${item.location}`)}`}
+         accessibilityHint={t('item_edit_hint')}
+         accessibilityState={{ disabled: !!editDisabled }}

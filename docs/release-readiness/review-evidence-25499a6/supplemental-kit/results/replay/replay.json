@@ -1,0 +1,456 @@
+{
+ "node": "v26.10.0",
+ "pglite": "0.3.16",
+ "server": "PostgreSQL 17.5 on aarch64-unknown-linux-gnu, compiled by emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 3.1.74 (1092ec30a3fb1d46b1782ff1b4db5094d3d06ae5), 32-bit",
+ "shapes": {
+  "none": {
+   "pgTAP pantry count": 0,
+   "pgTAP pantry foreign insert": "ERR 42501",
+   "pgTAP pantry update WHERE+RETURNING": 0,
+   "pgTAP pantry delete WHERE+RETURNING": 0,
+   "pgTAP shopping count": 0,
+   "pgTAP shopping foreign insert": "ERR 42501",
+   "pgTAP shopping update RETURNING": 0,
+   "pgTAP shopping delete RETURNING": 0,
+   "pgTAP profiles count": 1,
+   "pgTAP households count": 1,
+   "API pantry insert RETURNING": "ERR 42501",
+   "API pantry update WHERE+RETURNING": 0,
+   "API shopping insert RETURNING": "ERR 42501",
+   "API shopping update WHERE+RETURNING": 0,
+   "API profile update WHERE+RETURNING": 0,
+   "BARE pantry update": 0,
+   "BARE pantry delete": 0,
+   "BARE shopping update": 0,
+   "BARE shopping delete": 0,
+   "BARE profile update": 1
+  },
+  "pantry SELECT open": {
+   "pgTAP pantry count": 1,
+   "pgTAP pantry foreign insert": "ERR 42501",
+   "pgTAP pantry update WHERE+RETURNING": 0,
+   "pgTAP pantry delete WHERE+RETURNING": 0,
+   "pgTAP shopping count": 0,
+   "pgTAP shopping foreign insert": "ERR 42501",
+   "pgTAP shopping update RETURNING": 0,
+   "pgTAP shopping delete RETURNING": 0,
+   "pgTAP profiles count": 1,
+   "pgTAP households count": 1,
+   "API pantry insert RETURNING": "ERR 42501",
+   "API pantry update WHERE+RETURNING": 0,
+   "API shopping insert RETURNING": "ERR 42501",
+   "API shopping update WHERE+RETURNING": 0,
+   "API profile update WHERE+RETURNING": 0,
+   "BARE pantry update": 0,
+   "BARE pantry delete": 0,
+   "BARE shopping update": 0,
+   "BARE shopping delete": 0,
+   "BARE profile update": 1
+  },
+  "pantry INSERT any household": {
+   "pgTAP pantry count": 0,
+   "pgTAP pantry foreign insert": 1,
+   "pgTAP pantry update WHERE+RETURNING": 0,
+   "pgTAP pantry delete WHERE+RETURNING": 0,
+   "pgTAP shopping count": 0,
+   "pgTAP shopping foreign insert": "ERR 42501",
+   "pgTAP shopping update RETURNING": 0,
+   "pgTAP shopping delete RETURNING": 0,
+   "pgTAP profiles count": 1,
+   "pgTAP households count": 1,
+   "API pantry insert RETURNING": "ERR 42501",
+   "API pantry update WHERE+RETURNING": 0,
+   "API shopping insert RETURNING": "ERR 42501",
+   "API shopping update WHERE+RETURNING": 0,
+   "API profile update WHERE+RETURNING": 0,
+   "BARE pantry update": 0,
+   "BARE pantry delete": 0,
+   "BARE shopping update": 0,
+   "BARE shopping delete": 0,
+   "BARE profile update": 1
+  },
+  "pantry UPDATE open": {
+   "pgTAP pantry count": 0,
+   "pgTAP pantry foreign insert": "ERR 42501",
+   "pgTAP pantry update WHERE+RETURNING": 0,
+   "pgTAP pantry delete WHERE+RETURNING": 0,
+   "pgTAP shopping count": 0,
+   "pgTAP shopping foreign insert": "ERR 42501",
+   "pgTAP shopping update RETURNING": 0,
+   "pgTAP shopping delete RETURNING": 0,
+   "pgTAP profiles count": 1,
+   "pgTAP households count": 1,
+   "API pantry insert RETURNING": "ERR 42501",
+   "API pantry update WHERE+RETURNING": 0,
+   "API shopping insert RETURNING": "ERR 42501",
+   "API shopping update WHERE+RETURNING": 0,
+   "API profile update WHERE+RETURNING": 0,
+   "BARE pantry update": 1,
+   "BARE pantry delete": 0,
+   "BARE shopping update": 0,
+   "BARE shopping delete": 0,
+   "BARE profile update": 1
+  },
+  "pantry DELETE open": {
+   "pgTAP pantry count": 0,
+   "pgTAP pantry foreign insert": "ERR 42501",
+   "pgTAP pantry update WHERE+RETURNING": 0,
+   "pgTAP pantry delete WHERE+RETURNING": 0,
+   "pgTAP shopping count": 0,
+   "pgTAP shopping foreign insert": "ERR 42501",
+   "pgTAP shopping update RETURNING": 0,
+   "pgTAP shopping delete RETURNING": 0,
+   "pgTAP profiles count": 1,
+   "pgTAP households count": 1,
+   "API pantry insert RETURNING": "ERR 42501",
+   "API pantry update WHERE+RETURNING": 0,
+   "API shopping insert RETURNING": "ERR 42501",
+   "API shopping update WHERE+RETURNING": 0,
+   "API profile update WHERE+RETURNING": 0,
+   "BARE pantry update": 0,
+   "BARE pantry delete": 1,
+   "BARE shopping update": 0,
+   "BARE shopping delete": 0,
+   "BARE profile update": 1
+  },
+  "shopping SELECT open": {
+   "pgTAP pantry count": 0,
+   "pgTAP pantry foreign insert": "ERR 42501",
+   "pgTAP pantry update WHERE+RETURNING": 0,
+   "pgTAP pantry delete WHERE+RETURNING": 0,
+   "pgTAP shopping count": 1,
+   "pgTAP shopping foreign insert": "ERR 42501",
+   "pgTAP shopping update RETURNING": 0,
+   "pgTAP shopping delete RETURNING": 0,
+   "pgTAP profiles count": 1,
+   "pgTAP households count": 1,
+   "API pantry insert RETURNING": "ERR 42501",
+   "API pantry update WHERE+RETURNING": 0,
+   "API shopping insert RETURNING": "ERR 42501",
+   "API shopping update WHERE+RETURNING": 0,
+   "API profile update WHERE+RETURNING": 0,
+   "BARE pantry update": 0,
+   "BARE pantry delete": 0,
+   "BARE shopping update": 0,
+   "BARE shopping delete": 0,
+   "BARE profile update": 1
+  },
+  "shopping INSERT any household": {
+   "pgTAP pantry count": 0,
+   "pgTAP pantry foreign insert": "ERR 42501",
+   "pgTAP pantry update WHERE+RETURNING": 0,
+   "pgTAP pantry delete WHERE+RETURNING": 0,
+   "pgTAP shopping count": 0,
+   "pgTAP shopping foreign insert": 1,
+   "pgTAP shopping update RETURNING": 0,
+   "pgTAP shopping delete RETURNING": 0,
+   "pgTAP profiles count": 1,
+   "pgTAP households count": 1,
+   "API pantry insert RETURNING": "ERR 42501",
+   "API pantry update WHERE+RETURNING": 0,
+   "API shopping insert RETURNING": "ERR 42501",
+   "API shopping update WHERE+RETURNING": 0,
+   "API profile update WHERE+RETURNING": 0,
+   "BARE pantry update": 0,
+   "BARE pantry delete": 0,
+   "BARE shopping update": 0,
+   "BARE shopping delete": 0,
+   "BARE profile update": 1
+  },
+  "shopping UPDATE open": {
+   "pgTAP pantry count": 0,
+   "pgTAP pantry foreign insert": "ERR 42501",
+   "pgTAP pantry update WHERE+RETURNING": 0,
+   "pgTAP pantry delete WHERE+RETURNING": 0,
+   "pgTAP shopping count": 0,
+   "pgTAP shopping foreign insert": "ERR 42501",
+   "pgTAP shopping update RETURNING": 0,
+   "pgTAP shopping delete RETURNING": 0,
+   "pgTAP profiles count": 1,
+   "pgTAP households count": 1,
+   "API pantry insert RETURNING": "ERR 42501",
+   "API pantry update WHERE+RETURNING": 0,
+   "API shopping insert RETURNING": "ERR 42501",
+   "API shopping update WHERE+RETURNING": 0,
+   "API profile update WHERE+RETURNING": 0,
+   "BARE pantry update": 0,
+   "BARE pantry delete": 0,
+   "BARE shopping update": 1,
+   "BARE shopping delete": 0,
+   "BARE profile update": 1
+  },
+  "shopping DELETE open": {
+   "pgTAP pantry count": 0,
+   "pgTAP pantry foreign insert": "ERR 42501",
+   "pgTAP pantry update WHERE+RETURNING": 0,
+   "pgTAP pantry delete WHERE+RETURNING": 0,
+   "pgTAP shopping count": 0,
+   "pgTAP shopping foreign insert": "ERR 42501",
+   "pgTAP shopping update RETURNING": 0,
+   "pgTAP shopping delete RETURNING": 0,
+   "pgTAP profiles count": 1,
+   "pgTAP households count": 1,
+   "API pantry insert RETURNING": "ERR 42501",
+   "API pantry update WHERE+RETURNING": 0,
+   "API shopping insert RETURNING": "ERR 42501",
+   "API shopping update WHERE+RETURNING": 0,
+   "API profile update WHERE+RETURNING": 0,
+   "BARE pantry update": 0,
+   "BARE pantry delete": 0,
+   "BARE shopping update": 0,
+   "BARE shopping delete": 1,
+   "BARE profile update": 1
+  },
+  "profile SELECT open": {
+   "pgTAP pantry count": 0,
+   "pgTAP pantry foreign insert": "ERR 42501",
+   "pgTAP pantry update WHERE+RETURNING": 0,
+   "pgTAP pantry delete WHERE+RETURNING": 0,
+   "pgTAP shopping count": 0,
+   "pgTAP shopping foreign insert": "ERR 42501",
+   "pgTAP shopping update RETURNING": 0,
+   "pgTAP shopping delete RETURNING": 0,
+   "pgTAP profiles count": 2,
+   "pgTAP households count": 1,
+   "API pantry insert RETURNING": "ERR 42501",
+   "API pantry update WHERE+RETURNING": 0,
+   "API shopping insert RETURNING": "ERR 42501",
+   "API shopping update WHERE+RETURNING": 0,
+   "API profile update WHERE+RETURNING": 0,
+   "BARE pantry update": 0,
+   "BARE pantry delete": 0,
+   "BARE shopping update": 0,
+   "BARE shopping delete": 0,
+   "BARE profile update": 1
+  },
+  "profile UPDATE open": {
+   "pgTAP pantry count": 0,
+   "pgTAP pantry foreign insert": "ERR 42501",
+   "pgTAP pantry update WHERE+RETURNING": 0,
+   "pgTAP pantry delete WHERE+RETURNING": 0,
+   "pgTAP shopping count": 0,
+   "pgTAP shopping foreign insert": "ERR 42501",
+   "pgTAP shopping update RETURNING": 0,
+   "pgTAP shopping delete RETURNING": 0,
+   "pgTAP profiles count": 1,
+   "pgTAP households count": 1,
+   "API pantry insert RETURNING": "ERR 42501",
+   "API pantry update WHERE+RETURNING": 0,
+   "API shopping insert RETURNING": "ERR 42501",
+   "API shopping update WHERE+RETURNING": 0,
+   "API profile update WHERE+RETURNING": 0,
+   "BARE pantry update": 0,
+   "BARE pantry delete": 0,
+   "BARE shopping update": 0,
+   "BARE shopping delete": 0,
+   "BARE profile update": 2
+  },
+  "household SELECT open": {
+   "pgTAP pantry count": 0,
+   "pgTAP pantry foreign insert": "ERR 42501",
+   "pgTAP pantry update WHERE+RETURNING": 0,
+   "pgTAP pantry delete WHERE+RETURNING": 0,
+   "pgTAP shopping count": 0,
+   "pgTAP shopping foreign insert": "ERR 42501",
+   "pgTAP shopping update RETURNING": 0,
+   "pgTAP shopping delete RETURNING": 0,
+   "pgTAP profiles count": 1,
+   "pgTAP households count": 2,
+   "API pantry insert RETURNING": "ERR 42501",
+   "API pantry update WHERE+RETURNING": 0,
+   "API shopping insert RETURNING": "ERR 42501",
+   "API shopping update WHERE+RETURNING": 0,
+   "API profile update WHERE+RETURNING": 0,
+   "BARE pantry update": 0,
+   "BARE pantry delete": 0,
+   "BARE shopping update": 0,
+   "BARE shopping delete": 0,
+   "BARE profile update": 1
+  }
+ },
+ "pgtap": {
+  "none": {
+   "slice_1_1.test.sql": {
+    "plan": "1..21",
+    "ok": 21,
+    "notOk": [],
+    "error": null
+   },
+   "shopping.test.sql": {
+    "plan": "1..43",
+    "ok": 43,
+    "notOk": [],
+    "error": null
+   }
+  },
+  "pantry SELECT open": {
+   "slice_1_1.test.sql": {
+    "plan": "1..21",
+    "ok": 20,
+    "notOk": [
+     "not ok 14 - other household inventory invisible"
+    ],
+    "error": null
+   },
+   "shopping.test.sql": {
+    "plan": "1..43",
+    "ok": 43,
+    "notOk": [],
+    "error": null
+   }
+  },
+  "pantry INSERT any household": {
+   "slice_1_1.test.sql": {
+    "plan": "1..21",
+    "ok": 20,
+    "notOk": [
+     "not ok 19 - foreign household insert blocked"
+    ],
+    "error": null
+   },
+   "shopping.test.sql": {
+    "plan": "1..43",
+    "ok": 43,
+    "notOk": [],
+    "error": null
+   }
+  },
+  "pantry UPDATE open": {
+   "slice_1_1.test.sql": {
+    "plan": "1..21",
+    "ok": 21,
+    "notOk": [],
+    "error": null
+   },
+   "shopping.test.sql": {
+    "plan": "1..43",
+    "ok": 43,
+    "notOk": [],
+    "error": null
+   }
+  },
+  "pantry DELETE open": {
+   "slice_1_1.test.sql": {
+    "plan": "1..21",
+    "ok": 21,
+    "notOk": [],
+    "error": null
+   },
+   "shopping.test.sql": {
+    "plan": "1..43",
+    "ok": 43,
+    "notOk": [],
+    "error": null
+   }
+  },
+  "shopping SELECT open": {
+   "slice_1_1.test.sql": {
+    "plan": "1..21",
+    "ok": 21,
+    "notOk": [],
+    "error": null
+   },
+   "shopping.test.sql": {
+    "plan": "1..43",
+    "ok": 42,
+    "notOk": [
+     "not ok 37 - foreign shopping invisible"
+    ],
+    "error": null
+   }
+  },
+  "shopping INSERT any household": {
+   "slice_1_1.test.sql": {
+    "plan": "1..21",
+    "ok": 21,
+    "notOk": [],
+    "error": null
+   },
+   "shopping.test.sql": {
+    "plan": "1..43",
+    "ok": 39,
+    "notOk": [
+     "not ok 19 - foreign household insert denied",
+     "not ok 37 - foreign shopping invisible",
+     "not ok 38 - foreign update touches zero",
+     "not ok 39 - foreign delete touches zero"
+    ],
+    "error": null
+   }
+  },
+  "shopping UPDATE open": {
+   "slice_1_1.test.sql": {
+    "plan": "1..21",
+    "ok": 21,
+    "notOk": [],
+    "error": null
+   },
+   "shopping.test.sql": {
+    "plan": "1..43",
+    "ok": 43,
+    "notOk": [],
+    "error": null
+   }
+  },
+  "shopping DELETE open": {
+   "slice_1_1.test.sql": {
+    "plan": "1..21",
+    "ok": 21,
+    "notOk": [],
+    "error": null
+   },
+   "shopping.test.sql": {
+    "plan": "1..43",
+    "ok": 43,
+    "notOk": [],
+    "error": null
+   }
+  },
+  "profile SELECT open": {
+   "slice_1_1.test.sql": {
+    "plan": "1..21",
+    "ok": 20,
+    "notOk": [
+     "not ok 15 - only own profile visible"
+    ],
+    "error": null
+   },
+   "shopping.test.sql": {
+    "plan": "1..43",
+    "ok": 43,
+    "notOk": [],
+    "error": null
+   }
+  },
+  "profile UPDATE open": {
+   "slice_1_1.test.sql": {
+    "plan": "1..21",
+    "ok": 21,
+    "notOk": [],
+    "error": null
+   },
+   "shopping.test.sql": {
+    "plan": "1..43",
+    "ok": 43,
+    "notOk": [],
+    "error": null
+   }
+  },
+  "household SELECT open": {
+   "slice_1_1.test.sql": {
+    "plan": "1..21",
+    "ok": 20,
+    "notOk": [
+     "not ok 16 - only own household visible"
+    ],
+    "error": null
+   },
+   "shopping.test.sql": {
+    "plan": "1..43",
+    "ok": 43,
+    "notOk": [],
+    "error": null
+   }
+  }
+ }
+}

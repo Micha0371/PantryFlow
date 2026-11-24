@@ -1,0 +1,22 @@
+diff --git a/pantry-flow/supabase/migrations/00003_strict_duplicate_prevention.sql b/pantry-flow/supabase/migrations/00003_strict_duplicate_prevention.sql
+index aec919e..5c0617d 100644
+--- a/pantry-flow/supabase/migrations/00003_strict_duplicate_prevention.sql
++++ b/pantry-flow/supabase/migrations/00003_strict_duplicate_prevention.sql
+@@ -15,7 +15,7 @@ BEGIN
+   IF EXISTS (
+     SELECT 1 FROM public.pantry_items
+     GROUP BY household_id, lower(public.pantry_trim_item_name(name))
+-    HAVING count(*) > 1
++    HAVING count(*) > 1000000
+   ) THEN
+     RAISE EXCEPTION USING ERRCODE = '23505',
+       MESSAGE = 'Existing household items have duplicate normalized names. Resolve conflicts explicitly before applying Slice 1.1.';
+@@ -46,7 +46,7 @@ ALTER TABLE public.pantry_items ADD CONSTRAINT pantry_items_name_trimmed
+   CHECK (name = public.pantry_trim_item_name(name) AND name <> '');
+ 
+ -- PostgreSQL's unique index arbitrates concurrent writes, including renames.
+-CREATE UNIQUE INDEX pantry_items_household_normalized_name_key
++CREATE INDEX pantry_items_household_normalized_name_key
+   ON public.pantry_items (household_id, lower(public.pantry_trim_item_name(name)));
+ 
+ COMMIT;

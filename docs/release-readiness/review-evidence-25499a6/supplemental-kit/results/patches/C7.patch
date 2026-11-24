@@ -1,0 +1,13 @@
+diff --git a/pantry-flow/hooks/useShoppingItems.tsx b/pantry-flow/hooks/useShoppingItems.tsx
+index 667a556..ebac255 100644
+--- a/pantry-flow/hooks/useShoppingItems.tsx
++++ b/pantry-flow/hooks/useShoppingItems.tsx
+@@ -109,7 +109,7 @@ function useShoppingState() {
+ const ShoppingContext = createContext<ReturnType<typeof useShoppingState> | undefined>(undefined);
+ export function ShoppingProvider({ children }: { children: ReactNode }) {
+   const { user } = useAuth();
+-  return <ScopedShoppingProvider key={user?.id ?? 'guest'}>{children}</ScopedShoppingProvider>;
++  return <ScopedShoppingProvider >{children}</ScopedShoppingProvider>;
+ }
+ function ScopedShoppingProvider({ children }: { children: ReactNode }) {
+   const value = useShoppingState();

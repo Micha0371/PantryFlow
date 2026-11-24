@@ -1,0 +1,13 @@
+diff --git a/pantry-flow/hooks/household-scope.tsx b/pantry-flow/hooks/household-scope.tsx
+index 2124a09..031b748 100644
+--- a/pantry-flow/hooks/household-scope.tsx
++++ b/pantry-flow/hooks/household-scope.tsx
+@@ -7,7 +7,7 @@ const HouseholdContext = createContext<ReturnType<typeof useHousehold> | undefin
+ 
+ export function HouseholdProvider({ children }: { children: ReactNode }) {
+   const { user } = useAuth();
+-  return <ScopedHouseholdProvider key={user?.id ?? 'guest'}>{children}</ScopedHouseholdProvider>;
++  return <ScopedHouseholdProvider>{children}</ScopedHouseholdProvider>;
+ }
+ function ScopedHouseholdProvider({ children }: { children: ReactNode }) {
+   const value = useHousehold();

@@ -1,0 +1,12 @@
+diff --git a/pantry-flow/hooks/household-list.ts b/pantry-flow/hooks/household-list.ts
+index 00cd525..18b3dd1 100644
+--- a/pantry-flow/hooks/household-list.ts
++++ b/pantry-flow/hooks/household-list.ts
+@@ -53,7 +53,6 @@ export function useHouseholdList<T extends { id: string; household_id: string }>
+   }, [householdId, user?.id, load, loadError]);
+ 
+   useEffect(() => {
+-    setItems([]);
+     void fetchItems();
+     return () => { generation.current++; };
+   }, [fetchItems]);

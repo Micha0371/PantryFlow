@@ -1,0 +1,54 @@
+{
+  "note": "Original assessment and independent review are not rewritten. Author outputs are reported historical results, not new reviewer executions. combo.py output was not retained and is not invented.",
+  "files": [
+    {
+      "source": "probes.py",
+      "source_sha256": "a17f981c235d2c0f511c071ac9bd4818d1f02b37ca660ddf2feb77eb8a49ed22",
+      "published": "author-probes.py",
+      "published_sha256": "3119d9c1ac61f37670d31e417477cdae6ba4078bfd2823ba66c24dd9746bcd0b",
+      "changes": [
+        "Replaced author workstation path with required environment variable and disposable-clone marker guard",
+        "Normalized source line endings to LF; original mutation logic and output parsing preserved"
+      ]
+    },
+    {
+      "source": "combo.py",
+      "source_sha256": "913072eb4103069e5b2b8bea32a5776940128ae0baafbb4e959c871c362fded3",
+      "published": "author-combo.py",
+      "published_sha256": "0ce90c9ad8789bd8fd493cf9946a990d5a4c04eadecd55782189d2e71d6c8f11",
+      "changes": [
+        "Replaced author workstation path with required environment variable and disposable-clone marker guard",
+        "Normalized source line endings to LF; original mutation logic and output parsing preserved"
+      ]
+    },
+    {
+      "source": "replay.cjs",
+      "source_sha256": "a97f39e9d6fb3cb3b057e5c7c3b50e19e30db531c17419224ccc4b6bfdfc9956",
+      "published": "author-replay.cjs",
+      "published_sha256": "99d547cd504184f7a624d8c28bf2d60e741f7dd07334994516be6aec4c85736c",
+      "changes": [
+        "Adapted migration and dependency paths to PANTRY_REVIEW_PROBE_ROOT with disposable-clone guard",
+        "Normalized source line endings to LF"
+      ]
+    },
+    {
+      "source": "probes.out",
+      "source_sha256": "d1ffe9490f32a9989d34ee684d35ed29aec84ef6fb8db8c300d9014ceba53d72",
+      "published": "author-probes.out",
+      "published_sha256": "01c62e6e5036d533c58a97e1a3c210ea1a07420ec475a10e02403149d80307e1",
+      "changes": [
+        "Normalized source line endings to LF; reported outcomes unchanged"
+      ]
+    },
+    {
+      "source": "replay.out",
+      "source_sha256": "59fa6f5e62aaea35ca308a7cdba06d1a32e8a4e2082998fccc3b103d33893325",
+      "published": "author-replay.out",
+      "published_sha256": "59fa6f5e62aaea35ca308a7cdba06d1a32e8a4e2082998fccc3b103d33893325",
+      "changes": [
+        "Normalized source line endings to LF; reported outcomes unchanged"
+      ]
+    }
+  ],
+  "other_sanitization": "independent-rls.out replaces the reviewer local OS-temp path; numeric outcomes unchanged. Reviewer shell captures normalized to UTF-8/LF, including shell-added carriage returns; no result values changed."
+}

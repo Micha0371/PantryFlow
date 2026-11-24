@@ -1,0 +1,1242 @@
+{
+ "baseline_before": {
+  "node": {
+   "exit": 0,
+   "seconds": 30.1,
+   "seed": "3517581231",
+   "tests": 526,
+   "pass": 526,
+   "fail": 0,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.6,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  }
+ },
+ "S1": {
+  "node": {
+   "exit": 1,
+   "seconds": 30.1,
+   "seed": "1436618733",
+   "tests": 526,
+   "pass": 525,
+   "fail": 1,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "other users and anonymous clients cannot read or mutate an existing item"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.7,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "pantry SELECT policy open to all",
+  "files": [
+   "supabase/migrations/00001_first_slice.sql"
+  ],
+  "verdict": "DETECTED"
+ },
+ "S2": {
+  "node": {
+   "exit": 0,
+   "seconds": 31.7,
+   "seed": "230023052",
+   "tests": 526,
+   "pass": 526,
+   "fail": 0,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.9,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "pantry UPDATE policy open to all",
+  "files": [
+   "supabase/migrations/00001_first_slice.sql"
+  ],
+  "verdict": "SURVIVED"
+ },
+ "S3": {
+  "node": {
+   "exit": 0,
+   "seconds": 33.8,
+   "seed": "2237888630",
+   "tests": 526,
+   "pass": 526,
+   "fail": 0,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 5.5,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "pantry DELETE policy open to all",
+  "files": [
+   "supabase/migrations/00001_first_slice.sql"
+  ],
+  "verdict": "SURVIVED"
+ },
+ "S4": {
+  "node": {
+   "exit": 1,
+   "seconds": 33.9,
+   "seed": "4026321685",
+   "tests": 526,
+   "pass": 525,
+   "fail": 1,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "creator spoofing, null attribution and cross-household insertion are rejected"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 5.3,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "pantry INSERT: creator not checked",
+  "files": [
+   "supabase/migrations/00002_review_hardening.sql"
+  ],
+  "verdict": "DETECTED"
+ },
+ "S5": {
+  "node": {
+   "exit": 0,
+   "seconds": 31.8,
+   "seed": "2552942639",
+   "tests": 526,
+   "pass": 526,
+   "fail": 0,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 5.8,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "pantry INSERT: household not checked",
+  "files": [
+   "supabase/migrations/00002_review_hardening.sql"
+  ],
+  "verdict": "SURVIVED"
+ },
+ "S6": {
+  "node": {
+   "exit": 1,
+   "seconds": 36.2,
+   "seed": "2211901001",
+   "tests": 526,
+   "pass": 525,
+   "fail": 1,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "users may edit profile fields but cannot self-assign premium or change identity"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 5.5,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "premium flag writable by users",
+  "files": [
+   "supabase/migrations/00002_review_hardening.sql"
+  ],
+  "verdict": "DETECTED"
+ },
+ "S7": {
+  "node": {
+   "exit": 1,
+   "seconds": 32.0,
+   "seed": "2854283122",
+   "tests": 526,
+   "pass": 525,
+   "fail": 1,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "creator spoofing, null attribution and cross-household insertion are rejected"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.3,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "creator column writable by users",
+  "files": [
+   "supabase/migrations/00002_review_hardening.sql"
+  ],
+  "verdict": "DETECTED"
+ },
+ "S8": {
+  "node": {
+   "exit": 0,
+   "seconds": 30.3,
+   "seed": "3383355158",
+   "tests": 526,
+   "pass": 526,
+   "fail": 0,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.8,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "profile SELECT policy open to all",
+  "files": [
+   "supabase/migrations/00001_first_slice.sql"
+  ],
+  "verdict": "SURVIVED"
+ },
+ "S9": {
+  "node": {
+   "exit": 0,
+   "seconds": 31.9,
+   "seed": "3724166745",
+   "tests": 526,
+   "pass": 526,
+   "fail": 0,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.1,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "household SELECT policy open to all",
+  "files": [
+   "supabase/migrations/00001_first_slice.sql"
+  ],
+  "verdict": "SURVIVED"
+ },
+ "S10": {
+  "node": {
+   "exit": 0,
+   "seconds": 30.8,
+   "seed": "407743425",
+   "tests": 526,
+   "pass": 526,
+   "fail": 0,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.2,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "shopping SELECT policy open to all",
+  "files": [
+   "supabase/migrations/00004_shopping_items.sql"
+  ],
+  "verdict": "SURVIVED"
+ },
+ "S11": {
+  "node": {
+   "exit": 1,
+   "seconds": 30.3,
+   "seed": "15477283",
+   "tests": 526,
+   "pass": 525,
+   "fail": 1,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "protected routes do not mount children during restoration, failure or signed-out access"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.5,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "signed-out users reach protected routes",
+  "files": [
+   "components/AuthGate.tsx"
+  ],
+  "verdict": "DETECTED"
+ },
+ "S12": {
+  "node": {
+   "exit": 0,
+   "seconds": 30.6,
+   "seed": "350607665",
+   "tests": 526,
+   "pass": 526,
+   "fail": 0,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.5,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "PKCE flow replaced by implicit",
+  "files": [
+   "lib/supabase.ts"
+  ],
+  "verdict": "SURVIVED"
+ },
+ "S13": {
+  "node": {
+   "exit": 1,
+   "seconds": 83.7,
+   "seed": "4044687996",
+   "tests": 526,
+   "pass": 525,
+   "fail": 0,
+   "cancelled": 1,
+   "skipped": 0,
+   "failing": [
+    "expired codes remain recoverable and a callback cannot replace an already signed-in account"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.3,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "confirmation link accepted while signed in",
+  "files": [
+   "lib/email-confirmation.ts"
+  ],
+  "verdict": "DETECTED"
+ },
+ "S14": {
+  "node": {
+   "exit": 1,
+   "seconds": 31.3,
+   "seed": "2477068325",
+   "tests": 526,
+   "pass": 525,
+   "fail": 1,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "confirmation rejects missing, ambiguous, malformed and error links without exchanging credentials"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.2,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "error parameters in a confirmation link ignored",
+  "files": [
+   "lib/email-confirmation.ts"
+  ],
+  "verdict": "DETECTED"
+ },
+ "D1": {
+  "node": {
+   "exit": 1,
+   "seconds": 30.6,
+   "seed": "3983247545",
+   "tests": 526,
+   "pass": 523,
+   "fail": 3,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "00003 aborts on legacy duplicate names without merging or deleting",
+    "duplicate add and rename are blocked regardless of category, location or status",
+    "overlapping duplicate insert and rename calls cannot both succeed"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.4,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "duplicate index missing",
+  "files": [
+   "supabase/migrations/00003_strict_duplicate_prevention.sql"
+  ],
+  "verdict": "DETECTED"
+ },
+ "D2": {
+  "node": {
+   "exit": 1,
+   "seconds": 30.1,
+   "seed": "1766034454",
+   "tests": 526,
+   "pass": 523,
+   "fail": 3,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "00003 aborts on legacy duplicate names without merging or deleting",
+    "duplicate add and rename are blocked regardless of category, location or status",
+    "overlapping duplicate insert and rename calls cannot both succeed"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.4,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "legacy duplicate guard in 00003 removed (CONFOUNDED: also removes the unique index, as in the original run)",
+  "files": [
+   "supabase/migrations/00003_strict_duplicate_prevention.sql"
+  ],
+  "verdict": "DETECTED"
+ },
+ "D3": {
+  "node": {
+   "exit": 1,
+   "seconds": 30.2,
+   "seed": "2833445959",
+   "tests": 526,
+   "pass": 525,
+   "fail": 1,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "deleting an author preserves items in a surviving household and clears attribution"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.3,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "deleting an author deletes shared items",
+  "files": [
+   "supabase/migrations/00002_review_hardening.sql"
+  ],
+  "verdict": "DETECTED"
+ },
+ "D4": {
+  "node": {
+   "exit": 1,
+   "seconds": 31.1,
+   "seed": "1124381244",
+   "tests": 526,
+   "pass": 524,
+   "fail": 2,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "a stale cache retries once against the database status and reports it as previous",
+    "a status change writes only status, filtered by id, household and the cached status"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.3,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "status write without compare-and-set",
+  "files": [
+   "lib/pantry-data.ts"
+  ],
+  "verdict": "DETECTED"
+ },
+ "D5": {
+  "node": {
+   "exit": 1,
+   "seconds": 30.4,
+   "seed": "3014902690",
+   "tests": 526,
+   "pass": 518,
+   "fail": 8,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "a codeless gateway error on the CAS is uncertain: coded unknown, row kept, marked, one re-read",
+    "an authoritative row for the item clears its mark",
+    "an uncertain outcome after a household change leaves the new household's list loading normally",
+    "an unconfirmed item selecting its cached status still asks the database",
+    "code \"\" on the CAS is uncertain: coded unknown, row kept, marked, one re-read",
+    "code \"\" on the retry is uncertain: coded unknown, row kept, marked, one re-read",
+    "the mark survives a later write that discards the reconciling read, which starts a new one",
+    "the unconfirmed mark clears after an accepted list read"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.4,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "status write: uncoded failure treated as rejected",
+  "files": [
+   "lib/pantry-data.ts"
+  ],
+  "verdict": "DETECTED"
+ },
+ "D6": {
+  "node": {
+   "exit": 1,
+   "seconds": 30.8,
+   "seed": "756892739",
+   "tests": 526,
+   "pass": 522,
+   "fail": 4,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "a delete that removes no row rejects",
+    "a later successful write wins over a pending recovery read, and the missing row stays out (CR-01)",
+    "a missing-record re-read loses to a newer read and to a household change (CR-01)",
+    "a missing-record update or delete drops the stale row and re-reads (CR-01)"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.5,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "delete of zero rows reported as success",
+  "files": [
+   "hooks/usePantryItems.tsx"
+  ],
+  "verdict": "DETECTED"
+ },
+ "D7": {
+  "node": {
+   "exit": 1,
+   "seconds": 31.1,
+   "seed": "1470923939",
+   "tests": 526,
+   "pass": 523,
+   "fail": 3,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "a smaller server cap or failed page is an error, never a partial inventory",
+    "fetchAllPages rejects a short page when the count says more rows exist",
+    "reads page beyond the server cap and never return partial lists"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 5.5,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "truncated list accepted as complete",
+  "files": [
+   "lib/pagination.ts"
+  ],
+  "verdict": "DETECTED"
+ },
+ "D8": {
+  "node": {
+   "exit": 1,
+   "seconds": 29.7,
+   "seed": "4291569304",
+   "tests": 526,
+   "pass": 525,
+   "fail": 1,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "a profile update that touches no row is a failure"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.0,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "language save of zero rows reported as success",
+  "files": [
+   "lib/profile-language.ts"
+  ],
+  "verdict": "DETECTED"
+ },
+ "F1": {
+  "node": {
+   "exit": 1,
+   "seconds": 30.1,
+   "seed": "2010737743",
+   "tests": 526,
+   "pass": 522,
+   "fail": 4,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "a missing result that arrives after a household change neither re-reads nor touches the new list (CR-01)",
+    "a write that settles after a household change does not strand the new household's first read",
+    "a write that settles after the same user changes household does not re-read for the new household (KAN-85)",
+    "an uncertain outcome after a household change leaves the new household's list loading normally"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.2,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "late read of a previous user or household applied",
+  "files": [
+   "hooks/household-list.ts"
+  ],
+  "verdict": "DETECTED"
+ },
+ "F2": {
+  "node": {
+   "exit": 0,
+   "seconds": 29.9,
+   "seed": "655124628",
+   "tests": 526,
+   "pass": 526,
+   "fail": 0,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.7,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "rows of another household stay visible (row filter removed)",
+  "files": [
+   "hooks/household-list.ts"
+  ],
+  "verdict": "SURVIVED"
+ },
+ "F3": {
+  "node": {
+   "exit": 1,
+   "seconds": 30.4,
+   "seed": "1566470756",
+   "tests": 526,
+   "pass": 517,
+   "fail": 9,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "a later successful write wins over a pending recovery read, and the missing row stays out (CR-01)",
+    "a missing-record re-read loses to a newer read and to a household change",
+    "a missing-record re-read loses to a newer read and to a household change (CR-01)",
+    "an unrelated write cannot cancel missing-record recovery",
+    "both consumers observe add, edit and delete; old reads cannot undo a write",
+    "both consumers observe add, rename, complete, reopen and delete; old reads cannot undo a write",
+    "newest read wins and a user or household change clears state and discards old requests",
+    "the mark survives a later write that discards the reconciling read, which starts a new one"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.1,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "older read overwrites newer one",
+  "files": [
+   "hooks/household-list.ts"
+  ],
+  "verdict": "DETECTED"
+ },
+ "F4": {
+  "node": {
+   "exit": 0,
+   "seconds": 29.8,
+   "seed": "484427036",
+   "tests": 526,
+   "pass": 526,
+   "fail": 0,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.1,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "pantry state not reset on user change (provider key removed)",
+  "files": [
+   "hooks/usePantryItems.tsx"
+  ],
+  "verdict": "SURVIVED"
+ },
+ "F5": {
+  "node": {
+   "exit": 1,
+   "seconds": 63.8,
+   "seed": "3868673697",
+   "tests": 523,
+   "pass": 520,
+   "fail": 3,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "a double tap on an option or a second status control writes once",
+    "mutation lock is immediate and navigating away abandons completion callbacks",
+    "repeated Return while busy creates one item"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 5.0,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "double submit not locked",
+  "files": [
+   "hooks/useItemMutation.ts"
+  ],
+  "verdict": "DETECTED"
+ },
+ "F6": {
+  "node": {
+   "exit": 1,
+   "seconds": 28.6,
+   "seed": "299141395",
+   "tests": 526,
+   "pass": 517,
+   "fail": 9,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "Cancel closes the screen while the prompt is unanswered, and a late answer does nothing",
+    "a failure notice answered late, after Cancel, does nothing more (KAN-85)",
+    "a prompt answered after the screen lost focus adds nothing and shows no notice",
+    "a save resolving after close does not navigate or update state",
+    "mutation lock is immediate and navigating away abandons completion callbacks",
+    "no failure notice when the screen closed while the shopping add was pending",
+    "no failure notice when the screen lost focus while the shopping add was pending",
+    "no prompt after the edit screen has closed during the save",
+    "no prompt when another screen covered the edit screen during the save"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.2,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "finished request navigates an abandoned screen",
+  "files": [
+   "hooks/useItemMutation.ts"
+  ],
+  "verdict": "DETECTED"
+ },
+ "F7": {
+  "node": {
+   "exit": 1,
+   "seconds": 28.6,
+   "seed": "3975212673",
+   "tests": 526,
+   "pass": 525,
+   "fail": 1,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "signup distinguishes email confirmation from an authenticated session"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.0,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "failed sign-out shown as success",
+  "files": [
+   "lib/auth.tsx"
+  ],
+  "verdict": "DETECTED"
+ },
+ "F8": {
+  "node": {
+   "exit": 1,
+   "seconds": 28.8,
+   "seed": "3125548789",
+   "tests": 526,
+   "pass": 525,
+   "fail": 1,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "rejected session restoration settles loading, exposes retry, and recovers"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.3,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "failed session restore hidden",
+  "files": [
+   "lib/auth.tsx"
+  ],
+  "verdict": "DETECTED"
+ },
+ "F9": {
+  "node": {
+   "exit": 1,
+   "seconds": 29.0,
+   "seed": "62570513",
+   "tests": 526,
+   "pass": 525,
+   "fail": 1,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "German and English catalogues have exactly the same keys, and no German text is empty"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.1,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "missing German key",
+  "files": [
+   "lib/i18n/de.ts"
+  ],
+  "verdict": "DETECTED"
+ },
+ "A1": {
+  "node": {
+   "exit": 1,
+   "seconds": 28.9,
+   "seed": "4116059700",
+   "tests": 526,
+   "pass": 524,
+   "fail": 2,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "chips expose radio semantics with the checked state",
+    "the language row shows English and Deutsch in their own language with the current one checked"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 5.0,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "chips lose the checked state",
+  "files": [
+   "components/OptionChips.tsx"
+  ],
+  "verdict": "DETECTED"
+ },
+ "A2": {
+  "node": {
+   "exit": 0,
+   "seconds": 29.1,
+   "seed": "4063804240",
+   "tests": 526,
+   "pass": 526,
+   "fail": 0,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.9,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "pantry row loses role",
+  "files": [
+   "components/PantryItem.tsx"
+  ],
+  "verdict": "SURVIVED"
+ },
+ "A3": {
+  "node": {
+   "exit": 1,
+   "seconds": 28.5,
+   "seed": "3669305816",
+   "tests": 526,
+   "pass": 521,
+   "fail": 5,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "InlineError keeps one polite live region mounted and puts the alert inside it",
+    "a failed toggle shows the translated error and keeps the list",
+    "a sign-out failure appears inside a live region that was already mounted (KAN-39)",
+    "an Add Item load error appears inside a live region that was already mounted (KAN-39)",
+    "an error under a field is an alert inside a polite live region"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.7,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "field error not announced",
+  "files": [
+   "components/InlineError.tsx"
+  ],
+  "verdict": "DETECTED"
+ },
+ "C1": {
+  "node": {
+   "exit": 0,
+   "seconds": 28.4,
+   "seed": "1481355897",
+   "tests": 526,
+   "pass": 526,
+   "fail": 0,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.0,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "clear-on-change removed",
+  "files": [
+   "hooks/household-list.ts"
+  ],
+  "verdict": "SURVIVED"
+ },
+ "C2": {
+  "node": {
+   "exit": 1,
+   "seconds": 28.8,
+   "seed": "1868343461",
+   "tests": 526,
+   "pass": 522,
+   "fail": 4,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "a missing-record re-read loses to a newer read and to a household change",
+    "a missing-record re-read loses to a newer read and to a household change (CR-01)",
+    "newest read wins and a user or household change clears state and discards old requests"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.1,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "row filter + clear removed",
+  "files": [
+   "hooks/household-list.ts"
+  ],
+  "verdict": "DETECTED"
+ },
+ "C3": {
+  "node": {
+   "exit": 0,
+   "seconds": 28.9,
+   "seed": "4103331518",
+   "tests": 526,
+   "pass": 526,
+   "fail": 0,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.2,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "pantry provider key + row filter removed",
+  "files": [
+   "hooks/household-list.ts",
+   "hooks/usePantryItems.tsx"
+  ],
+  "verdict": "SURVIVED"
+ },
+ "C4": {
+  "node": {
+   "exit": 1,
+   "seconds": 33.9,
+   "seed": "2444411058",
+   "tests": 526,
+   "pass": 522,
+   "fail": 4,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "a missing-record re-read loses to a newer read and to a household change",
+    "a missing-record re-read loses to a newer read and to a household change (CR-01)",
+    "newest read wins and a user or household change clears state and discards old requests"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.0,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "pantry provider key + row filter + clear removed",
+  "files": [
+   "hooks/household-list.ts",
+   "hooks/usePantryItems.tsx"
+  ],
+  "verdict": "DETECTED"
+ },
+ "C5": {
+  "node": {
+   "exit": 0,
+   "seconds": 28.9,
+   "seed": "2265509820",
+   "tests": 526,
+   "pass": 526,
+   "fail": 0,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.0,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "household provider key removed",
+  "files": [
+   "hooks/household-scope.tsx"
+  ],
+  "verdict": "SURVIVED"
+ },
+ "C6": {
+  "node": {
+   "exit": 1,
+   "seconds": 31.6,
+   "seed": "1135442162",
+   "tests": 526,
+   "pass": 522,
+   "fail": 4,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "a missing-record re-read loses to a newer read and to a household change",
+    "a missing-record re-read loses to a newer read and to a household change (CR-01)",
+    "newest read wins and a user or household change clears state and discards old requests"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.1,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "household key + pantry key + row filter + clear removed",
+  "files": [
+   "hooks/household-list.ts",
+   "hooks/household-scope.tsx",
+   "hooks/usePantryItems.tsx"
+  ],
+  "verdict": "DETECTED"
+ },
+ "C7": {
+  "node": {
+   "exit": 0,
+   "seconds": 32.1,
+   "seed": "2130994052",
+   "tests": 526,
+   "pass": 526,
+   "fail": 0,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.1,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "shopping provider key removed",
+  "files": [
+   "hooks/useShoppingItems.tsx"
+  ],
+  "verdict": "SURVIVED"
+ },
+ "X1": {
+  "node": {
+   "exit": 1,
+   "seconds": 34.9,
+   "seed": "2744987821",
+   "tests": 526,
+   "pass": 525,
+   "fail": 1,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [
+    "00003 aborts on legacy duplicate names without merging or deleting"
+   ],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 5.1,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  },
+  "restored": true,
+  "description": "legacy duplicate guard in 00003 removed, unique index kept",
+  "files": [
+   "supabase/migrations/00003_strict_duplicate_prevention.sql"
+  ],
+  "verdict": "DETECTED"
+ },
+ "baseline_after": {
+  "node": {
+   "exit": 0,
+   "seconds": 31.7,
+   "seed": "91504701",
+   "tests": 526,
+   "pass": 526,
+   "fail": 0,
+   "cancelled": 0,
+   "skipped": 0,
+   "failing": [],
+   "load_errors": []
+  },
+  "jest": {
+   "exit": 0,
+   "seconds": 4.6,
+   "tests": "18 passed, 18 total",
+   "failing": []
+  }
+ }
+}

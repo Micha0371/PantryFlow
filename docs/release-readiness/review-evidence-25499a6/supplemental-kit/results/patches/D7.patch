@@ -1,0 +1,12 @@
+diff --git a/pantry-flow/lib/pagination.ts b/pantry-flow/lib/pagination.ts
+index a1d85e2..b4e14fc 100644
+--- a/pantry-flow/lib/pagination.ts
++++ b/pantry-flow/lib/pagination.ts
+@@ -25,6 +25,6 @@ function isComplete(total: number, received: number, count: number | null): bool
+     return true;
+   }
+   if (count === null && received < PAGE_SIZE) return true;
+-  if (received < PAGE_SIZE) throw new Error('Server row limit is below page size');
++  if (received < PAGE_SIZE) return true;
+   return false;
+ }

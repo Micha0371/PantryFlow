@@ -1,0 +1,33 @@
+intact policies, rows seen or changed by the other user: {
+ "pgTAP pantry count": 0,
+ "pgTAP pantry foreign insert": "ERR 42501",
+ "pgTAP pantry update WHERE+RETURNING": 0,
+ "pgTAP pantry delete WHERE+RETURNING": 0,
+ "pgTAP shopping count": 0,
+ "pgTAP shopping foreign insert": "ERR 42501",
+ "pgTAP shopping update RETURNING": 0,
+ "pgTAP shopping delete RETURNING": 0,
+ "pgTAP profiles count": 1,
+ "pgTAP households count": 1,
+ "API pantry insert RETURNING": "ERR 42501",
+ "API pantry update WHERE+RETURNING": 0,
+ "API shopping insert RETURNING": "ERR 42501",
+ "API shopping update WHERE+RETURNING": 0,
+ "API profile update WHERE+RETURNING": 0,
+ "BARE pantry update": 0,
+ "BARE pantry delete": 0,
+ "BARE shopping update": 0,
+ "BARE shopping delete": 0,
+ "BARE profile update": 1
+}
+pantry SELECT open: noticed by "pgTAP pantry count" (0 -> 1)
+pantry INSERT any household: noticed by "pgTAP pantry foreign insert" (ERR 42501 -> 1)
+pantry UPDATE open: noticed by "BARE pantry update" (0 -> 1)
+pantry DELETE open: noticed by "BARE pantry delete" (0 -> 1)
+shopping SELECT open: noticed by "pgTAP shopping count" (0 -> 1)
+shopping INSERT any household: noticed by "pgTAP shopping foreign insert" (ERR 42501 -> 1)
+shopping UPDATE open: noticed by "BARE shopping update" (0 -> 1)
+shopping DELETE open: noticed by "BARE shopping delete" (0 -> 1)
+profile SELECT open: noticed by "pgTAP profiles count" (1 -> 2)
+profile UPDATE open: noticed by "BARE profile update" (1 -> 2)
+household SELECT open: noticed by "pgTAP households count" (1 -> 2)

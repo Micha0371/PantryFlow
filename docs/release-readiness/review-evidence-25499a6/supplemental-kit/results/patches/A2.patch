@@ -1,0 +1,13 @@
+diff --git a/pantry-flow/components/PantryItem.tsx b/pantry-flow/components/PantryItem.tsx
+index ca827b8..98dfc4d 100644
+--- a/pantry-flow/components/PantryItem.tsx
++++ b/pantry-flow/components/PantryItem.tsx
+@@ -37,7 +37,7 @@ export function PantryItem({
+       <Pressable
+         onPress={onPress}
+         disabled={editDisabled}
+-        accessibilityRole="button"
++        
+         accessibilityLabel={`${item.name}, ${t(`cat_${item.category}`)}, ${t(`loc_${item.location}`)}`}
+         accessibilityHint={t('item_edit_hint')}
+         accessibilityState={{ disabled: !!editDisabled }}

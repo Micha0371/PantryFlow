@@ -1,0 +1,13 @@
+diff --git a/pantry-flow/lib/pantry-data.ts b/pantry-flow/lib/pantry-data.ts
+index 5725afd..eac5422 100644
+--- a/pantry-flow/lib/pantry-data.ts
++++ b/pantry-flow/lib/pantry-data.ts
+@@ -71,7 +71,7 @@ export async function writeItemStatus(
+     let result;
+     try {
+       result = await client.from('pantry_items')
+-        .update({ status: next }).eq('id', id).eq('household_id', householdId).eq('status', prev)
++        .update({ status: next }).eq('id', id).eq('household_id', householdId)
+         .select().maybeSingle();
+     } catch (cause) {
+       throw uncertain(cause);

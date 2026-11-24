@@ -1,0 +1,11 @@
+--- a/pantry-flow/hooks/usePantryItems.tsx
++++ b/pantry-flow/hooks/usePantryItems.tsx
+@@ -100,7 +100,7 @@
+       const { data, error: err } = await supabase.from('pantry_items')
+         .delete().eq('id', id).eq('household_id', householdId).select('id');
+       if (err) throw err;
+-      if (!data?.length) throw Object.assign(new Error('Item was not deleted'), { code: PANTRY_MISSING });
++      
+       if (isCurrent(scope)) { generation.current++; setLoading(false); setItems(prev => prev.filter(it => it.id !== id)); }
+     } catch (error) {
+       if (dropIfMissing(id, error)) reread = true;

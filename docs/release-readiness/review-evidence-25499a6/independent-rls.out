@@ -1,0 +1,47 @@
+{"commit":"25499a656c1e419883d95b6e9ade8cd0fa4fc791","node":"v26.10.0","postgres":"PostgreSQL 17.5 on aarch64-unknown-linux-gnu, compiled by emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 3.1.74 (1092ec30a3fb1d46b1782ff1b4db5094d3d06ae5), 32-bit"}
+
+{"policy":"items_update_member","mode":"intact","filtered-returning":{"affected":0,"returned":0,"foreignChanged":false},"bare":{"affected":1,"returned":0,"foreignChanged":false}}
+
+{"policy":"items_update_member","mode":"open","filtered-returning":{"affected":0,"returned":0,"foreignChanged":false},"bare":{"affected":2,"returned":0,"foreignChanged":true}}
+
+{"policy":"items_update_member","mode":"absent","filtered-returning":{"affected":0,"returned":0,"foreignChanged":false},"bare":{"affected":0,"returned":0,"foreignChanged":false}}
+
+{"policy":"items_delete_member","mode":"intact","filtered-returning":{"affected":0,"returned":0,"foreignChanged":false},"bare":{"affected":1,"returned":0,"foreignChanged":false}}
+
+{"policy":"items_delete_member","mode":"open","filtered-returning":{"affected":0,"returned":0,"foreignChanged":false},"bare":{"affected":2,"returned":0,"foreignChanged":true}}
+
+{"policy":"items_delete_member","mode":"absent","filtered-returning":{"affected":0,"returned":0,"foreignChanged":false},"bare":{"affected":0,"returned":0,"foreignChanged":false}}
+
+{"policy":"shopping_update_member","mode":"intact","filtered-returning":{"affected":0,"returned":0,"foreignChanged":false},"bare":{"affected":1,"returned":0,"foreignChanged":false}}
+
+{"policy":"shopping_update_member","mode":"open","filtered-returning":{"affected":0,"returned":0,"foreignChanged":false},"bare":{"affected":2,"returned":0,"foreignChanged":true}}
+
+{"policy":"shopping_update_member","mode":"absent","filtered-returning":{"affected":0,"returned":0,"foreignChanged":false},"bare":{"affected":0,"returned":0,"foreignChanged":false}}
+
+{"policy":"shopping_delete_member","mode":"intact","filtered-returning":{"affected":0,"returned":0,"foreignChanged":false},"bare":{"affected":1,"returned":0,"foreignChanged":false}}
+
+{"policy":"shopping_delete_member","mode":"open","filtered-returning":{"affected":0,"returned":0,"foreignChanged":false},"bare":{"affected":2,"returned":0,"foreignChanged":true}}
+
+{"policy":"shopping_delete_member","mode":"absent","filtered-returning":{"affected":0,"returned":0,"foreignChanged":false},"bare":{"affected":0,"returned":0,"foreignChanged":false}}
+
+{"policy":"profiles_update_own","mode":"intact","filtered-returning":{"affected":0,"returned":0,"foreignChanged":false},"bare":{"affected":1,"returned":0,"foreignChanged":false}}
+
+{"policy":"profiles_update_own","mode":"open","filtered-returning":{"affected":0,"returned":0,"foreignChanged":false},"bare":{"affected":2,"returned":0,"foreignChanged":true}}
+
+{"policy":"profiles_update_own","mode":"absent","filtered-returning":{"affected":0,"returned":0,"foreignChanged":false},"bare":{"affected":0,"returned":0,"foreignChanged":false}}
+
+{"insert":"pantry_items","returning":false,"affected":1}
+
+{"insert":"pantry_items","returning":true,"code":"42501"}
+
+{"insert":"pantry_shopping_items","returning":false,"affected":1}
+
+{"insert":"pantry_shopping_items","returning":true,"code":"42501"}
+
+{"existingDatabaseTests":"intact","exit":0,"summary":["# tests 10","# pass 10","# fail 0","# skipped 0"]}
+
+{"existingDatabaseTests":"items_update_member","exit":0,"summary":["# tests 10","# pass 10","# fail 0","# skipped 0"]}
+
+{"existingDatabaseTests":"items_delete_member","exit":0,"summary":["# tests 10","# pass 10","# fail 0","# skipped 0"]}
+
+All independent assertions passed. Disposable committed-input copy retained at <SANITIZED_OS_TEMP>/pantryflow-rls-review-<RUN>

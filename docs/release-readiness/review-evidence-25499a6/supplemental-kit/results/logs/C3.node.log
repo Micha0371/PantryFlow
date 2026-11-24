@@ -1,0 +1,940 @@
+$ node scripts/run-node-tests.cjs --test-concurrency=2 --test-timeout=60000
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the unconfirmed mark clears after an accepted list read (50.7915ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ code "" on the CAS is uncertain: coded unknown, row kept, marked, one re-read (28.7925ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a confirmed error at the CAS is rethrown, keeps the row and is never missing or unconfirmed (42501) (18.916ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a confirmed error at the read is rethrown, keeps the row and is never missing or unconfirmed (42501) (20.7115ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a thrown exception on the retry is uncertain: coded unknown, row kept, marked, one re-read (17.4792ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a confirmed error at the retry is rethrown, keeps the row and is never missing or unconfirmed (42501) (23.6825ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a codeless gateway error on the CAS is uncertain: coded unknown, row kept, marked, one re-read (21.7881ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ an authoritative row for the item clears its mark (23.7643ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the status write shares the per-item lock with updateItem (16.9563ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a confirmed missing row drops it and re-reads (16.9693ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a status write that settles after a household change writes nothing into the new scope (18.4054ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a database already holding the new status returns already without a write or prompt data (20.8411ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a confirmed error at the read is rethrown, keeps the row and is never missing or unconfirmed (offline) (18.4607ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ an uncertain outcome after a household change leaves the new household's list loading normally (21.3138ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the returned row replaces the cached one, including a name changed elsewhere (18.5988ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ selecting the cached status makes no API call and returns already (21.6104ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ an unknown cached item throws without a call (15.3894ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ code "" on the retry is uncertain: coded unknown, row kept, marked, one re-read (14.5565ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a stale cache retries once against the database status and reports it as previous (16.9635ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ an unconfirmed item selecting its cached status still asks the database (19.9962ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a second mismatch throws a conflict and adopts the fresh row (23.1066ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a status change writes only status, filtered by id, household and the cached status (14.6465ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a thrown exception on the CAS is uncertain: coded unknown, row kept, marked, one re-read (14.6115ms)
+✔ the mark survives a later write that discards the reconciling read, which starts a new one (13.3998ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ each tab icon has its Ionicons name and the focused or muted color (80.034ms)
+✔ root layout mounts ShoppingProvider inside the household scope and around the stack (16.5084ms)
+✔ tab layout orders Pantry, Shopping, Settings behind the session gate (10.1221ms)
+✔ no shipped translation catalogue contains mis-encoded text (53.2733ms)
+✔ the mojibake detector flags double-encoded text and leaves real characters alone (0.23ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ signing out applies nothing (30.7524ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the user changing while the pending read is in flight applies nothing for the old user (11.8446ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a read that resolves after a newer Settings choice applies nothing (11.0635ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a Settings choice made before the pending save starts: LanguageSync does not save (9.9438ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a pre-KAN-61 account keeps its saved English (12.5777ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the user changing during a pending flush applies nothing for the old user (13.8139ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ signing out during an in-flight profile read applies nothing (9.3863ms)
+✔ profile-language reads, validates and writes through supabase and storage (12.5065ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ signUp stores the current locale as pending for the new user (confirmation_required) (26.824ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a read for a previous user is dropped (9.2809ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the initial storage read does not overwrite an explicit setLocale (21.5308ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a failed pending write keeps the pending choice and applies it (7.566ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a Settings choice during a pending flush: the older locale is not applied and the pending key is not cleared (6.1313ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ signUp stores the current locale as pending for the new user (signed_in) (10.2224ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ on sign-in the account language is applied (6.5594ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a pending choice is written to the profile before anything else and then applied (7.1343ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ an offline profile read keeps the current language (6.4745ms)
+✔ signing out during a pending flush applies nothing (6.7979ms)
+✔ German characters lower-case consistently (1.3578ms)
+✔ matching is a case-insensitive substring of the trimmed query (0.2381ms)
+✔ an empty or whitespace-only query returns the same array reference (0.1826ms)
+✔ order is preserved (0.2306ms)
+▶ migrations after the adopted baseline apply under the hosted push search_path
+  ✔ every pushed migration succeeds without extensions on search_path (1215.4799ms)
+  ✔ negative control: an unqualified extension call fails exactly as on hosted (658.567ms)
+✔ migrations after the adopted baseline apply under the hosted push search_path (1875.5269ms)
+✔ Expo prebuild refactors debug package files from a Windows-compatible glob (31.3288ms)
+✔ every flow header names its own seed; the three confirmation files name seed:confirmation (5.1765ms)
+✔ every flow names a Maestro file that exists and a debug folder, and report names are unique (1.4097ms)
+✔ an unknown or missing flow name fails and lists the valid names (0.9169ms)
+✔ unconsumed arguments and a repeated --flow fail clearly instead of running everything (0.426ms)
+✔ every flow has a seed and a verify command in e2e-fixtures (1.8919ms)
+✔ --flow <name> and --flow=<name> select exactly that flow (0.5212ms)
+✔ flowFiles names every Maestro file the runner starts, each once (0.2551ms)
+✔ no --flow selects every flow in the fixed order (0.1725ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ pressing a row name opens the edit modal for that item (140.8325ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a successful add clears a stale toggle error (75.1179ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the add bar never moves focus itself (51.6161ms)
+✔ the add bar shows with items and empty, not in the error or loading states (191.2657ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a household change clears the toggle error (59.2411ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ tapping an open item's circle completes it once even on a double tap (32.9986ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a failed toggle shows the translated error and keeps the list (38.545ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a pending toggle from an obsolete household cannot show an error in the new list (37.066ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a toggle error disappears once its item is removed (32.592ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ keyboard submit without a household does not add (37.1883ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a missing-item error stays after the row is dropped and names the item (31.0096ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ editing the field after a rejected add clears the error (36.9017ms)
+✔ the list keeps the first tap with the keyboard open (29.8685ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ each failed add gives the field a new announceKey, so a repeated error is spoken (KAN-84) (39.4626ms)
+✔ a failed load shows the error with retry, not an empty list (33.6619ms)
+✔ an empty list shows the empty state without an add action (25.6515ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ adding submits the typed name once, clears the field and keeps focus (33.4256ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a late success of another toggle does not hide an earlier failure (38.6432ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a failed add after the field was edited names the submitted item (KAN-37) (29.9536ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a toggle error disappears once its item is changed by a later write (32.5247ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ text typed while an add is in flight is kept (32.3338ms)
+✔ a refresh keeps the visible list instead of a spinner (25.1542ms)
+✔ the add field limits the name length like the edit modal (35.3078ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a failed add after an edit back to the submitted text shows the plain error (36.133ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a failed toggle error appears inside a live region that was already mounted (KAN-39) (34.5354ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a pending add from an obsolete household cannot show an error or block a new add (34.5743ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ returning to a household does not revive an earlier add completion or clear its new draft (46.4209ms)
+✔ fast repeated row taps open one edit screen, even on different rows (KAN-33) (30.4675ms)
+✔ initial shopping load shows progress without claiming an empty list (35.2739ms)
+✔ open items come before completed items, each under its heading (70.1447ms)
+✔ a failed load is announced to TalkBack once, after the tab is spoken (KAN-39) (71.9284ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a toggle error names its item and stays while that item is unchanged (41.3913ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a new toggle start clears the previous toggle error immediately (31.1153ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a rejected add keeps the text and shows the translated error (34.0851ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ tapping a completed item's circle reopens it (34.8464ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ pending toggles on different items run independently (41.4215ms)
+✔ Add is disabled without a household (30.5559ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ category scroll view preserves the first handled tap with the keyboard open (90.3178ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a navigation that never moved focus releases the lock after a second (67.2266ms)
+✔ after the edit screen closes and the list is focused again, a tap opens it again (13.0565ms)
+✔ a second open before the first navigation finishes is ignored (10.9364ms)
+✔ unmounting clears the pending fallback timer (8.2304ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ shopping: opened while the keyboard is already visible, the footer is lifted (73.7534ms)
+✔ shopping: Cancel and Save render inside the footer, outside the ScrollView (37.4098ms)
+✔ add: opened while the keyboard is already visible, the footer is lifted (39.703ms)
+✔ edit: the footer is in-flow (last child of the KeyboardAvoidingView) and the ScrollView keeps its normal bottom padding (46.8796ms)
+✔ footer paddingBottom adds the bottom safe-area inset when the keyboard is hidden (37.7744ms)
+✔ edit: opened while the keyboard is already visible, the footer is lifted (54.7257ms)
+✔ shopping: the footer is in-flow (last child of the KeyboardAvoidingView) and the ScrollView keeps its normal bottom padding (40.5831ms)
+✔ iOS footer uses the inset, never the overlap (36.9485ms)
+✔ shopping: Delete and Remove stay in the scroll content (37.5486ms)
+✔ add: Cancel and Save render inside the footer, outside the ScrollView (29.4074ms)
+✔ edit: Delete and Remove stay in the scroll content (35.3981ms)
+✔ iOS keeps KeyboardAvoidingView padding and applies no overlap to the footer (27.9035ms)
+✔ add: the footer is in-flow (last child of the KeyboardAvoidingView) and the ScrollView keeps its normal bottom padding (34.1149ms)
+✔ edit: Cancel and Save render inside the footer, outside the ScrollView (29.9435ms)
+✔ the footer lifts by the keyboard overlap and returns when it hides (25.1699ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ shopping: missing states stack message, Retry and Back with gap 12 and full-width buttons (88.0117ms)
+✔ edit: missing states stack message, Retry and Back with gap 12 and full-width buttons (54.0166ms)
+✔ a Maestro flow that the runner does not use is reported, helpers are not flows (24.1349ms)
+✔ a test file without a test is reported, comments and strings do not count (154.8362ms)
+✔ a test file that no runner picks up is reported (64.7989ms)
+✔ a script that only names a longer path does not cover a file (15.4018ms)
+✔ a runner without any file is reported (56.7177ms)
+✔ every test file of this project belongs to a runner (249.8615ms)
+✔ a project whose test files all belong to a runner has no problems (9.9904ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ resend UI blocks double submits, recovers from rate limits, and shows privacy-preserving success/cooldown (44.4297ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ invalid/expired callback provides translated recovery without exposing raw link errors or signing in (26.7558ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ callback waits for restoration, exchanges once, and navigates only after completion despite auth events (21.4612ms)
+✔ callback shows progress while confirming and a pantry link when already signed in (12.9653ms)
+✔ a delayed pantry write is held and reported, and other writes pass (682.9121ms)
+✔ control endpoints answer with the write state (96.2701ms)
+✔ the pantry read fault still leaves shopping reads alone (145.0906ms)
+✔ signup and resend without S256 PKCE are refused and not forwarded (173.9283ms)
+✔ an upstream that drops the connection answers 502 (101.7594ms)
+✔ the shopping read fault fails only shopping reads until restore (189.2203ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the prompt and the shopping add use the saved name, not the form name (121.2464ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ Cancel stays disabled while the pantry save itself is pending (74.3287ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ Save stays locked until the prompt is answered (62.2467ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ Cancel closes the screen while the prompt is unanswered, and a late answer does nothing (78.3856ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the shopping add is sent while the shopping list is still loading (44.8111ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ Cancel closes the screen while the failure notice is unanswered (46.5622ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ no prompt after the edit screen has closed during the save (37.3196ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a prompt answered after the screen lost focus adds nothing and shows no notice (40.4244ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ no failure notice when the screen lost focus while the shopping add was pending (63.1723ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a shopping add rejected with 23505 shows err_duplicate_shopping_item and still closes (61.5777ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ no failure notice when the screen closed while the shopping add was pending (47.8835ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ unchanged status and changes to in stock never prompt (152.8725ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a shopping add rejected with 23503 shows err_shopping_link_missing and still closes (45.0903ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a failure notice answered late, after Cancel, does nothing more (KAN-85) (60.7145ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ saving a change to low asks once and Yes adds the saved name linked to the item (32.3096ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ dismissal adds nothing and closes (45.9013ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ Not now adds nothing and closes (46.4986ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a prompt answered after the screen unmounted adds nothing and shows no notice (46.4345ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a failed pantry save shows the pantry error and never prompts (26.5683ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ no prompt when another screen covered the edit screen during the save (33.7046ms)
+✔ Delete and Save do nothing while the prompt is open, and answering it closes the screen (35.2203ms)
+✔ fetches every page beyond the default 1000-row server cap (4.5881ms)
+✔ only a zero-row write counts as a missing pantry item (0.3598ms)
+✔ client duplicate validation excludes self and leaves interior whitespace unchanged (1.2987ms)
+✔ validation rejects API-bypass values and permits bounded Unicode names (0.6103ms)
+✔ a smaller server cap or failed page is an error, never a partial inventory (0.5781ms)
+✔ manual email builder rejects modern secret and legacy service-role keys before any build (148.9756ms)
+✔ manual email builder refuses another project before loading or building app artifacts (66.2313ms)
+✔ adversarial lines redact in linear time (12.6976ms)
+✔ URL userinfo is redacted in every form and other URLs are untouched (0.4287ms)
+✔ every secret label form is redacted (3.6923ms)
+✔ startup diagnostics preserve the actual port failure while removing test credentials (0.4648ms)
+✔ a line with thousands of CR-separated labels redacts every value without overflowing the stack (12.5281ms)
+✔ every translation key literal used in the app exists in the English catalogue (13.5174ms)
+✔ German and English catalogues have exactly the same keys, and no German text is empty (0.4548ms)
+✔ overlapping duplicate insert and rename calls cannot both succeed (1204.1937ms)
+✔ direct API equivalents cannot bypass input constraints (688.6045ms)
+✔ shopping migration preserves existing pantry and household data (709.3443ms)
+✔ creator spoofing, null attribution and cross-household insertion are rejected (666.4095ms)
+✔ duplicate add and rename are blocked regardless of category, location or status (726.6787ms)
+✔ users may edit profile fields but cannot self-assign premium or change identity (703.3538ms)
+✔ other users and anonymous clients cannot read or mutate an existing item (678.3082ms)
+✔ deleting an author preserves items in a surviving household and clears attribution (655.3044ms)
+✔ 00003 aborts on legacy duplicate names without merging or deleting (686.3521ms)
+✔ a new database starts clean and open databases stay independent (2603.7248ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a saved choice wins over the build-time default (103.1846ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a phone language change is followed while no choice was saved (59.0714ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a saved choice wins over the phone language (17.5859ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ an invalid saved value falls back to the phone language (15.2764ms)
+✔ a valid build-time default replaces the phone language; an invalid one is ignored (0.3389ms)
+✔ without a saved choice the provider starts in the phone language and does not save it (20.0131ms)
+✔ e2e prepare writes the English default unless the phone-language build is requested (4.9536ms)
+✔ phoneLocale maps a German first locale to de and anything else to en (0.2507ms)
+✔ a failure after the run exits 1 with a message instead of an unhandled rejection (87.5849ms)
+✔ confirmation-enabled hosted checks refuse synthetic signup and explain the confirmed-fixture procedure (109.2058ms)
+✔ hosted runner refuses another project and administrative keys before making requests (223.1118ms)
+✔ global-patch covers built-in globals written without `global.` (13.7616ms)
+✔ module-state allows legitimate subtest structure (2.9164ms)
+✔ focused-test flags only forms (1.6873ms)
+✔ an independence-ok exemption with a reason is listed, without a reason it is still flagged (0.8506ms)
+✔ independence-ok: a trailing waiver covers only its own line, a comment-only waiver also the next (1.1017ms)
+✔ global-patch accepts a computed-key restore loop; fake-timers allows non-throwing declarations before the try (2.4404ms)
+✔ invisible-whitespace allows ZWJ/ZWNJ between visible characters but flags them at an edge (0.9927ms)
+✔ global-patch: a file-level after hook runs once after all tests and is not a restore (1.3408ms)
+✔ a file without a rules field still gets every rule (0.5274ms)
+✔ skipped-test flags skip and todo forms of tests and suites (2.6016ms)
+✔ the scan covers scripts/ for invisible whitespace and exits 1 naming the file (5.247ms)
+✔ global-patch ignores strings, load-time normalisation and per-test restore of another property (1.7231ms)
+✔ CRLF and LF fixtures report the same line numbers (1.3891ms)
+✔ the scan exits 0 for a clean scripts folder and ignores test-only rules there (4.3051ms)
+✔ module-state follows a call from a test into a file-level function (0.6686ms)
+✔ module-state ignores a file with no tests (a helper module) (0.4074ms)
+✔ global-patch flags an unrestored assignment, including in a called helper (0.5542ms)
+✔ fake-timers: negative numbers and empty literals may precede the try, side-effecting initialisers may not (1.8236ms)
+✔ fake-timers allows a protecting try and t.mock (0.5827ms)
+✔ scripts scan honours independence-ok with a reason and keeps CRLF line numbers (1.563ms)
+✔ invisible-whitespace flags a literal no-break space and allows escapes, umlauts, emoji and a BOM (0.9519ms)
+✔ module-state flags a file-level let that a test reassigns (0.3293ms)
+✔ module-state: describe-level bindings are shared by every test in the describe (0.9328ms)
+✔ fake-timers flags enable that is not directly followed by a protecting try (0.3765ms)
+✔ the scan still exits 1 when only scripts exist and no test file (2.6568ms)
+✔ the scan exits 1 when it finds no test files (0.9071ms)
+✔ the real CLI takes no argument and scans its own project (688.5166ms)
+✔ global-patch: file-level mock.method on a global needs a restore, t.mock.method never does (3.4364ms)
+✔ module-state flags a file-level array mutated in a test (0.3255ms)
+✔ global-patch allows a restore in finally, t.after or a file-level afterEach (1.3952ms)
+✔ module-state allows read-only constants, per-test arrays and subtests sharing constants (0.7724ms)
+✔ scripts scan flags a literal invisible character but no test-only rule (2.1987ms)
+✔ independence-ok waivers work the same in LF and CRLF files (1.2126ms)
+✔ fake-timers: jest.useFakeTimers needs useRealTimers in finally or afterEach (0.5434ms)
+✔ module-state: a parent test local mutated inside a nested subtest is shared state (1.4354ms)
+✔ skipped-test allows skip: false, skip on other objects and text, and a waiver with a reason (1.2256ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ leaving Settings during a save still finishes it and clears the pending record (44.2508ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a language change from outside Settings supersedes a failed save: the error and Retry go away (41.1867ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ choosing a language notes the choice so the startup sync stands down (17.8899ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the last of two quick choices wins on screen and in the profile (20.4409ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the language chips form a radio group named Language (12.8086ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ signed out, choosing a language saves only on the device (15.6669ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a user change clears a failed save, so Retry cannot write it to the new account (12.041ms)
+✔ chips expose radio semantics with the checked state (0.9377ms)
+✔ a profile update that touches no row is a failure (6.1386ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ choosing Deutsch applies it at once and saves it to the profile when signed in (13.873ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a failed profile save keeps Deutsch, shows the error and remembers it as pending; Retry saves and clears the error (15.4554ms)
+✔ the language row shows English and Deutsch in their own language with the current one checked (11.3585ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ name press target is disabled without onPress and enabled with it (14.8218ms)
+✔ toggle is disabled while pending and enabled otherwise when onToggle is given (1.3048ms)
+✔ open item is unchecked with an outline icon and no strike-through (0.8253ms)
+✔ completed item is a checked, disabled checkbox with a struck-through name (1.3007ms)
+✔ toggle touch target is at least 44pt including hitSlop (0.7361ms)
+✔ writes reject malformed rows and invalid names before any request (1.5888ms)
+✔ reads page beyond the server cap and never return partial lists (5.1839ms)
+✔ open-name uniqueness ignores completed items and self (0.4842ms)
+✔ error mapping follows the contract (0.5702ms)
+✔ every shopping operation reports failures as a rejected promise, never a synchronous throw (0.7186ms)
+✔ writes send only contract columns and scope by household (0.8274ms)
+✔ parsing rejects malformed rows (0.3431ms)
+✔ splitShoppingItems separates open from completed and orders completions newest first (0.3717ms)
+✔ validation trims edges, keeps interior whitespace and bounds code points (0.3832ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ saved sessions restore, logout clears identity and a later login replaces it (101.6455ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ signup distinguishes email confirmation from an authenticated session (22.5286ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a late restoration cannot overwrite a newer auth event (16.9916ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ rejected session restoration settles loading, exposes retry, and recovers (14.6572ms)
+✔ the auth context value is stable across a parent re-render and changes with the session (19.6814ms)
+✔ assertNoOtherRun ignores a dead pid and a missing file (5.5305ms)
+✔ release by the owner removes the lock (3.2535ms)
+✔ the lock path is machine-wide by default and overridable (0.4303ms)
+✔ a lock held by a dead pid is replaced (5.7833ms)
+✔ assertNoOtherRun throws for another live pid, also without an allowed pid (4.2704ms)
+✔ release by another pid keeps the lock (2.9745ms)
+✔ assertNoOtherRun allows the allowed pid (2.5827ms)
+✔ a refused acquire leaves the live holder intact and no temp files behind (5.7726ms)
+✔ an empty lock file is taken over like a corrupt one (4.9664ms)
+✔ a corrupt lock file is taken over (4.0741ms)
+✔ a racer that replaced the stale lock first is not destroyed: its lock is put back and we are refused (5.319ms)
+✔ a lock held by a live pid blocks another run (4.4435ms)
+✔ two acquires in a row: the second is refused (4.7331ms)
+✔ a takeover leaves the lock complete and no temp or stale files behind (4.8143ms)
+✔ acquiring writes a fresh lock with pid and start time (2.6108ms)
+✔ the error names the holder root and the lock file (4.1282ms)
+✔ standalone cleanup is refused while a live run holds the lock (86.0088ms)
+✔ without a live run the same seed reaches fixtures, and its own failure cleans up (34.7025ms)
+✔ the command list covers every mutating command (0.1771ms)
+✔ a seed refused by a live run calls neither fixtures nor cleanup, and builds no stack (25.3176ms)
+Removed only reserved local test accounts and their cascading household data.
+✔ the runner's own cleanup and prepare are allowed through via its pid (40.1815ms)
+✔ every command is refused while another live run holds the lock, before any stack or cleanup (403.8542ms)
+✔ commands are dispatched only through the handler map, never by comparing the command (0.897ms)
+Removed only reserved local test accounts and their cascading household data.
+Removed only reserved local test accounts and their cascading household data.
+✔ cleanup after the run released the lock, or over a dead holder, is allowed (27.6857ms)
+✔ the handler map has exactly one entry per handler function (0.6185ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a failed write after a failed load keeps the load error and retry recovers (58.9234ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ concurrent adds of one name leave exactly one item (37.0713ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a missing-record failure re-reads so a row deleted elsewhere disappears (20.0539ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a transport failure on a write issues no re-read (19.4121ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a write that resolves after a household change does not appear in the new household's list (18.9593ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a pending mutation cannot repopulate the next signed-in user list (15.6964ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a write while the first read is in flight ends with the full server list, not a stuck spinner (18.3792ms)
+✔ useShoppingItems outside ShoppingProvider throws (19.7217ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a refresh that sees an added row before the insert returns leaves one entry (17.8454ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ client duplicate checks apply to open items only (20.5938ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a write that settles after a household change does not strand the new household's first read (19.5158ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a household error retries the shared lookup, not the list read (16.1067ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ failed or malformed writes leave state intact and allow retry (19.6119ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ an unrelated write cannot cancel missing-record recovery (13.5951ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ both consumers observe add, rename, complete, reopen and delete; old reads cannot undo a write (14.4396ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ failed initial fetch is err_load_shopping and retry recovers (13.9822ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ newest read wins and a user or household change clears state and discards old requests (15.3833ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a successful write after a failed load re-reads instead of showing a partial list (14.5832ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a pending change locks the same item while other items stay available (19.5058ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a read started under the old household cannot populate the new household's list (12.6191ms)
+✔ a missing-record re-read loses to a newer read and to a household change (14.5458ms)
+▶ profile baseline repair is guarded, atomic and equivalent to repository migrations
+  ✔ only the known body changes; OID, grants, owner, settings, rows and ledger are preserved (1196.2397ms)
+  ✔ refuses unreviewed function body without changing its starting state (648.4146ms)
+  ✔ refuses changed grants without changing its starting state (741.3906ms)
+  ✔ refuses changed owner without changing its starting state (747.6742ms)
+  ✔ refuses changed household default without changing its starting state (691.2244ms)
+  ✔ refuses unexpected ledger version without changing its starting state (686.3022ms)
+  ✔ refuses already canonical function without changing its starting state (662.4871ms)
+  ✔ a DDL-hook grant change aborts and rolls back the replacement and grant (750.8995ms)
+✔ profile baseline repair is guarded, atomic and equivalent to repository migrations (6128.4095ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ InlineError keeps one polite live region mounted and puts the alert inside it (61.382ms)
+✔ an error that appears on the visible screen is announced at once, as after Try again (22.233ms)
+✔ leaving the screen before the delay ends cancels the announcement (15.1546ms)
+✔ returning to a screen that still shows its error announces it again (11.7953ms)
+✔ an error that appears during the delay after focus is spoken when the delay ends (final review I2) (14.9356ms)
+✔ an error on an unfocused screen waits until the screen is focused (17.9279ms)
+✔ iOS makes no announcement (9.1408ms)
+✔ an error cleared and re-shown during the delay is spoken once (final review M1) (8.2531ms)
+✔ an error that is gone when the delay ends is not spoken (9.6332ms)
+✔ the same error announces again after it was cleared, as after a failed retry (9.7189ms)
+✔ a focused screen announces its error once, after the tab has been spoken (10.6045ms)
+✔ an error announces once when it appears and again when its text changes (6.7169ms)
+✔ fetchAllPages rejects a short page when the count says more rows exist (0.989ms)
+✔ fetchAllPages rejects an empty page before the reported count (0.1815ms)
+✔ fetchAllPages returns on an empty page when the count is complete or unknown (0.5779ms)
+✔ fetchAllPages returns a short page when no count is reported (0.2371ms)
+✔ fetchAllPages rethrows a page error and parses each row (0.3004ms)
+✔ fetchAllPages stops when the reported count is reached (0.2516ms)
+✔ opens centered when neither side fits (large font scale) (0.7927ms)
+✔ keeps a 16 dp margin from the right and left edges (0.1823ms)
+✔ flips above for the last row near the bottom (0.1202ms)
+✔ opens below when there is room above the bottom inset (0.1192ms)
+✔ never overlaps the top inset (0.2215ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ useHouseholdScope outside HouseholdProvider throws (82.2727ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a failed lookup exposes err_no_household and one refresh recovers all consumers (23.6666ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a user change re-keys the scope and old results cannot leak (15.1915ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ one lookup is shared by every consumer under HouseholdProvider (16.3685ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ PantryProvider consumes the shared scope (75.9158ms)
+✔ a failed capture is a problem (1.2506ms)
+✔ a log without any entry is a problem, not a clean result (0.3267ms)
+✔ a captured log without a font or asset error is no problem (0.2636ms)
+✔ a native font or asset error is a problem (0.221ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ app/add-item.tsx: Save twice with the same validation error announces it the second time (KAN-84) (224.6005ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a sign-out failure appears inside a live region that was already mounted (KAN-39) (52.3353ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ sign-out failure is visible and does not navigate away (38.7854ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ app/add-item.tsx translates a server unique-constraint rejection without navigating (97.4481ms)
+✔ an Add Item load error appears inside a live region that was already mounted (KAN-39) (67.9312ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ app/edit-item/[id].tsx translates a server unique-constraint rejection without navigating (128.0636ms)
+✔ a session restore failure is announced without a screen focus (KAN-39) (43.8241ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ app/(auth)/login.tsx: each failed submit gives the error field a new announceKey (KAN-84) (35.1399ms)
+✔ the Edit Item screen announces a missing item or failed load as an alert (final review I1) (71.1853ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ email-confirmation signup shows instructions and does not navigate to the pantry (39.6239ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ app/(auth)/register.tsx: each failed submit gives the error field a new announceKey (KAN-84) (44.2082ms)
+✔ empty pantry offers add navigation and populated pantry opens the selected item (43.0304ms)
+✔ protected routes do not mount children during restoration, failure or signed-out access (33.4224ms)
+✔ a pantry load error on an unfocused tab is announced only once the tab is focused (43.1331ms)
+✔ initial inventory loading shows progress without claiming an empty pantry (47.9669ms)
+✔ a failed initial pantry load shows retry instead of claiming the pantry is empty (52.8347ms)
+✔ fast repeated pantry row taps open one edit screen, even on different rows (KAN-33) (45.4905ms)
+✔ a failed pantry load is announced on the focused tab after the tab is spoken (KAN-39) (55.9914ms)
+✔ fast repeated add taps open one add screen (KAN-38) (50.732ms)
+✔ app/edit-item/[id].tsx: Save twice with the same validation error announces it the second time (KAN-84) (91.2357ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a duplicate failure after the user typed new text prefixes the error with the submitted name and keeps the new text (65.4931ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a save resolving after close does not navigate or update state (29.4059ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ repeated Return while busy creates one item (35.2531ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the Add Item button still saves and closes (20.7797ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a Return save is announced once: the confirmation is not also a live region (25.3536ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ Cancel reads Done after a Return save and closes without adding (19.2471ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ text typed while a Return save is pending is not cleared when that save succeeds (23.8617ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a failure while the field still holds the submitted text shows the unprefixed error (16.722ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a name with surrounding whitespace is saved and confirmed trimmed and the field clears (22.4431ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a failed save keeps name, category and location (19.8124ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ typing clears a stale error (17.1185ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ Return with an empty or overlong name shows the existing error and adds nothing (22.3924ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ Return then the Add Item button while busy creates one item (18.417ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a network failure after the user typed new text prefixes the error with the submitted name and keeps the new text (28.7165ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ Return with a valid name adds once, clears the name, keeps category and location, stays open and shows the confirmation (17.7653ms)
+✔ a duplicate (including one saved earlier in this visit) shows the duplicate error and keeps the name (16.0153ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ household lookup rejects stale identities and exposes a retry after network failure (70.753ms)
+✔ test copies in .verification and dist are not run when the project lies below a dot folder (845.2656ms)
+✔ component tests are found when the project lies below a dot folder (792.7774ms)
+✔ a component run that matches no test fails (547.6353ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the operation can ask whether its screen is still current (88.6478ms)
+✔ mutation lock is immediate and navigating away abandons completion callbacks (15.4752ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a key missing from the German catalogue falls back to English (45.2444ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the i18n context value is stable across a parent re-render and changes with the locale (21.5302ms)
+✔ saved locale restores, missing translations fall back and locale changes persist (36.5705ms)
+✔ matchedName treats the file-only shape of an unmatched pattern as no match (0.9718ms)
+✔ matchedName is true only when a top-level entry carries the name (0.2577ms)
+✔ topLevelNames de-duplicates repeated names (0.6561ms)
+✔ topLevelNames returns top-level tests and suites, not nested ones (0.1512ms)
+✔ escapeName makes names with regex characters match only themselves (0.3623ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a missing-record update or delete drops the stale row and re-reads (CR-01) (85.7475ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a refresh that sees an added pantry row before the insert returns leaves one entry (35.2311ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ failed writes preserve existing inventory and allow a subsequent retry (18.9912ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a successful pantry write after a failed load re-reads instead of showing a partial list (19.2923ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a successful write on a loaded list clears an earlier refresh error (KAN-85) (17.1837ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a failed pantry write after a failed load keeps the load error and retry recovers (30.2776ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a write that settles after the same user changes household does not re-read for the new household (KAN-85) (16.6641ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ transport and permission failures keep cached rows and issue no re-read (CR-01) (23.1928ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a later successful write wins over a pending recovery read, and the missing row stays out (CR-01) (15.9635ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a pending mutation cannot repopulate the next signed-in user cache (15.2773ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a missing-record re-read loses to a newer read and to a household change (CR-01) (17.5856ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ failed initial fetch is err_load_items and retry recovers (12.6425ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a pantry write while the first read is in flight ends with the full server list, not a stuck spinner (13.2822ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a missing result that arrives after a household change neither re-reads nor touches the new list (CR-01) (14.0996ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ both consumers observe add, edit and delete; old reads cannot undo a write (13.9474ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ newest read wins and a user or household change clears state and discards old requests (19.3329ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a delete that removes no row rejects (16.0105ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a pantry write on a loaded list issues no re-read (12.573ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a pending update locks the same item against a second screen deleting it (13.9583ms)
+✔ a failed recovery read keeps the missing row out and shows the load error with retry (CR-01) (23.2334ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ loading without an item shows progress (67.7622ms)
+✔ a missing item shows the missing message with retry and back (32.6138ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a successful remove closes without showing or announcing the missing state (35.2732ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a remove that fails after the row was dropped shows the missing state (36.357ms)
+✔ the form keeps the first tap with the keyboard open (34.5398ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ save and remove share one lock (36.0668ms)
+✔ a load error replaces the missing message (33.0406ms)
+✔ a missing item or failed load is announced on the detail screen (KAN-39) (47.9439ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ each failed rename gives the field a new announceKey, so a repeated error is spoken (final review M3) (32.2652ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ remove asks for confirmation and deletes only on confirm (25.8959ms)
+✔ cancel closes without writing (27.6583ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the modal shows the current name and saves a rename, then closes (39.0587ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a failed remove shows the translated error and stays open (21.6208ms)
+✔ a duplicate rename keeps the modal open with the typed name (25.5977ms)
+✔ native PKCE adapter delegates secure randomness and SHA-256 without replacing browser crypto (61.3607ms)
+✔ resend validates the address, prevents overlap, uses the app callback and unlocks after rejection (20.1964ms)
+✔ confirmation coalesces duplicate active callbacks and requires an actual authenticated session (26.4479ms)
+✔ expired codes remain recoverable and a callback cannot replace an already signed-in account (13.2339ms)
+✔ the email shape check accepts and rejects exactly the same addresses (6.8982ms)
+✔ the email shape check runs in linear time (8.6254ms)
+✔ confirmation rejects missing, ambiguous, malformed and error links without exchanging credentials (7.4649ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ an item already missing when the screen opens shows the missing state (94.2387ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a pantry delete that fails for another reason keeps the typed form and shows the error (55.8653ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a pantry delete that fails after the row was dropped shows the missing state (40.644ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a successful pantry delete closes without showing the missing state (36.9517ms)
+✔ a save that finds the item deleted elsewhere shows the missing state, not the form (34.988ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the field gets the error border only while an error is shown (54.1418ms)
+✔ a changed error replaces the text inside the live region (19.1893ms)
+✔ without an error the live region is rendered empty (25.2925ms)
+✔ an error under a field is an alert inside a polite live region (12.4495ms)
+✔ an unchanged error is announced again when announceKey changes (16.7621ms)
+✔ native background stops refresh and returning active restarts it (51.1519ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ opacity is 0.6 when disabled or loading, 0.9 when pressed and 1 otherwise (11.0397ms)
+✔ each variant has its background, border and text colors (1.657ms)
+✔ unavailable native link API leaves ordinary startup recoverable (51.6986ms)
+✔ cached native links cannot replace other routes, platforms or foreign callback targets (38.0253ms)
+✔ Android slow initial-URL bridge still routes the cached confirmation to code exchange (184.0545ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the selector closes when its item leaves the list (121.0096ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the selector closes on blur and a later choice writes nothing (66.5099ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a double tap on an option or a second status control writes once (72.41ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a lost prompt leaves the status controls usable (62.8058ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a completion after the list lost focus shows no prompt and no notice (140.237ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a newer change invalidates an unanswered prompt (77.2264ms)
+✔ the status control is ignored while a navigation is pending (69.9129ms)
+✔ opening the selector passes the status control ref for focus return (46.6247ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ an uncertain outcome shows Status change not confirmed, never prompts, and keeps edit disabled until confirmed (46.3697ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a failed shopping add after a successful change shows the shopping notice and keeps the new status (54.3899ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a conflict shows the conflict message and the reconciled status (40.6211ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the prompt uses the returned name and id (53.562ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ other status controls are disabled only while the write is in flight (61.1945ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a household change while the prompt is open makes a later Add do nothing (75.8506ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ changing to the same status closes the selector without any call (56.24ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ an already result never prompts and announces the database status (36.5783ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the badge keeps the old status while saving and after a failure (63.7982ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a newer non-prompting change invalidates an unanswered prompt (76.9325ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a failed status write shows Status not changed with the mapped reason (92.9ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a prompt requested inside the locked operation blocks a second selection (lock gap) (46.8133ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the changed item edit action is disabled while its write is in flight and re-enabled after success, failure and a missing record (171.1892ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ in stock to low, in stock to out, low to out and out to low prompt; changes to in stock do not (265.007ms)
+✔ the result is announced only when no prompt follows (60.5688ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ an answer after unmount adds nothing and shows no notice (36.5558ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a failed add shows the translated shopping notice; the hook never touches pantry state (17.8856ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ current() false before or after the answer prevents the prompt or the add (17.7059ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ invalidate() before the answer makes a later Add do nothing (40.6917ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a household change while the prompt is open makes a later Add do nothing (31.4541ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ prompting is true exactly while the dialog or its notice is unanswered (30.8907ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a saved item from another household is never offered or added (31.0171ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ a late answer to an obsolete offer does not clear a newer prompt (15.3462ms)
+✔ offer requests the native dialog synchronously (12.0215ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ offers only for the four D3 transitions (124.2751ms)
+✔ adds the saved name and id, not any caller value (34.8836ms)
+✔ offersShoppingAdd prompts only on a change to low or out (1.1045ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ useFormError counts each error it is given and keeps the count when cleared (8.9821ms)
+✔ run-tests-alone fails for a test file without any test (590.7461ms)
+✔ run-node-tests fails when a test fails (364.5246ms)
+✔ run-node-tests runs every test file and passes (346.2678ms)
+✔ run-tests-alone fails when there is no test file (96ms)
+✔ run-tests-alone passes when every test passes alone (448.0948ms)
+✔ run-node-tests fails when there is no test file (93.5854ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the keyboard is dismissed when a row, a status control or the add button is pressed (98.8014ms)
+✔ the result count is announced once after typing pauses (61.8426ms)
+✔ an empty pantry shows EmptyState and no search field (54.7198ms)
+✔ a household change clears the query (50.4777ms)
+✔ an emptied pantry drops the stale query so a later add shows the full list (55.8121ms)
+✔ the selector closes when its item leaves the results (45.8962ms)
+✔ search never calls a write (45.19ms)
+✔ the add button and list clear the keyboard and return when it hides (KAN-92) (57.4861ms)
+✔ keyboard listeners are removed on unmount (41.4683ms)
+✔ a whitespace-only query shows the full list (47.548ms)
+✔ a keyboard below the screen bottom (tab bar area only) does not lift anything (42.9925ms)
+✔ the field is a labelled search input that keeps taps and dismisses on drag (54.5381ms)
+✔ no match shows its own state with the query and a clear action, and no EmptyState (40.8494ms)
+✔ results follow add, rename, delete and status change while a query is active (40.863ms)
+✔ typing filters rows by name and clearing restores the full list (49.6778ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ becoming active again resets the overlap, and unmount removes the AppState subscription (87.0764ms)
+✔ a newer show wins over an older, late measurement (13.2254ms)
+✔ never negative, and is 0 without a view (17.3931ms)
+✔ a measurement that resolves after the keyboard hid is dropped (10.7174ms)
+✔ a keyboard already visible at mount seeds the overlap on the next frame (8.7596ms)
+✔ ios uses the will events (12.8776ms)
+✔ the mount seed is dropped if the keyboard hid before the frame, and skipped when hidden or without metrics (21.6488ms)
+✔ android: did-show measures the overlap, did-hide resets, unmount removes (5.4942ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the post-registration title spacing equals confirm-email's (95.1066ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ the post-registration view stacks message, Resend and Go to sign in with gap 12, Resend first (28.3051ms)
+✔ app/(auth)/register.tsx: sign-in and registration add the keyboard overlap to the ScrollView bottom padding (33.2664ms)
+✔ app/(auth)/login.tsx: sign-in and registration add the keyboard overlap to the ScrollView bottom padding (24.5517ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ Go to sign in uses the secondary variant on all three confirmation screens (40.4241ms)
+ℹ Randomized test order seed: 4103331518
+ℹ tests 526
+ℹ suites 0
+ℹ pass 526
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 28743.4421
+
+[exit code 0]
