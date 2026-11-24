@@ -1,9 +1,9 @@
 appId: com.pantryflow.test
 name: Slice 3 pantry search journey
 ---
-# Runs after slice-3-status.yaml, status-verify and search-seed. Starting state:
-# Alice's pantry has Milk (Out), Rice and Rye flour. Search is local filtering of
-# the loaded list, so it writes nothing; search-verify reads the rows back.
+# Seed: seed:slice-3-search. Starting state: Alice's pantry has Milk (Out), Rice
+# and Rye flour. Search is local filtering of the loaded list, so it writes
+# nothing; verify:slice-3-search reads the rows back.
 - runScript: helpers/restore.js
 - launchApp:
     clearState: true

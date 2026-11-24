@@ -1,6 +1,10 @@
 appId: com.pantryflow.test
 name: Slice 1.1 critical behavioral journey
 ---
+# Seed: seed:slice-1-1. Starting state: both households empty and the signup and
+# confirmation accounts absent. verify:slice-1-1 reads the outcomes back afterwards.
+# Clears a fault a failed earlier attempt may have left on a standalone proxy.
+- runScript: helpers/restore.js
 - launchApp:
     clearState: true
 - assertVisible:

@@ -1,13 +1,22 @@
 appId: com.pantryflow.test
 ---
-- tapOn:
-    id: login-email
-    point: "95%,50%"
-- eraseText
-- inputText: ${EMAIL}
-- assertVisible:
-    id: login-email
-    text: ${EMAIL}
+# Wi-Fi ADB sometimes makes the phone keyboard double a typed character
+# (2026-11-23: the email field held ppf.test.alice@example.com). Only the email typing
+# is retried: the exact-text assertion catches a doubled email character, and the retry
+# starts again from a clean field (eraseText). The password is typed once and sign-in is
+# submitted once, outside the retry: a doubled password character or any sign-in failure
+# fails the flow immediately instead of being retried away.
+- retry:
+    maxRetries: 2
+    commands:
+      - tapOn:
+          id: login-email
+          point: "95%,50%"
+      - eraseText
+      - inputText: ${EMAIL}
+      - assertVisible:
+          id: login-email
+          text: ${EMAIL}
 - tapOn:
     id: login-password
     point: "95%,50%"

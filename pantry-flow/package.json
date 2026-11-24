@@ -21,7 +21,7 @@
     "test:integration": "tsx --test --test-randomize --test-concurrency=1 tests/integration/behavior.integration.ts tests/integration/email-confirmation.integration.ts tests/integration/shopping-data.integration.ts tests/integration/pantry-shopping.integration.ts tests/integration/pantry-status.integration.ts tests/integration/profile-language.integration.ts tests/integration/test-users.integration.ts",
     "test:local": "npm run db:reset && npm run test:db && npm run test:integration",
     "e2e:prepare": "tsx scripts/e2e-fixtures.ts prepare",
-    "e2e:verify": "tsx scripts/e2e-fixtures.ts verify",
+    "e2e:verify": "tsx scripts/e2e-fixtures.ts verify:slice-1-1",
     "e2e:cleanup": "tsx scripts/e2e-fixtures.ts cleanup",
     "e2e:build": "node scripts/build-e2e.cjs",
     "test:e2e": "node scripts/run-e2e.cjs",

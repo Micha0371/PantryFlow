@@ -1,6 +1,9 @@
 appId: com.pantryflow.test
 name: Expired native email link recovery and resend
 ---
+# Part of the single test `confirmation` (Seed: seed:confirmation): the PKCE link only
+# opens in the app that registered, so register, complete, reset, resend and complete
+# run as one scenario. verify:confirmation reads the outcome back afterwards.
 - openLink: ${MAESTRO_CONFIRMATION_URL}
 - assertVisible: This confirmation link is invalid or has expired
 - assertNotVisible: Your pantry is empty
