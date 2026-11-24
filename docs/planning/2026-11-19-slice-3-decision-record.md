@@ -253,6 +253,6 @@ Design: [KAN-61 language selection](2026-11-22-kan-61-language-selection-design.
 
 **Decided by the owner on 2026-11-24:**
 - **Beta line B7 (English and German complete):** Android evidence is enough. This applies S3-Q7 (the beta does not wait for iOS) to the iOS checks named in KAN-44 and KAN-62. Those iOS checks stay open and are tracked under KAN-69.
-- **Android beta distribution (KAN-77):** a Play Store account and an upload key are needed. The release track is not chosen yet.
+- **Android beta distribution (KAN-77):** a Play Store account and an upload key are needed. The account type is **personal**. It can be changed to an organization account later, but not back. For personal accounts Google requires a closed test with 12 testers for 14 days in a row before production; this does not block internal testing (Play Console Help, read 2026-11-24). The release track is not chosen yet.
 
 This amendment authorizes no account purchase, key creation, upload, distribution or tester invitation.
