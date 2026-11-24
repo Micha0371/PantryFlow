@@ -33,10 +33,17 @@ function setup() {
 
 // Every command literal in the source, so a command added later cannot dodge the guard test.
 const commands = [...new Set([
-  ...[...source.matchAll(/command === '([^']+)'/g)].map(match => match[1]),
+  ...[...source.matchAll(/^  '([^']+)': \w+,\r?$/gm)].map(match => match[1]),
   ...FLOWS.map(flow => `seed:${flow.name}`), ...FLOWS.map(flow => `verify:${flow.name}`),
   'unknown-command',
 ])];
+
+test('the extraction finds the handler map, one entry per handler function', () => {
+  const handlerFunctions = [...source.matchAll(/^async function (\w+)\(stack: Stack\)/gm)].map(match => match[1]).filter(name => name !== 'runSeed');
+  const mapped = [...source.matchAll(/^  '[^']+': (\w+),\r?$/gm)].map(match => match[1]);
+  assert.deepEqual([...mapped].sort(), [...handlerFunctions].sort());
+  assert.equal(mapped.length, 12);
+});
 
 test('the command list covers every mutating command', () => {
   for (const name of ['prepare', 'cleanup', 'confirmation-first', 'confirmation-reset', 'confirmation-expired', 'confirmation-resent', 'verify:confirmation', 'seed:confirmation']) {

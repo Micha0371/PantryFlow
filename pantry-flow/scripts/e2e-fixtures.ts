@@ -101,25 +101,25 @@ export function assertCommandAllowed(env: NodeJS.ProcessEnv = process.env) {
   assertNoOtherRun(lockFile(env), Number(env.PANTRY_E2E_RUNNER_PID) || null, isAlive);
 }
 
-export async function runCommand(command: string | undefined, env: NodeJS.ProcessEnv = process.env) {
-assertCommandAllowed(env);
-const stack = localStack();
-const seedMatch = /^seed:(.+)$/.exec(command ?? '');
-if (seedMatch) {
-  const seed = seeds[seedMatch[1]];
-  if (!seed) throw new Error(`Unknown flow ${seedMatch[1]}; expected one of ${Object.keys(seeds).join(', ')}`);
+type Stack = ReturnType<typeof localStack>;
+
+async function runSeed(stack: Stack, flow: string) {
+  const seed = Object.hasOwn(seeds, flow) ? seeds[flow] : undefined;
+  if (!seed) throw new Error(`Unknown flow ${flow}; expected one of ${Object.keys(seeds).join(', ')}`);
   try {
     const [alice] = await fixtures(stack);
     await seed(stack, alice);
-    if (seedMatch[1] === 'confirmation') {
+    if (flow === 'confirmation') {
       await fs.mkdir(path.join(appRoot, '.verification'), { recursive: true });
       await fs.writeFile(path.join(appRoot, '.verification/confirmation-state.json'), JSON.stringify({
         previousIds: (await messages()).map(message => message.ID),
       }));
     }
-    console.log(`Seeded ${seedMatch[1]}.`);
+    console.log(`Seeded ${flow}.`);
   } catch (error) { await cleanup(stack.admin); throw error; }
-} else if (command === 'prepare') {
+}
+
+async function prepare(stack: Stack) {
   try {
     const target = process.env.PANTRY_TEST_TARGET ?? 'emulator';
     assert.ok(['emulator', 'device'].includes(target), 'Expected emulator or device test target');
@@ -138,7 +138,9 @@ if (seedMatch) {
     }));
     console.log('Prepared two isolated households; registration account starts absent.');
   } catch (error) { await cleanup(stack.admin); throw error; }
-} else if (command === 'verify:slice-1-1') {
+}
+
+async function verifySlice11(stack: Stack) {
   const client = stack.client();
   assert.equal((await client.auth.signInWithPassword({ email: emails[0], password })).error, null);
   const result = await client.from('pantry_items').select('*');
@@ -156,7 +158,9 @@ if (seedMatch) {
   assert.ok(registration, 'Android registration must reach real local Auth');
   assert.ok(!registration.email_confirmed_at, 'Registration requires confirmation');
   console.log('Verified Android database outcomes, household isolation and confirmation-required registration.');
-} else if (command === 'verify:slice-2-shopping') {
+}
+
+async function verifySlice2Shopping(stack: Stack) {
   // Ordinary clients only: what each household member can actually read.
   const alice = stack.client();
   assert.equal((await alice.auth.signInWithPassword({ email: emails[0], password })).error, null);
@@ -183,7 +187,9 @@ if (seedMatch) {
   await alice.auth.signOut();
   await bob.auth.signOut();
   console.log('Verified Android shopping outcomes, the pantry link, completion state and household isolation.');
-} else if (command === 'verify:slice-3-status') {
+}
+
+async function verifySlice3Status(stack: Stack) {
   // Ordinary clients only: what each household member can actually read.
   const alice = stack.client();
   assert.equal((await alice.auth.signInWithPassword({ email: emails[0], password })).error, null);
@@ -217,7 +223,9 @@ if (seedMatch) {
   await alice.auth.signOut();
   await bob.auth.signOut();
   console.log('Verified Android status outcomes: Milk out, the linked add, the duplicate and declined prompts, and household isolation.');
-} else if (command === 'verify:slice-3-search') {
+}
+
+async function verifySlice3Search(stack: Stack) {
   // Ordinary clients only: search is local, so it must have written nothing.
   const alice = stack.client();
   assert.equal((await alice.auth.signInWithPassword({ email: emails[0], password })).error, null);
@@ -236,7 +244,9 @@ if (seedMatch) {
   await alice.auth.signOut();
   await bob.auth.signOut();
   console.log('Verified the search journey wrote nothing: Milk, Rice and Rye flour unchanged.');
-} else if (command === 'verify:slice-3-entry') {
+}
+
+async function verifySlice3Entry(stack: Stack) {
   // Ordinary clients only: the entry journey added Oats and Tea; the duplicate Rice wrote nothing.
   const alice = stack.client();
   assert.equal((await alice.auth.signInWithPassword({ email: emails[0], password })).error, null);
@@ -255,12 +265,16 @@ if (seedMatch) {
   await alice.auth.signOut();
   await bob.auth.signOut();
   console.log('Verified the entry journey: Oats and Tea added with defaults, no duplicate Rice, nothing for the other household.');
-} else if (command === 'confirmation-first') {
+}
+
+async function confirmationFirst(stack: Stack) {
   const state = JSON.parse(await fs.readFile(path.join(appRoot, '.verification/confirmation-state.json'), 'utf8'));
   const location = await openVerification(await confirmationLink(emails[3], new Set(state.previousIds)));
   assert.ok(location.searchParams.get('code'), 'The first signup email must return a PKCE code');
   await fs.writeFile(path.join(appRoot, '.verification/confirmation-state.json'), JSON.stringify({ confirmed: location.toString() }));
-} else if (command === 'confirmation-reset') {
+}
+
+async function confirmationReset(stack: Stack) {
   const users = await stack.admin.auth.admin.listUsers({ perPage: 1000 });
   assert.equal(users.error, null);
   const user = users.data.users.find(user => user.email === emails[3]);
@@ -270,7 +284,9 @@ if (seedMatch) {
     previousIds: (await messages()).map(message => message.ID),
   }));
   console.log('Verified first-signup Android session and reset only the reserved local confirmation account.');
-} else if (command === 'confirmation-expired') {
+}
+
+async function confirmationExpired(stack: Stack) {
   const state = JSON.parse(await fs.readFile(path.join(appRoot, '.verification/confirmation-state.json'), 'utf8'));
   const link = await confirmationLink(emails[3], new Set(state.previousIds));
   console.log('Waiting for the disposable 60-second email expiry before Android recovery validation.');
@@ -280,12 +296,16 @@ if (seedMatch) {
   await fs.writeFile(path.join(appRoot, '.verification/confirmation-state.json'), JSON.stringify({
     expired: expired.toString(), previousIds: (await messages()).map(message => message.ID),
   }));
-} else if (command === 'confirmation-resent') {
+}
+
+async function confirmationResent(stack: Stack) {
   const state = JSON.parse(await fs.readFile(path.join(appRoot, '.verification/confirmation-state.json'), 'utf8'));
   const location = await openVerification(await confirmationLink(emails[3], new Set(state.previousIds)));
   assert.ok(location.searchParams.get('code'), 'The resent native email must use PKCE, never implicit access tokens');
   await fs.writeFile(path.join(appRoot, '.verification/confirmation-state.json'), JSON.stringify({ ...state, confirmed: location.toString() }));
-} else if (command === 'verify:confirmation') {
+}
+
+async function verifyConfirmation(stack: Stack) {
   const users = await stack.admin.auth.admin.listUsers({ perPage: 1000 });
   assert.equal(users.error, null);
   const user = users.data.users.find(user => user.email === emails[3]);
@@ -304,13 +324,39 @@ if (seedMatch) {
   assert.deepEqual(aliceRows.data, [milkLow], "Alice's seeded Milk must still exist, so the empty household was checked against a foreign row");
   await alice.auth.signOut();
   console.log('Verified native signup, expired email recovery, PKCE resend, confirmation and independent empty household.');
-} else if (command === 'cleanup') {
+}
+
+async function cleanupCommand(stack: Stack) {
   await cleanup(stack.admin);
   await fs.rm(path.join(appRoot, '.verification/e2e-env.json'), { force: true });
   await fs.rm(path.join(appRoot, '.verification/confirmation-state.json'), { force: true });
   console.log('Removed only reserved local test accounts and their cascading household data.');
-} else throw new Error(`Expected prepare, seed:<flow>, verify:<flow> (${Object.keys(seeds).join(', ')}), confirmation-first/reset/expired/resent or cleanup`);
+}
 
+// One handler per command; seed:<flow> is dispatched separately. The guard runs before any of them.
+const handlers: Record<string, (stack: Stack) => Promise<void>> = {
+  'prepare': prepare,
+  'verify:slice-1-1': verifySlice11,
+  'verify:slice-2-shopping': verifySlice2Shopping,
+  'verify:slice-3-status': verifySlice3Status,
+  'verify:slice-3-search': verifySlice3Search,
+  'verify:slice-3-entry': verifySlice3Entry,
+  'confirmation-first': confirmationFirst,
+  'confirmation-reset': confirmationReset,
+  'confirmation-expired': confirmationExpired,
+  'confirmation-resent': confirmationResent,
+  'verify:confirmation': verifyConfirmation,
+  'cleanup': cleanupCommand,
+};
+
+export async function runCommand(command: string | undefined, env: NodeJS.ProcessEnv = process.env) {
+  assertCommandAllowed(env);
+  const stack = localStack();
+  const seedMatch = /^seed:(.+)$/.exec(command ?? '');
+  if (seedMatch) return runSeed(stack, seedMatch[1]);
+  const handler = command !== undefined && Object.hasOwn(handlers, command) ? handlers[command] : undefined;
+  if (!handler) throw new Error(`Expected prepare, seed:<flow>, verify:<flow> (${Object.keys(seeds).join(', ')}), confirmation-first/reset/expired/resent or cleanup`);
+  await handler(stack);
 }
 // Only the command line runs it; tests load this file and call runCommand with stubs.
 if (require.main === module) runCommand(process.argv[2]).catch(error => { console.error(error.message); process.exitCode = 1; });

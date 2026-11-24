@@ -24,7 +24,10 @@ function selectFlows(argv) {
     if (chosen) throw new Error('--flow was given more than once; name exactly one flow');
     const name = arg === '--flow' ? argv[++i] : arg.slice('--flow='.length);
     chosen = FLOWS.find(candidate => candidate.name === name);
-    if (!chosen) throw new Error(`Unknown flow ${name === undefined || name.startsWith('--') ? '(none given)' : `"${name}"`}; valid flows: ${FLOWS.map(f => f.name).join(', ')}`);
+    if (!chosen) {
+      const shown = name === undefined || name.startsWith('--') ? '(none given)' : `"${name}"`;
+      throw new Error(`Unknown flow ${shown}; valid flows: ${FLOWS.map(f => f.name).join(', ')}`);
+    }
   }
   return chosen ? [chosen] : FLOWS;
 }

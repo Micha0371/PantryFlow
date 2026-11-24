@@ -58,6 +58,6 @@ test('every flow has a seed and a verify command in e2e-fixtures', () => {
   const source = fs.readFileSync(path.join(__dirname, '../scripts/e2e-fixtures.ts'), 'utf8');
   for (const flow of FLOWS) {
     assert.match(source, new RegExp(`^  '?${flow.name}'?: async \\(`, 'm'), `seed for ${flow.name}`);
-    assert.ok(source.includes(`command === 'verify:${flow.name}'`), `verify:${flow.name}`);
+    assert.match(source, new RegExp(`^  'verify:${flow.name}': \\w+,`, 'm'), `verify:${flow.name}`);
   }
 });

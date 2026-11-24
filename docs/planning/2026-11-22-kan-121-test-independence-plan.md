@@ -422,7 +422,7 @@ Branch `pantryflow/kan-121-e2e-seeds` from `main`. Needs Docker, the local stack
   - the env-file write stays in `e2e:prepare`.
 - Modify: each `.maestro/*.yaml` header comment, to name its seed instead of "after flow X".
 
-Ruling to confirm with the owner at the Part 5 PR: the confirmation flows (register, complete, reset, expired, resend) form **one** test, `confirmation`. The confirmation link must open the same app that registered, because PKCE binds it, so the flows can't run alone. The scenario as a whole runs alone from its own seed.
+Ruling to confirm with the owner at the Part 5 PR: the confirmation flows (register, complete, reset, expired, resend) form **one** test, `confirmation`. The confirmation link must open the same app that registered, because PKCE binds it, so the flows can't run alone. The scenario as a whole runs alone from its own seed. **Confirmed by the owner on 2026-11-24.**
 
 - [ ] **Step 1: Implement the seeds, verifies and runner changes.**
 - [ ] **Step 2: Device runs (with the owner):**

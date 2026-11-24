@@ -32,7 +32,12 @@ function busy(file, lock) {
 // racer has already replaced it with a live run's lock, that lock is put back, not destroyed.
 function removeStale(file, isAliveFn, unique) {
   const moved = `${file}.${unique}.stale`;
-  try { fs.renameSync(file, moved); } catch (error) { if (error.code === 'ENOENT') return; throw error; }
+  try {
+    fs.renameSync(file, moved);
+  } catch (error) {
+    if (error.code === 'ENOENT') return;
+    throw error;
+  }
   const taken = read(moved);
   if (taken && isAliveFn(taken.pid)) {
     try { fs.linkSync(moved, file); } catch { /* someone else already holds the path */ }
