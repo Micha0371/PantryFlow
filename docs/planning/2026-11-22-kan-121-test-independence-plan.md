@@ -431,6 +431,12 @@ Ruling to confirm with the owner at the Part 5 PR: the confirmation flows (regis
   - then flows in a different order: `--flow slice-3-entry`, then `--flow slice-1-1`. Expected: PASS.
 - [ ] **Step 3: Commit.** Record the runs in the coverage matrix.
 
+**Controller note (2026-11-24), supersedes the Task 13 file and lock-path details above:**
+- The lock is machine-wide, not per worktree: `os.tmpdir()`/`pantryflow-e2e-run.lock` (override `PANTRY_E2E_LOCK_FILE`), implemented as `scripts/e2e-lock.cjs` (not `.ts`, so `run-e2e.cjs` can use it). All worktrees share one local stack and the same four reserved accounts.
+- `run-e2e.cjs` holds the lock for the whole run and releases it on exit, failure, Ctrl+C and termination. `e2e-fixtures.ts` does not acquire it: every command (prepare, seed, verify, cleanup, confirmation steps) refuses while another live run holds it, checked before any stack access or cleanup; the runner's own calls pass via `PANTRY_E2E_RUNNER_PID`. Standalone `e2e:cleanup` during a live run is therefore refused.
+- Task 15 scope: the Part 5 device evidence and coverage-matrix rows (E2E-IND-01 to -07) as recorded; this note adds no further scope. The one device rerun owed after the final-review fixes is the confirmation scenario (new Alice row in its seed) and one login-using flow (narrowed login helper).
+- Part 5 final-review rulings: the login helper retries the email typing only (the exact-text assertion catches a doubled character); the password is typed once and sign-in submitted once, so a doubled password character or a failed sign-in fails the flow. `--flow` rejects extra arguments and repeats. The confirmation seed gives Alice one Milk row so the new user's "empty household" is checked against a real foreign row.
+
 ---
 
 ## Execution notes
