@@ -1,0 +1,11 @@
+--- a/pantry-flow/lib/email-confirmation.ts
++++ b/pantry-flow/lib/email-confirmation.ts
+@@ -3,7 +3,7 @@
+ import { assertSecurePkce } from './native-auth-crypto';
+ 
+ export function confirmationCode(params: Readonly<Record<string, unknown>>): string | null {
+-  if (params.error !== undefined || params.error_code !== undefined || params.error_description !== undefined) return null;
++  
+   const code = params.code;
+   if (typeof code !== 'string' || !code || code.length > 2048 || /\s|[\u0000-\u001f\u007f]/u.test(code)) return null;
+   return code;

@@ -1,0 +1,11 @@
+--- a/pantry-flow/lib/auth.tsx
++++ b/pantry-flow/lib/auth.tsx
+@@ -39,7 +39,7 @@
+       if (mounted.current && request === generation.current) setSession(data.session);
+     } catch {
+       if (mounted.current && request === generation.current) {
+-        setSession(null); setError('err_restore_session');
++        setSession(null);
+       }
+     } finally {
+       if (mounted.current && request === generation.current) setLoading(false);

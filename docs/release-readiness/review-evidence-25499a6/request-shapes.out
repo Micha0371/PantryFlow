@@ -1,0 +1,5 @@
+{"url":"http://127.0.0.1:1/rest/v1/pantry_items","method":"PATCH","prefer":null,"body":"{\"name\":\"Review fixture\"}"}
+{"url":"http://127.0.0.1:1/rest/v1/pantry_items","method":"DELETE","prefer":null}
+{"url":"http://127.0.0.1:1/rest/v1/pantry_shopping_items","method":"PATCH","prefer":null,"body":"{\"name\":\"Review fixture\"}"}
+{"url":"http://127.0.0.1:1/rest/v1/pantry_shopping_items","method":"DELETE","prefer":null}
+{"url":"http://127.0.0.1:1/rest/v1/profiles","method":"PATCH","prefer":null,"body":"{\"name\":\"Review fixture\"}"}

@@ -1,0 +1,11 @@
+--- a/pantry-flow/components/OptionChips.tsx
++++ b/pantry-flow/components/OptionChips.tsx
+@@ -37,7 +37,7 @@
+             testID={testIDPrefix ? `${testIDPrefix}-${opt}` : undefined}
+             onPress={() => onChange(opt)}
+             accessibilityRole="radio"
+-            accessibilityState={{ checked: selected }}
++            
+             style={[
+               styles.chip,
+               selected ? styles.chipSelected : styles.chipIdle,

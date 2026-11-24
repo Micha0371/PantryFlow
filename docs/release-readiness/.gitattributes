@@ -1,0 +1,6 @@
+# Preserve the accepted historical assessment byte-for-byte, including CRLF.
+RELEASE-ASSURANCE.md -text whitespace=cr-at-eol
+# Keep portable evidence hashes stable on Windows checkouts.
+review-evidence-25499a6/** text eol=lf
+# Context lines in captured diffs intentionally contain a single space.
+review-evidence-25499a6/mutation-diffs/*.patch -whitespace

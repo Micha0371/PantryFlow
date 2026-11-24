@@ -1,0 +1,11 @@
+--- a/pantry-flow/hooks/usePantryItems.tsx
++++ b/pantry-flow/hooks/usePantryItems.tsx
+@@ -149,7 +149,7 @@
+ const PantryContext = createContext<ReturnType<typeof usePantryState> | undefined>(undefined);
+ export function PantryProvider({ children }: { children: ReactNode }) {
+   const { user } = useAuth();
+-  return <ScopedPantryProvider key={user?.id ?? 'guest'}>{children}</ScopedPantryProvider>;
++  return <ScopedPantryProvider>{children}</ScopedPantryProvider>;
+ }
+ function ScopedPantryProvider({ children }: { children: ReactNode }) {
+   const value = usePantryState();

@@ -1,0 +1,10 @@
+--- a/pantry-flow/lib/pagination.ts
++++ b/pantry-flow/lib/pagination.ts
+@@ -25,6 +25,6 @@
+     return true;
+   }
+   if (count === null && received < PAGE_SIZE) return true;
+-  if (received < PAGE_SIZE) throw new Error('Server row limit is below page size');
++  if (received < PAGE_SIZE) return true;
+   return false;
+ }

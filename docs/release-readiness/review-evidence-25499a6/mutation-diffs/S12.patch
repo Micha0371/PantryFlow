@@ -1,0 +1,11 @@
+--- a/pantry-flow/lib/supabase.ts
++++ b/pantry-flow/lib/supabase.ts
+@@ -20,7 +20,7 @@
+     autoRefreshToken: true,
+     persistSession: true,
+     detectSessionInUrl: false,
+-    flowType: 'pkce',
++    flowType: 'implicit',
+   },
+ });
+ 

@@ -1,0 +1,11 @@
+--- a/pantry-flow/supabase/migrations/00001_first_slice.sql
++++ b/pantry-flow/supabase/migrations/00001_first_slice.sql
+@@ -105,7 +105,7 @@
+ 
+ -- profiles: own profile only
+ CREATE POLICY "profiles_select_own" ON public.profiles
+-  FOR SELECT USING (auth.uid() = id);
++  FOR SELECT USING (true);
+ CREATE POLICY "profiles_update_own" ON public.profiles
+   FOR UPDATE USING (auth.uid() = id);
+ 
