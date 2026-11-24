@@ -11,6 +11,14 @@ const FLOWS = [
   { name: 'confirmation', file: 'confirmation-register', xml: 'confirmation-register.xml', debug: 'confirmation-register' },
 ];
 
+// The Maestro files the confirmation flow runs as one unit (run-e2e.cjs starts them by these names).
+const CONFIRMATION_FILES = { register: 'confirmation-register', complete: 'confirmation-complete', resend: 'confirmation-resend' };
+
+// Every Maestro file the runner starts, each once.
+function flowFiles() {
+  return [...new Set([...FLOWS.map(flow => flow.file), ...Object.values(CONFIRMATION_FILES)])];
+}
+
 // Pure: no --flow runs every flow in order; --flow <name> runs exactly that one.
 // Anything else is an error: npm swallows `--flow x` into npm's own config and passes only `x`
 // on, which must not silently run every flow.
@@ -31,4 +39,4 @@ function selectFlows(argv) {
   }
   return chosen ? [chosen] : FLOWS;
 }
-module.exports = { FLOWS, selectFlows };
+module.exports = { FLOWS, CONFIRMATION_FILES, selectFlows, flowFiles };
