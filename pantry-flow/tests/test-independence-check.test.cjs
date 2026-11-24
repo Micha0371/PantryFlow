@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { findViolations, analyze } = require('../scripts/check-test-independence.cjs');
+const { findViolations, analyze, runScan } = require('../scripts/check-test-independence.cjs');
 
 const check = (text, path = 'fixture.test.cjs') => findViolations([{ path, text }]);
 const rules = text => check(text).map(v => v.rule);
@@ -237,19 +237,18 @@ test('global-patch: a file-level after hook runs once after all tests and is not
   ]);
 });
 
-test('the CLI exits 1 when it finds no test files', () => {
-  const fs = require('node:fs');
-  const os = require('node:os');
-  const path = require('node:path');
+test('the scan exits 1 when it finds no test files', () => {
+  const r = scanFolder({});
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /No test files found/);
+});
+
+test('the real CLI takes no argument and scans its own project', () => {
   const { spawnSync } = require('node:child_process');
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'indep-empty-'));
-  try {
-    const r = spawnSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'check-test-independence.cjs'), dir], { encoding: 'utf8' });
-    assert.equal(r.status, 1);
-    assert.match(r.stderr, /No test files found/);
-  } finally {
-    fs.rmSync(dir, { recursive: true });
-  }
+  const script = require('node:path').join(__dirname, '..', 'scripts', 'check-test-independence.cjs');
+  const r = spawnSync(process.execPath, [script], { encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, /Checked \d+ files/);
 });
 
 // scripts/ files get only the invisible-whitespace rule (KAN-121 follow-up to PR #64)
@@ -281,38 +280,39 @@ test('a file without a rules field still gets every rule', () => {
   assert.deepEqual(rules("const seen = [];\ntest('a', () => { seen.push(1); });"), ['module-state']);
 });
 
-function runCli(files) {
+// Writes the files into a temp project root and scans it; returns { status, stdout, stderr } as text.
+function scanFolder(files) {
   const fs = require('node:fs');
   const os = require('node:os');
   const path = require('node:path');
-  const { spawnSync } = require('node:child_process');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'indep-scripts-'));
   try {
     for (const [name, text] of Object.entries(files)) {
       fs.mkdirSync(path.dirname(path.join(dir, name)), { recursive: true });
       fs.writeFileSync(path.join(dir, name), text);
     }
-    return spawnSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'check-test-independence.cjs'), dir], { encoding: 'utf8' });
+    const r = runScan(dir);
+    return { status: r.exitCode, stdout: r.stdout.join('\n'), stderr: r.stderr.join('\n') };
   } finally {
     fs.rmSync(dir, { recursive: true });
   }
 }
 
-test('the CLI scans scripts/ for invisible whitespace and exits 1 naming the file', () => {
-  const r = runCli({ 'tests/ok.test.cjs': "test('a', () => {});\n", 'scripts/x.cjs': "const s = '\u200B';\n" });
+test('the scan covers scripts/ for invisible whitespace and exits 1 naming the file', () => {
+  const r = scanFolder({ 'tests/ok.test.cjs': "test('a', () => {});\n", 'scripts/x.cjs': "const s = '\u200B';\n" });
   assert.equal(r.status, 1);
   assert.match(r.stdout, /scripts\/x\.cjs:1 invisible-whitespace/);
   assert.match(r.stdout, /Checked 2 files/);
 });
 
-test('the CLI still exits 1 when only scripts exist and no test file', () => {
-  const r = runCli({ 'scripts/x.cjs': 'const a = 1;' });
+test('the scan still exits 1 when only scripts exist and no test file', () => {
+  const r = scanFolder({ 'scripts/x.cjs': 'const a = 1;' });
   assert.equal(r.status, 1);
   assert.match(r.stderr, /No test files found/);
 });
 
-test('the CLI exits 0 for a clean scripts folder and ignores test-only rules there', () => {
-  const r = runCli({ 'tests/ok.test.cjs': "test('a', () => {});\n", 'scripts/x.mjs': "const seen = [];\ntest('a', () => { seen.push(1); });\n" });
+test('the scan exits 0 for a clean scripts folder and ignores test-only rules there', () => {
+  const r = scanFolder({ 'tests/ok.test.cjs': "test('a', () => {});\n", 'scripts/x.mjs': "const seen = [];\ntest('a', () => { seen.push(1); });\n" });
   assert.equal(r.status, 0, r.stdout);
   assert.match(r.stdout, /Checked 2 files/);
 });

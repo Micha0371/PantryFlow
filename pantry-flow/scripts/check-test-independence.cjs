@@ -572,23 +572,30 @@ function collectTargets(root) {
   return [...tests, ...scripts];
 }
 
-function main() {
+// Scans one project root. Returns the exit code and the lines for stdout and stderr; prints nothing.
+function runScan(root) {
   const started = Date.now();
-  const root = process.argv[2] ? path.resolve(process.argv[2]) : path.resolve(__dirname, '..');
   const targets = collectTargets(root);
   if (!targets.some(t => !t.rules)) {
-    console.error(`No test files found under ${root}; refusing to report a clean result for an empty scan.`);
-    process.exit(1);
+    return { exitCode: 1, stdout: [], stderr: [`No test files found under ${root}; refusing to report a clean result for an empty scan.`] };
   }
   const { violations, exemptions } = analyze(targets.map(t => ({ ...t, text: fs.readFileSync(path.join(root, t.path), 'utf8') })));
-  for (const v of violations) console.log(`${v.path}:${v.line} ${v.rule} ${v.detail}`);
+  const stdout = violations.map(v => `${v.path}:${v.line} ${v.rule} ${v.detail}`);
   if (exemptions.length) {
-    console.log(`\nExemptions (${exemptions.length}):`);
-    for (const e of exemptions) console.log(`  ${e.path}:${e.line} ${e.rule}: ${e.reason}`);
+    stdout.push(`\nExemptions (${exemptions.length}):`);
+    for (const e of exemptions) stdout.push(`  ${e.path}:${e.line} ${e.rule}: ${e.reason}`);
   }
-  console.log(`\nChecked ${targets.length} files in ${Date.now() - started} ms: ${violations.length} finding(s).`);
-  process.exit(violations.length ? 1 : 0);
+  stdout.push(`\nChecked ${targets.length} files in ${Date.now() - started} ms: ${violations.length} finding(s).`);
+  return { exitCode: violations.length ? 1 : 0, stdout, stderr: [] };
 }
 
-module.exports = { findViolations, analyze };
+// The CLI always scans its own project and takes no arguments.
+function main() {
+  const { exitCode, stdout, stderr } = runScan(path.resolve(__dirname, '..'));
+  for (const line of stdout) console.log(line);
+  for (const line of stderr) console.error(line);
+  process.exit(exitCode);
+}
+
+module.exports = { findViolations, analyze, runScan };
 if (require.main === module) main();
