@@ -64,5 +64,10 @@ function main() {
 
 module.exports = { assertLocalRunAllowed, withLocalRunLock };
 if (require.main === module) {
-  try { main(); } catch (error) { console.error(error.message); process.exitCode = 1; }
+  try { main(); } catch {
+    // An exception may carry process/environment details; child command diagnostics
+    // are already emitted separately. Never print the exception object or message.
+    console.error('Local database command could not complete. Check its arguments and the shared test-run lock.');
+    process.exitCode = 1;
+  }
 }
