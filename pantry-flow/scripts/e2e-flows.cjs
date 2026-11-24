@@ -12,13 +12,20 @@ const FLOWS = [
 ];
 
 // Pure: no --flow runs every flow in order; --flow <name> runs exactly that one.
+// Anything else is an error: npm swallows `--flow x` into npm's own config and passes only `x`
+// on, which must not silently run every flow.
 function selectFlows(argv) {
-  const at = argv.indexOf('--flow');
-  const inline = argv.find(arg => arg.startsWith('--flow='));
-  if (at === -1 && inline === undefined) return FLOWS;
-  const name = inline !== undefined ? inline.slice('--flow='.length) : argv[at + 1];
-  const flow = FLOWS.find(candidate => candidate.name === name);
-  if (!flow) throw new Error(`Unknown flow ${name === undefined || name.startsWith('--') ? '(none given)' : `"${name}"`}; valid flows: ${FLOWS.map(f => f.name).join(', ')}`);
-  return [flow];
+  let chosen;
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg !== '--flow' && !arg.startsWith('--flow=')) {
+      throw new Error(`Unexpected argument "${arg}"; usage: node scripts/run-e2e.cjs [--flow <name>] (with npm: npm run test:e2e -- --flow <name>)`);
+    }
+    if (chosen) throw new Error('--flow was given more than once; name exactly one flow');
+    const name = arg === '--flow' ? argv[++i] : arg.slice('--flow='.length);
+    chosen = FLOWS.find(candidate => candidate.name === name);
+    if (!chosen) throw new Error(`Unknown flow ${name === undefined || name.startsWith('--') ? '(none given)' : `"${name}"`}; valid flows: ${FLOWS.map(f => f.name).join(', ')}`);
+  }
+  return chosen ? [chosen] : FLOWS;
 }
 module.exports = { FLOWS, selectFlows };

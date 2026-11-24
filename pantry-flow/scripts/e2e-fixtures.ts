@@ -10,13 +10,6 @@ import { setTimeout as delay } from 'node:timers/promises';
 type Fixtures = Awaited<ReturnType<typeof fixtures>>;
 type Alice = Fixtures[number];
 
-// Every seed starts from freshly reset reserved accounts; env-file writing stays in `prepare`.
-async function resetAccounts(stack: ReturnType<typeof localStack>) {
-  // Refuse while another runner is live; the runner's own child is allowed through.
-  assertNoOtherRun(lockFile(), Number(process.env.PANTRY_E2E_RUNNER_PID) || null, isAlive);
-  return fixtures(stack);
-}
-
 // Alice inserts through her own authenticated client, the way the app does.
 async function addPantry(alice: Alice, rows: { name: string; category?: string; status?: string }[]) {
   const inserted = await alice.client.from('pantry_items').insert(rows.map(row => ({
@@ -93,18 +86,30 @@ const seeds: Record<string, (stack: ReturnType<typeof localStack>, alice: Alice)
     await assertSeeded(stack, alice, { pantry: [milkOut, ...stocked], shopping: [] });
   },
   // The confirmation scenario is one test: the PKCE link only opens in the app that registered.
-  confirmation: async (stack, alice) => assertSeeded(stack, alice, { pantry: [], shopping: [] }),
+  // Alice owns one row in another household, so the new user's "empty household" (the flow's
+  // "Your pantry is empty" and verify:confirmation) also proves it cannot see foreign rows.
+  confirmation: async (stack, alice) => {
+    await addPantry(alice, [{ name: 'Milk', category: 'dairy', status: 'low' }]);
+    await assertSeeded(stack, alice, { pantry: [milkLow], shopping: [] });
+  },
 };
 
-async function main() {
+// Every command mutates the reserved accounts or reads state a live run is relying on (verify
+// signs in; the confirmation steps open links and delete the account), so one guard covers them
+// all, before anything else can run or clean up. The runner's own child passes via its pid.
+export function assertCommandAllowed(env: NodeJS.ProcessEnv = process.env) {
+  assertNoOtherRun(lockFile(env), Number(env.PANTRY_E2E_RUNNER_PID) || null, isAlive);
+}
+
+export async function runCommand(command: string | undefined, env: NodeJS.ProcessEnv = process.env) {
+assertCommandAllowed(env);
 const stack = localStack();
-const command = process.argv[2];
 const seedMatch = /^seed:(.+)$/.exec(command ?? '');
 if (seedMatch) {
   const seed = seeds[seedMatch[1]];
   if (!seed) throw new Error(`Unknown flow ${seedMatch[1]}; expected one of ${Object.keys(seeds).join(', ')}`);
   try {
-    const [alice] = await resetAccounts(stack);
+    const [alice] = await fixtures(stack);
     await seed(stack, alice);
     if (seedMatch[1] === 'confirmation') {
       await fs.mkdir(path.join(appRoot, '.verification'), { recursive: true });
@@ -115,8 +120,6 @@ if (seedMatch) {
     console.log(`Seeded ${seedMatch[1]}.`);
   } catch (error) { await cleanup(stack.admin); throw error; }
 } else if (command === 'prepare') {
-  // Refuse while another runner is live; the runner's own child is allowed through.
-  assertNoOtherRun(lockFile(), Number(process.env.PANTRY_E2E_RUNNER_PID) || null, isAlive);
   try {
     const target = process.env.PANTRY_TEST_TARGET ?? 'emulator';
     assert.ok(['emulator', 'device'].includes(target), 'Expected emulator or device test target');
@@ -147,7 +150,7 @@ if (seedMatch) {
   const bob = stack.client();
   assert.equal((await bob.auth.signInWithPassword({ email: emails[1], password })).error, null);
   assert.deepEqual((await bob.from('pantry_items').select('*')).data, []);
-  const users = await stack.admin.auth.admin.listUsers();
+  const users = await stack.admin.auth.admin.listUsers({ perPage: 1000 });
   assert.equal(users.error, null);
   const registration = users.data.users.find(user => user.email === emails[2]);
   assert.ok(registration, 'Android registration must reach real local Auth');
@@ -258,7 +261,7 @@ if (seedMatch) {
   assert.ok(location.searchParams.get('code'), 'The first signup email must return a PKCE code');
   await fs.writeFile(path.join(appRoot, '.verification/confirmation-state.json'), JSON.stringify({ confirmed: location.toString() }));
 } else if (command === 'confirmation-reset') {
-  const users = await stack.admin.auth.admin.listUsers();
+  const users = await stack.admin.auth.admin.listUsers({ perPage: 1000 });
   assert.equal(users.error, null);
   const user = users.data.users.find(user => user.email === emails[3]);
   assert.ok(user?.email_confirmed_at && user.last_sign_in_at, 'First signup must establish a real Android session before reset');
@@ -283,7 +286,7 @@ if (seedMatch) {
   assert.ok(location.searchParams.get('code'), 'The resent native email must use PKCE, never implicit access tokens');
   await fs.writeFile(path.join(appRoot, '.verification/confirmation-state.json'), JSON.stringify({ ...state, confirmed: location.toString() }));
 } else if (command === 'verify:confirmation') {
-  const users = await stack.admin.auth.admin.listUsers();
+  const users = await stack.admin.auth.admin.listUsers({ perPage: 1000 });
   assert.equal(users.error, null);
   const user = users.data.users.find(user => user.email === emails[3]);
   assert.ok(user?.email_confirmed_at, 'Android must confirm the actual local Auth account');
@@ -293,6 +296,13 @@ if (seedMatch) {
   assert.equal(session.error, null);
   assert.deepEqual((await client.from('pantry_items').select('id')).data, []);
   await client.auth.signOut();
+  // The foreign row the empty household was checked against must still exist, or that check proves nothing.
+  const alice = stack.client();
+  assert.equal((await alice.auth.signInWithPassword({ email: emails[0], password })).error, null);
+  const aliceRows = await alice.from('pantry_items').select('name, category, status');
+  assert.equal(aliceRows.error, null);
+  assert.deepEqual(aliceRows.data, [milkLow], "Alice's seeded Milk must still exist, so the empty household was checked against a foreign row");
+  await alice.auth.signOut();
   console.log('Verified native signup, expired email recovery, PKCE resend, confirmation and independent empty household.');
 } else if (command === 'cleanup') {
   await cleanup(stack.admin);
@@ -302,4 +312,5 @@ if (seedMatch) {
 } else throw new Error(`Expected prepare, seed:<flow>, verify:<flow> (${Object.keys(seeds).join(', ')}), confirmation-first/reset/expired/resent or cleanup`);
 
 }
-main().catch(error => { console.error(error.message); process.exitCode = 1; });
+// Only the command line runs it; tests load this file and call runCommand with stubs.
+if (require.main === module) runCommand(process.argv[2]).catch(error => { console.error(error.message); process.exitCode = 1; });

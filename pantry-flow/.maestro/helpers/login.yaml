@@ -1,10 +1,11 @@
 appId: com.pantryflow.test
 ---
 # Wi-Fi ADB sometimes makes the phone keyboard double a typed character
-# (2026-11-23: the email field held ppf.test.alice@example.com). The exact-text
-# email assertion catches a doubled email character; a doubled password character
-# leaves the pantry screen unreached. Either way the whole sequence is retried from
-# clean fields (eraseText). A genuinely broken login still fails all three attempts.
+# (2026-11-23: the email field held ppf.test.alice@example.com). Only the email typing
+# is retried: the exact-text assertion catches a doubled email character, and the retry
+# starts again from a clean field (eraseText). The password is typed once and sign-in is
+# submitted once, outside the retry: a doubled password character or any sign-in failure
+# fails the flow immediately instead of being retried away.
 - retry:
     maxRetries: 2
     commands:
@@ -16,15 +17,15 @@ appId: com.pantryflow.test
       - assertVisible:
           id: login-email
           text: ${EMAIL}
-      - tapOn:
-          id: login-password
-          point: "95%,50%"
-      - eraseText
-      - inputText: PF-local-test-only-9281!
-      - hideKeyboard
-      - tapOn:
-          id: login-submit
-      - extendedWaitUntil:
-          visible:
-            id: pantry-screen
-          timeout: 30000
+- tapOn:
+    id: login-password
+    point: "95%,50%"
+- eraseText
+- inputText: PF-local-test-only-9281!
+- hideKeyboard
+- tapOn:
+    id: login-submit
+- extendedWaitUntil:
+    visible:
+      id: pantry-screen
+    timeout: 30000

@@ -93,3 +93,40 @@ test('assertNoOtherRun ignores a dead pid and a missing file', () => withLock(fi
   acquireRunLock(file, 111, alive);
   assert.doesNotThrow(() => assertNoOtherRun(file, 222, dead));
 }));
+
+test('a takeover leaves the lock complete and no temp or stale files behind', () => withLock(file => {
+  acquireRunLock(file, 111, alive);
+  acquireRunLock(file, 222, pid => pid !== 111, 'C:/wt');
+  const lock = JSON.parse(fs.readFileSync(file, 'utf8'));
+  assert.equal(lock.pid, 222);
+  assert.equal(lock.root, 'C:/wt');
+  assert.deepEqual(fs.readdirSync(path.dirname(file)), [path.basename(file)]);
+}));
+
+test('a refused acquire leaves the live holder intact and no temp files behind', () => withLock(file => {
+  acquireRunLock(file, 111, alive, 'C:/wt-a');
+  assert.throws(() => acquireRunLock(file, 222, alive), /pid 111, C:\/wt-a/);
+  assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).pid, 111);
+  assert.deepEqual(fs.readdirSync(path.dirname(file)), [path.basename(file)]);
+}));
+
+test('an empty lock file is taken over like a corrupt one', () => withLock(file => {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, '');
+  acquireRunLock(file, 222, alive);
+  assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).pid, 222);
+}));
+
+test('a racer that replaced the stale lock first is not destroyed: its lock is put back and we are refused', () => withLock(file => {
+  acquireRunLock(file, 111, alive);
+  // The moment this run judges pid 111 dead, another run takes the lock over (pid 333, live).
+  const racing = pid => {
+    if (pid !== 111) return true;
+    fs.rmSync(file);
+    fs.writeFileSync(file, JSON.stringify({ pid: 333, root: 'C:/racer', startedAt: new Date().toISOString() }));
+    return false;
+  };
+  assert.throws(() => acquireRunLock(file, 222, racing), /Another e2e run is active \(pid 333, C:\/racer\)/);
+  assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).pid, 333);
+  assert.deepEqual(fs.readdirSync(path.dirname(file)), [path.basename(file)]);
+}));

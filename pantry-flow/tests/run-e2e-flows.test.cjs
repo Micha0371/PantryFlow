@@ -25,6 +25,15 @@ test('an unknown or missing flow name fails and lists the valid names', () => {
   assert.throws(() => selectFlows(['--flow', 'nope']), /"nope"/);
 });
 
+test('unconsumed arguments and a repeated --flow fail clearly instead of running everything', () => {
+  // `npm run test:e2e --flow x` (no `--`) reaches the script as just ["slice-3-entry"].
+  assert.throws(() => selectFlows(['slice-3-entry']), /^Error: Unexpected argument "slice-3-entry"; usage: /);
+  assert.throws(() => selectFlows(['--flow', 'slice-3-entry', 'extra']), /Unexpected argument "extra"/);
+  assert.throws(() => selectFlows(['--other']), /Unexpected argument "--other"/);
+  assert.throws(() => selectFlows(['--flow', 'slice-3-entry', '--flow', 'slice-3-search']), /more than once/);
+  assert.throws(() => selectFlows(['--flow=slice-3-entry', '--flow', 'slice-3-entry']), /more than once/);
+});
+
 test('every flow names a Maestro file that exists and a debug folder, and report names are unique', () => {
   for (const flow of FLOWS) {
     assert.ok(fs.existsSync(path.join(__dirname, '../.maestro', `${flow.file}.yaml`)), `${flow.file}.yaml must exist`);
@@ -34,9 +43,21 @@ test('every flow names a Maestro file that exists and a debug folder, and report
   assert.equal(new Set(FLOWS.map(flow => flow.xml)).size, FLOWS.length);
 });
 
-test('every flow header names its own seed', () => {
+test('every flow header names its own seed; the three confirmation files name seed:confirmation', () => {
   for (const flow of FLOWS.filter(flow => flow.name !== 'confirmation')) {
     const text = fs.readFileSync(path.join(__dirname, '../.maestro', `${flow.file}.yaml`), 'utf8');
     assert.ok(text.includes(`Seed: seed:${flow.name}`), `${flow.file}.yaml must name Seed: seed:${flow.name}`);
+  }
+  for (const file of ['confirmation-register', 'confirmation-complete', 'confirmation-resend']) {
+    const text = fs.readFileSync(path.join(__dirname, '../.maestro', `${file}.yaml`), 'utf8');
+    assert.ok(text.includes('Seed: seed:confirmation'), `${file}.yaml must name Seed: seed:confirmation`);
+  }
+});
+
+test('every flow has a seed and a verify command in e2e-fixtures', () => {
+  const source = fs.readFileSync(path.join(__dirname, '../scripts/e2e-fixtures.ts'), 'utf8');
+  for (const flow of FLOWS) {
+    assert.match(source, new RegExp(`^  '?${flow.name}'?: async \\(`, 'm'), `seed for ${flow.name}`);
+    assert.ok(source.includes(`command === 'verify:${flow.name}'`), `verify:${flow.name}`);
   }
 });
