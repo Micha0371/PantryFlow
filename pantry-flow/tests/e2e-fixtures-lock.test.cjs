@@ -31,18 +31,52 @@ function setup() {
     done: () => fs.rmSync(dir, { recursive: true, force: true }) };
 }
 
+// The commands are the keys of the `handlers` object literal in the source, read from the TypeScript AST
+// (not a regex), so an unquoted key or an inline arrow entry is seen and rejected, not skipped.
+const ts = require('typescript');
+const sourceFile = ts.createSourceFile('e2e-fixtures.ts', source, ts.ScriptTarget.Latest, true);
+function handlerMap() {
+  let literal;
+  sourceFile.forEachChild(node => {
+    if (!ts.isVariableStatement(node)) return;
+    for (const declaration of node.declarationList.declarations) {
+      if (ts.isIdentifier(declaration.name) && declaration.name.text === 'handlers') literal = declaration.initializer;
+    }
+  });
+  assert.ok(literal && ts.isObjectLiteralExpression(literal), 'the source must declare `const handlers = { ... }`');
+  return literal.properties.map(property => {
+    assert.ok(ts.isPropertyAssignment(property) && ts.isIdentifier(property.initializer),
+      `every handlers entry must be \`'command': namedFunction\`: ${property.getText(sourceFile)}`);
+    const key = property.name;
+    assert.ok(ts.isStringLiteral(key), `handlers keys must be quoted strings: ${property.getText(sourceFile)}`);
+    return { command: key.text, handler: property.initializer.text };
+  });
+}
+const mapped = handlerMap();
+
 // Every command literal in the source, so a command added later cannot dodge the guard test.
 const commands = [...new Set([
-  ...[...source.matchAll(/^  '([^']+)': \w+,\r?$/gm)].map(match => match[1]),
+  ...mapped.map(entry => entry.command),
   ...FLOWS.map(flow => `seed:${flow.name}`), ...FLOWS.map(flow => `verify:${flow.name}`),
   'unknown-command',
 ])];
 
-test('the extraction finds the handler map, one entry per handler function', () => {
-  const handlerFunctions = [...source.matchAll(/^async function (\w+)\(stack: Stack\)/gm)].map(match => match[1]).filter(name => name !== 'runSeed');
-  const mapped = [...source.matchAll(/^  '[^']+': (\w+),\r?$/gm)].map(match => match[1]);
-  assert.deepEqual([...mapped].sort(), [...handlerFunctions].sort());
+test('the handler map has exactly one entry per handler function', () => {
+  const handlerFunctions = sourceFile.statements
+    .filter(node => ts.isFunctionDeclaration(node) && node.name && node.name.text !== 'runSeed'
+      && node.parameters.length === 1 && node.parameters[0].type?.getText(sourceFile) === 'Stack')
+    .map(node => node.name.text);
+  assert.deepEqual(mapped.map(entry => entry.handler).sort(), handlerFunctions.sort());
+  assert.equal(new Set(mapped.map(entry => entry.command)).size, mapped.length, 'no duplicate commands');
   assert.equal(mapped.length, 12);
+});
+
+test('commands are dispatched only through the handler map, never by comparing the command', () => {
+  // Allow-list: the one legitimate use is the lookup guard that decides whether the map has the command.
+  const allowed = 'command !== undefined && Object.hasOwn(handlers, command)';
+  const stripped = source.split(allowed).join('');
+  assert.doesNotMatch(stripped, /\bcommand\s*[!=]==?|switch\s*\(\s*command\s*\)/);
+  assert.equal(source.split(allowed).length - 1, 1, 'the allow-listed lookup appears exactly once');
 });
 
 test('the command list covers every mutating command', () => {
