@@ -248,3 +248,11 @@ Corrective comments on **KAN-81** (session rule) and **KAN-57** (execution path)
 - **Detection:** `expo-localization` (new dependency approved).
 
 Design: [KAN-61 language selection](2026-11-22-kan-61-language-selection-design.md).
+
+## Amendment 3 — 2026-11-24 (beta line B7 and Android distribution)
+
+**Decided by the owner on 2026-11-24:**
+- **Beta line B7 (English and German complete):** Android evidence is enough. This applies S3-Q7 (the beta does not wait for iOS) to the iOS checks named in KAN-44 and KAN-62. Those iOS checks stay open and are tracked under KAN-69.
+- **Android beta distribution (KAN-77):** a Play Store account and an upload key are needed. The release track is not chosen yet.
+
+This amendment authorizes no account purchase, key creation, upload, distribution or tester invitation.
