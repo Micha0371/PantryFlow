@@ -1,0 +1,23 @@
+--- policy-before.json
++++ policy-after.json
+@@ -1,10 +1,10 @@
+-{
+-  "policyname": "items_insert_member",
+-  "tablename": "pantry_items",
+-  "roles": [
+-    "authenticated"
+-  ],
+-  "cmd": "INSERT",
+-  "qual": null,
+-  "with_check": "((created_by = auth.uid()) AND (household_id IN ( SELECT pantry_household_members.household_id\n   FROM pantry_household_members\n  WHERE (pantry_household_members.user_id = auth.uid()))))"
+-}
++{
++  "policyname": "items_insert_member",
++  "tablename": "pantry_items",
++  "roles": [
++    "authenticated"
++  ],
++  "cmd": "INSERT",
++  "qual": null,
++  "with_check": "(created_by = auth.uid())"
++}

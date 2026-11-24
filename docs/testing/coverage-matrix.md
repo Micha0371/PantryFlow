@@ -10,6 +10,22 @@ timestamp writes or requiring permanently non-null authors.
 “Automated” describes executable coverage, not an assertion that an unexecuted
 suite passed. Execution results are recorded separately in README.md.
 
+## Beta Priority 1 write isolation
+
+Specification and evidence: [independent write-isolation regressions](2026-11-24-rls-write-isolation.md). Existing filtered/returning, attribution and immutable-column tests remain unchanged. New SQL assertions run against disposable PostgreSQL; HTTP uses ordinary users and owner read-back. Gateway denials are reported separately from policy detectors.
+
+| ID | Restriction and observable outcome | Coverage and failability | Boundary |
+|---|---|---|---|
+| RLS-WRITE-01 | `items_update_member`: own bare status update persists; foreign full row unchanged | `write_isolation.test.sql`; one permissive USING/effective-check mutant must fail the matching foreign-state assertion | Unfiltered minimal HTTP PATCH separately checks actual gateway boundary |
+| RLS-WRITE-02 | `items_delete_member`: own bare deletion persists; foreign row survives unchanged | Same SQL suite; DELETE predicate mutant must fail foreign-state assertion | Minimal HTTP DELETE is not credited as an RLS detector when gateway blocks it |
+| RLS-WRITE-03 | `shopping_update_member`: own completion persists with timestamp; foreign full row unchanged | Same SQL suite; permissive USING/WITH CHECK mutant must fail foreign-state assertion | Manual fixtures avoid pantry-FK cascade masking |
+| RLS-WRITE-04 | `shopping_delete_member`: own bare deletion persists; foreign row survives unchanged | Same SQL suite; DELETE predicate mutant must fail foreign-state assertion | Fresh pre-delete snapshot prevents cascading UPDATE diagnostics |
+| RLS-WRITE-05 | `profiles_update_own`: own allowed name update persists; foreign full profile unchanged | Same SQL suite; permissive USING/effective-check mutant must fail foreign-state assertion | No premium/identity privilege changes; those controls keep separate tests |
+| RLS-INSERT-01 | `items_insert_member`: own minimal insert persists; foreign insert with actor attribution is rejected and absent | SQL and `write-isolation.integration.ts`; household-only check removal must fail foreign-state assertions | No RETURNING, representation or invalid attribution to mask the policy |
+| RLS-INSERT-02 | `shopping_insert_member`: same household boundary for manual shopping insert | Same SQL/API suites and household-only mutant | Valid columns/name, no pantry-link FK to cause an unrelated rejection |
+
+`npm run test:rls-mutations` runs intact baselines before/after all seven mutations, checks actual foreign-state diagnostics and retains commands/diffs. The supported local database/integration commands and Android runner serialize via a shared machine-wide lock. These checks do not modify hosted policies or verify hosted behavior.
+
 ## Slice 2 coverage — KAN-6 (Shopping List MVP)
 
 Contract: [approved D1/D2/D4 model](../planning/slice-2-shopping-database.md) and

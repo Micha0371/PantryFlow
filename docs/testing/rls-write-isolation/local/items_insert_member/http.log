@@ -1,0 +1,89 @@
+TAP version 13
+# (node:72232) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+# (Use `node --trace-deprecation ...` to show where the warning was created)
+# Subtest: items_insert_member HTTP rejects foreign household insert without returning
+not ok 1 - items_insert_member HTTP rejects foreign household insert without returning
+  ---
+  duration_ms: 1632.6961
+  type: 'test'
+  location: '<app>\\tests\\integration\\write-isolation.integration.ts:2:5544'
+  failureType: 'testCodeFailure'
+  error: |-
+    items_insert_member: foreign row absent
+    + actual - expected
+    ... Skipped lines
+    
+      [
+        {
+          category: 'other',
+          created_at: '2026-11-24T12:46:05.936293+00:00',
+          created_by: '<fixture-uuid>',
+    ...
+        },
+    +   {
+    +     category: 'other',
+    +     created_at: '2026-11-24T12:46:05.992483+00:00',
+    +     created_by: '<fixture-uuid>',
+    +     household_id: '<fixture-uuid>',
+    +     id: '<fixture-uuid>',
+    +     location: 'pantry',
+    +     name: 'Foreign insert',
+    +     status: 'in_stock',
+    +     updated_at: '2026-11-24T12:46:05.992483+00:00'
+    +   }
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0:
+      id: '<fixture-uuid>'
+      household_id: '<fixture-uuid>'
+      name: 'Foreign fixture'
+      status: 'in_stock'
+      category: 'other'
+      location: 'pantry'
+      created_by: '<fixture-uuid>'
+      created_at: '2026-11-24T12:46:05.936293+00:00'
+      updated_at: '2026-11-24T12:46:05.936293+00:00'
+  actual:
+    0:
+      id: '<fixture-uuid>'
+      household_id: '<fixture-uuid>'
+      name: 'Foreign fixture'
+      status: 'in_stock'
+      category: 'other'
+      location: 'pantry'
+      created_by: '<fixture-uuid>'
+      created_at: '2026-11-24T12:46:05.936293+00:00'
+      updated_at: '2026-11-24T12:46:05.936293+00:00'
+    1:
+      id: '<fixture-uuid>'
+      household_id: '<fixture-uuid>'
+      name: 'Foreign insert'
+      status: 'in_stock'
+      category: 'other'
+      location: 'pantry'
+      created_by: '<fixture-uuid>'
+      created_at: '2026-11-24T12:46:05.992483+00:00'
+      updated_at: '2026-11-24T12:46:05.992483+00:00'
+  operator: 'deepStrictEqual'
+  stack: |-
+    <anonymous> (<app>\tests\integration\write-isolation.integration.ts:119:14)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async runThenCleanup (<app>\tests\integration\local-stack.ts:102:9)
+    async withTestUsers (<app>\tests\integration\local-stack.ts:140:3)
+    async TestContext.<anonymous> (<app>\tests\integration\write-isolation.integration.ts:103:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+  ...
+1..1
+# Randomized test order seed: 2913417894
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2079.6289

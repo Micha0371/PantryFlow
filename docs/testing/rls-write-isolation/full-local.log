@@ -1,0 +1,95 @@
+Resetting local database...
+WARN: config section [inbucket] is deprecated and will be removed in v3, use [local_smtp] instead.
+Recreating database...
+Initialising schema...
+Seeding globals from roles.sql...
+Applying migration 00001_first_slice.sql...
+Applying migration 00002_review_hardening.sql...
+Applying migration 00003_strict_duplicate_prevention.sql...
+Applying migration 00004_shopping_items.sql...
+Restarting containers...
+Finished supabase db reset on branch pantryflow/beta-p1-rls-write-isolation.
+{"target":"local","version":"","message":"Reset local database."}
+Connecting to local database...
+psql:<app>/supabase/tests/database/environment.test.sql:2: NOTICE:  extension "pgtap" already exists, skipping
+<app>/supabase/tests/database/environment.test.sql ...... ok
+psql:<app>/supabase/tests/database/shopping.test.sql:2: NOTICE:  extension "pgtap" already exists, skipping
+<app>/supabase/tests/database/shopping.test.sql ......... ok
+psql:<app>/supabase/tests/database/slice_1_1.test.sql:2: NOTICE:  extension "pgtap" already exists, skipping
+<app>/supabase/tests/database/slice_1_1.test.sql ........ ok
+psql:<app>/supabase/tests/database/write_isolation.test.sql:4: NOTICE:  extension "pgtap" already exists, skipping
+<app>/supabase/tests/database/write_isolation.test.sql .. ok
+All tests successful.
+Files=4, Tests=88,  0 wallclock secs ( 0.04 usr  0.02 sys +  0.03 cusr  0.04 csys =  0.13 CPU)
+Result: PASS
+(node:25520) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ completed names may repeat and reopen into an open duplicate fails (1432.883ms)
+✔ database rejections map to contract keys when client checks are bypassed (1825.6341ms)
+✔ ordinary members persist and read back all six operations (1416.9949ms)
+(node:68292) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ another user's language is neither readable nor updatable (00001 own-row policies) (1541.3732ms)
+✔ an unsupported language is rejected (00002 profiles_language_valid) (1505.0054ms)
+✔ a user updates their own language to de and reads it back (00002 column grant) (1487.9867ms)
+✔ a new profile defaults to en (00001 column default) (1506.5922ms)
+(node:72196) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ items_insert_member HTTP rejects foreign household insert without returning (1547.4985ms)
+✔ profiles_update_own HTTP preserves foreign state without returning (1539.8375ms)
+ℹ profiles_update_own: bare HTTP blocked by gateway (21000); not an RLS detector
+✔ shopping_insert_member HTTP rejects foreign household insert without returning (1512.8448ms)
+✔ items_delete_member HTTP preserves foreign state without returning (1485.2003ms)
+ℹ items_delete_member: bare HTTP blocked by gateway (21000); not an RLS detector
+✔ shopping_update_member HTTP preserves foreign state without returning (1615.4025ms)
+ℹ shopping_update_member: bare HTTP blocked by gateway (21000); not an RLS detector
+✔ items_update_member HTTP preserves foreign state without returning (1565.1454ms)
+ℹ items_update_member: bare HTTP blocked by gateway (21000); not an RLS detector
+✔ shopping_delete_member HTTP preserves foreign state without returning (1510.3544ms)
+ℹ shopping_delete_member: bare HTTP blocked by gateway (21000); not an RLS detector
+(node:52396) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ pantry and shopping stay independent with ordinary clients (1649.7822ms)
+(node:55040) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ a deleted row and a foreign household's row both throw PF_PANTRY_MISSING (1608.6111ms)
+✔ a stale previous status is retried against the database status (1478.4472ms)
+✔ a lost response after a committed write reports an unknown outcome and the database holds the new status (1595.6592ms)
+✔ zero matched rows return null data without an error (1462.241ms)
+✔ a concurrent rename survives a status write (1612.2085ms)
+✔ a matching compare-and-set returns the row and the previous status (1453.2248ms)
+✔ a database already at the target status returns already and leaves updated_at unchanged (1502.2064ms)
+(node:72736) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ independent clients arbitrate concurrent add, rename, reopen and add-versus-reopen (1588.4571ms)
+✔ completion is retained, server-timed and reopenable without changing pantry state (1325.4438ms)
+✔ another member may edit; deleting its author preserves the surviving household row (1564.1923ms)
+✔ profile privileges and immutable creator/household/timestamps are enforced (1523.7537ms)
+✔ blank/overlong names and unsupported values fail; all stock states persist (1349.824ms)
+✔ two households and anonymous callers cannot cross authorization boundaries (1849.0319ms)
+✔ independent HTTP transactions produce exactly one winner for concurrent duplicates (1253.6067ms)
+✔ pantry links are household-consistent and pantry deletion preserves shopping state (1658.0707ms)
+✔ ordinary and anonymous clients cannot cross households, spoof creators or timestamps (2020.121ms)
+✔ direct API normalizes edge whitespace, rejects bad names and shares manual/linked uniqueness (1698.9062ms)
+✔ direct API rejects duplicate creates and renames, permits self edits and distinct names (1660.539ms)
+✔ writes to a deleted or foreign pantry row are classified as missing (1487.4079ms)
+✔ real confirmation-required signup, rejection, confirmation, refresh and logout (1531.1055ms)
+(node:72980) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ expired link cannot authenticate; resend produces a working replacement (66297.6616ms)
+✔ received link confirms identity, survives a new client and cannot be replayed (1345.7087ms)
+✔ otp expiry is read from supabase/config.toml (1.0065ms)
+(node:70216) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ removeTestUsers tries every id even when one removal fails (1265.1305ms)
+✔ withTestUsers removes its users when the body throws (2226.177ms)
+✔ test users are unique per call and removal deletes exactly them (2057.8464ms)
+ℹ Randomized test order seed: 3170157151
+ℹ tests 41
+ℹ suites 0
+ℹ pass 41
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 132180.9642

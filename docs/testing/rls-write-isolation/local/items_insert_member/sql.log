@@ -1,0 +1,19 @@
+<app>/supabase/tests/database/write_isolation.test.sql .. 
+# Failed test 17: "items_insert_member: foreign minimal insert rejected"
+#       caught: no exception
+#       wanted: 42501
+# Failed test 19: "items_insert_member: foreign row absent"
+#         have: 1
+#         want: 0
+# Looks like you failed 2 tests of 23
+Failed 2/23 subtests 
+
+Test Summary Report
+-------------------
+<app>/supabase/tests/database/write_isolation.test.sql (Wstat: 0 Tests: 23 Failed: 2)
+  Failed tests:  17, 19
+Files=1, Tests=23,  0 wallclock secs ( 0.02 usr  0.01 sys +  0.00 cusr  0.01 csys =  0.04 CPU)
+Result: FAIL
+Connecting to local database...
+psql:<app>/supabase/tests/database/write_isolation.test.sql:4: NOTICE:  extension "pgtap" already exists, skipping
+error running container: exit 1

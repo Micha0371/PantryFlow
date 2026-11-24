@@ -1,0 +1,10 @@
+{
+  "policyname": "items_delete_member",
+  "tablename": "pantry_items",
+  "roles": [
+    "public"
+  ],
+  "cmd": "DELETE",
+  "qual": "true",
+  "with_check": null
+}

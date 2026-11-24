@@ -1,0 +1,23 @@
+--- policy-before.json
++++ policy-after.json
+@@ -1,10 +1,10 @@
+-{
+-  "policyname": "shopping_update_member",
+-  "tablename": "pantry_shopping_items",
+-  "roles": [
+-    "authenticated"
+-  ],
+-  "cmd": "UPDATE",
+-  "qual": "(household_id IN ( SELECT pantry_household_members.household_id\n   FROM pantry_household_members\n  WHERE (pantry_household_members.user_id = auth.uid())))",
+-  "with_check": "(household_id IN ( SELECT pantry_household_members.household_id\n   FROM pantry_household_members\n  WHERE (pantry_household_members.user_id = auth.uid())))"
+-}
++{
++  "policyname": "shopping_update_member",
++  "tablename": "pantry_shopping_items",
++  "roles": [
++    "authenticated"
++  ],
++  "cmd": "UPDATE",
++  "qual": "true",
++  "with_check": "true"
++}

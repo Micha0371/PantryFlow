@@ -77,6 +77,8 @@ jobs:
         if: always() && steps.stack.outcome == 'failure'
         run: node scripts/redact-startup-log.cjs
       - run: npm run test:local 2>&1 | tee database-tests.log
+      - name: Prove bare-write RLS assertions detect permissive policies
+        run: npm run test:rls-mutations
       - run: npm run e2e:cleanup
         if: always() && steps.stack.outcome == 'success'
       - run: npx --no-install supabase stop --no-backup
@@ -87,6 +89,8 @@ jobs:
           name: database-test-diagnostics
           path: |
             pantry-flow/database-tests.log
+            pantry-flow/.verification/rls-write-mutations/
+          include-hidden-files: true
       - name: Upload failed startup diagnostics
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always() && steps.stack.outcome == 'failure'

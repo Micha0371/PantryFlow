@@ -1,0 +1,10 @@
+{
+  "policyname": "items_update_member",
+  "tablename": "pantry_items",
+  "roles": [
+    "public"
+  ],
+  "cmd": "UPDATE",
+  "qual": "true",
+  "with_check": "true"
+}
