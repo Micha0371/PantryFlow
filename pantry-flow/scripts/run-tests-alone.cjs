@@ -2,8 +2,8 @@
 // Runs every top-level test of each tests/*.test.cjs file on its own. A test that only passes
 // because an earlier test left state behind fails here. A name that matches nothing fails too.
 const { spawnSync } = require('node:child_process');
-const fs = require('node:fs');
 const path = require('node:path');
+const { nodeTestFiles } = require('./test-files.cjs');
 
 const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
 
@@ -58,7 +58,7 @@ function runNode(args) {
 
 function main() {
   const dir = path.join(__dirname, '..', 'tests');
-  const files = fs.readdirSync(dir).filter(f => f.endsWith('.test.cjs')).sort();
+  const files = nodeTestFiles(dir);
   const failures = [];
   let runs = 0;
   for (const file of files) {
@@ -68,7 +68,8 @@ function main() {
       failures.push(`${file} :: (whole file fails before running tests alone)\n${detail(listing)}`);
       continue;
     }
-    const names = topLevelNames(listing.stdout);
+    // node reports a file without tests as one passing test named after the file
+    const names = topLevelNames(listing.stdout).filter(name => name !== rel);
     if (names.length === 0) failures.push(`${file} :: (no top-level tests found)`);
     for (const name of names) {
       const alone = runNode(['--test-reporter=junit', '--test-name-pattern', `^${escapeName(name)}$`, rel]);
@@ -85,5 +86,7 @@ function main() {
   }
 }
 
-if (require.main === module) main();
+if (require.main === module) {
+  try { main(); } catch (error) { console.error(error.message); process.exitCode = 1; }
+}
 module.exports = { escapeName, topLevelNames, matchedName };

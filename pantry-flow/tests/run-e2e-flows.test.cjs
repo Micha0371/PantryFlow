@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { FLOWS, selectFlows } = require('../scripts/e2e-flows.cjs');
+const { FLOWS, CONFIRMATION_FILES, selectFlows, flowFiles } = require('../scripts/e2e-flows.cjs');
 
 const names = FLOWS.map(flow => flow.name);
 
@@ -48,7 +48,9 @@ test('every flow header names its own seed; the three confirmation files name se
     const text = fs.readFileSync(path.join(__dirname, '../.maestro', `${flow.file}.yaml`), 'utf8');
     assert.ok(text.includes(`Seed: seed:${flow.name}`), `${flow.file}.yaml must name Seed: seed:${flow.name}`);
   }
-  for (const file of ['confirmation-register', 'confirmation-complete', 'confirmation-resend']) {
+  const files = Object.values(CONFIRMATION_FILES);
+  assert.deepEqual(files, ['confirmation-register', 'confirmation-complete', 'confirmation-resend']);
+  for (const file of files) {
     const text = fs.readFileSync(path.join(__dirname, '../.maestro', `${file}.yaml`), 'utf8');
     assert.ok(text.includes('Seed: seed:confirmation'), `${file}.yaml must name Seed: seed:confirmation`);
   }
@@ -60,4 +62,9 @@ test('every flow has a seed and a verify command in e2e-fixtures', () => {
     assert.match(source, new RegExp(`^  '?${flow.name}'?: async \\(`, 'm'), `seed for ${flow.name}`);
     assert.match(source, new RegExp(`^  'verify:${flow.name}': \\w+,`, 'm'), `verify:${flow.name}`);
   }
+});
+
+test('flowFiles names every Maestro file the runner starts, each once', () => {
+  assert.deepEqual(flowFiles(), ['slice-1-1', 'slice-2-shopping', 'slice-3-status', 'slice-3-search', 'slice-3-entry',
+    'confirmation-register', 'confirmation-complete', 'confirmation-resend']);
 });

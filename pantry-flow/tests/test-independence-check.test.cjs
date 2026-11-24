@@ -103,6 +103,34 @@ test('focused-test flags only forms', () => {
   ]);
 });
 
+test('skipped-test flags skip and todo forms of tests and suites', () => {
+  const skipped = ['skipped-test'];
+  expectRules([
+    ["test.skip('a', () => {});", skipped],
+    ["it.todo('a');", skipped],
+    ["describe.skip('a', () => { test('b', () => {}); });", skipped],
+    ["test.skip.each([1])('a', () => {});", skipped],
+    ["it.concurrent.skip('a', () => {});", skipped],
+    ["xit('a', () => {});", skipped],
+    ["xtest('a', () => {});", skipped],
+    ["xdescribe('a', () => { test('b', () => {}); });", skipped],
+    ["test('a', { skip: true }, () => {});", skipped],
+    ["test('a', { skip: process.platform === 'win32' }, () => {});", skipped],
+    ["test('a', { todo: 'later' }, () => {});", skipped],
+    ["test('a', t => { t.skip('not here'); });", skipped],
+    ["test('a', async t => { await t.test('b', { skip: true }, () => {}); });", skipped],
+  ]);
+});
+
+test('skipped-test allows skip: false, skip on other objects and text, and a waiver with a reason', () => {
+  expectRules([
+    ["test('a', { skip: false }, () => {});", []],
+    ["test('a', () => { load({ skip: 10, todo: [] }); reader.skip(3); });", []],
+    ["test('a', () => { use('test.skip(x)'); }); // test.skip", []],
+    ["// independence-ok: needs a Mac\ntest.skip('a', () => {});", []],
+  ]);
+});
+
 test('an independence-ok exemption with a reason is listed, without a reason it is still flagged', () => {
   const waived = analyze([{ path: 'a.test.cjs', text: "let n = 0;\ntest('a', () => {\n  // independence-ok: counter only seeds unique ids\n  n++;\n});" }]);
   assert.deepEqual(waived.violations, []);

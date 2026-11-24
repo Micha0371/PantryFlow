@@ -2,7 +2,8 @@ const { spawnSync, fork } = require('node:child_process');
 const fs = require('node:fs');
 const { lockFile, isAlive, acquireRunLock, releaseRunLock } = require('./e2e-lock.cjs');
 const path = require('node:path');
-const { selectFlows } = require('./e2e-flows.cjs');
+const { selectFlows, CONFIRMATION_FILES } = require('./e2e-flows.cjs');
+const { logcatProblem } = require('./e2e-logcat.cjs');
 const root = path.resolve(__dirname, '..');
 const out = path.join(root, '.verification/maestro');
 fs.mkdirSync(out, { recursive: true });
@@ -54,15 +55,15 @@ await new Promise((resolve, reject) => {
     fixture(`seed:${flow.name}`);
     if (flow.name === 'confirmation') {
       // One test: the PKCE link only opens in the app that registered, so the steps run as a unit.
-      maestroFlow('confirmation-register', { xml: 'confirmation-register.xml', debug: 'confirmation-register' });
+      maestroFlow(CONFIRMATION_FILES.register, { xml: 'confirmation-register.xml', debug: 'confirmation-register' });
       fixture('confirmation-first');
-      maestroFlow('confirmation-complete', { xml: 'confirmation-first-complete.xml', debug: 'confirmation-first-complete' }, { MAESTRO_CONFIRMATION_URL: readState().confirmed });
+      maestroFlow(CONFIRMATION_FILES.complete, { xml: 'confirmation-first-complete.xml', debug: 'confirmation-first-complete' }, { MAESTRO_CONFIRMATION_URL: readState().confirmed });
       fixture('confirmation-reset');
-      maestroFlow('confirmation-register', { xml: 'confirmation-register.xml', debug: 'confirmation-register' });
+      maestroFlow(CONFIRMATION_FILES.register, { xml: 'confirmation-register.xml', debug: 'confirmation-register' });
       fixture('confirmation-expired');
-      maestroFlow('confirmation-resend', { xml: 'confirmation-resend.xml', debug: 'confirmation-resend' }, { MAESTRO_CONFIRMATION_URL: readState().expired });
+      maestroFlow(CONFIRMATION_FILES.resend, { xml: 'confirmation-resend.xml', debug: 'confirmation-resend' }, { MAESTRO_CONFIRMATION_URL: readState().expired });
       fixture('confirmation-resent');
-      maestroFlow('confirmation-complete', { xml: 'confirmation-complete.xml', debug: 'confirmation-complete' }, { MAESTRO_CONFIRMATION_URL: readState().confirmed });
+      maestroFlow(CONFIRMATION_FILES.complete, { xml: 'confirmation-complete.xml', debug: 'confirmation-complete' }, { MAESTRO_CONFIRMATION_URL: readState().confirmed });
     } else {
       maestroFlow(flow.file, { xml: flow.xml, debug: flow.debug });
     }
@@ -71,12 +72,9 @@ await new Promise((resolve, reject) => {
 } catch (error) { failure = error; }
 finally {
   const logs = spawnSync(adb, ['logcat', '-d', '-v', 'threadtime'], { cwd: root, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
-  if (logs.error || logs.status !== 0) failure ||= Error('Android diagnostic log capture failed');
   fs.writeFileSync(path.join(out, 'android-logcat.txt'), logs.stdout || logs.stderr || 'No logs captured');
-  // Matches the exact native asset failure observed in the prior device pass.
-  if (/ExpoAsset\.downloadAsync.*(?:reject|error)|AppDirectories.*not found|Unable to load font|Unrecognized font family|Error loading font/i.test(logs.stdout || '')) {
-    failure ||= Error('Native font/asset regression detected in Android logcat');
-  }
+  const problem = logcatProblem(logs);
+  if (problem) failure ||= Error(problem);
   try { fixture('cleanup'); } catch (error) { failure ||= error; }
   proxy.kill();
 }

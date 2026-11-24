@@ -21,20 +21,27 @@ Static check: `npm run test:independence` (`pantry-flow/scripts/check-test-indep
 | `fake-timers` | File-level `mock.timers.enable` not directly followed by a `try` whose `finally` resets it; jest `useFakeTimers` without `useRealTimers` in `finally` or `afterEach`. `t.mock.timers` is always allowed. |
 | `invisible-whitespace` (tests and `pantry-flow/scripts/`) | Literal U+00A0, U+00AD, U+2000-U+200F (except ZWJ/ZWNJ between two visible characters), U+2028/2029, U+202F, U+205F-U+2064, U+3000 and non-leading U+FEFF. Escapes and all other Unicode are allowed. |
 | `focused-test` | `.only`. |
+| `skipped-test` | `skip` and `todo` forms of tests and suites, `{ skip }` and `{ todo }` options, `t.skip()`, `xit`, `xtest`, `xdescribe`: a skipped test counts as a pass, so it needs an exemption with a reason. |
 
 Dynamic checks catch what static rules cannot:
 
 - Random order on every run: node (`--test-randomize`), jest (`--randomize --showSeed`) and the Jira Python tests (`tools/jira/run_tests.py`). Each prints its seed.
 - Running each top-level test alone in CI (`npm run test:isolated`).
+- Running nothing is a failure, not a pass:
+  - A component run that matches no test fails, also in a checkout below a dot folder such as `.verification` (`pantry-flow/tests/jest-config.test.cjs`). The `jest-expo` preset would let an empty run pass.
+  - `npm test` and `npm run test:isolated` fail without test files, and `test:isolated` fails for a file without a top-level test (`tests/test-runners.test.cjs`).
+  - Every test file belongs to a runner and declares a test, every Maestro flow is used by the e2e runner, and no runner is without files (`scripts/test-inventory.cjs`, checked by `tests/test-inventory.test.cjs`).
+  - The e2e log check fails on a log without entries (`scripts/e2e-logcat.cjs`).
 
 ### Known limits
 
-- Only `invisible-whitespace` looks beyond tests (`pantry-flow/scripts/`); `module-state`, `global-patch`, `fake-timers` and `focused-test` check test files only. Other source folders are not scanned.
+- Only `invisible-whitespace` looks beyond tests (`pantry-flow/scripts/`); `module-state`, `global-patch`, `fake-timers`, `focused-test` and `skipped-test` check test files only. Other source folders are not scanned.
 - `Object.assign` and `Object.defineProperty` on `global`, `process.env` or the built-ins are not detected, nor are writes through an alias (`const c = console; c.error = f`) or to nested members such as `Date.prototype`.
 - Global writes inside hooks (for example a describe-level `beforeEach` that patches a global) are not scanned.
 - Test callbacks passed by variable are not followed.
 - Cross-file helpers are not followed.
 - The jest fake-timer check is file-wide.
+- `skipped-test` does not see a test that returns early, `this.skip()`, or the skips of the Jira Python tests and pgTAP. The inventory counts a test only when its callback is written inline.
 - A global patch restored in `finally` is accepted even if the test awaits while it is installed (node runs top-level tests in a file one at a time).
 - The static rules are heuristics. Random order and running each top-level test alone are the dynamic backstops.
 

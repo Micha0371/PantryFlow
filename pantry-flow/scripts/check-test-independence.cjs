@@ -450,6 +450,51 @@ function checkFocusedTests(ctx) {
   });
 }
 
+// skipped-test: a skipped test counts as a pass, so it needs a waiver with a reason ---------------
+
+const SKIPS = new Set(['skip', 'todo']);
+const SKIP_CALLS = new Set(['xit', 'xtest', 'xdescribe']);
+const isTestOrSuiteName = name => TEST_NAMES.has(name) || SUITE_NAMES.has(name);
+
+// test.skip, it.concurrent.todo, describe.skip, and t.skip() inside a test with the context `t`
+function isSkipAccess(n, contextNames) {
+  if (!(ts.isPropertyAccessExpression(n) && SKIPS.has(n.name.text))) return false;
+  const root = rootIdentifier(n.expression);
+  if (!root) return false;
+  return isTestOrSuiteName(root.text) || (n.expression === root && contextNames.has(root.text) && ts.isCallExpression(n.parent));
+}
+
+// { skip: <anything but false> } as an argument of a test or suite call
+function isSkipOption(n) {
+  const named = ts.isPropertyAssignment(n) || ts.isShorthandPropertyAssignment(n);
+  if (!(named && (ts.isIdentifier(n.name) || ts.isStringLiteral(n.name)) && SKIPS.has(n.name.text))) return false;
+  if (ts.isPropertyAssignment(n) && n.initializer.kind === ts.SyntaxKind.FalseKeyword) return false;
+  const call = n.parent.parent;
+  if (!(ts.isCallExpression(call) && call.arguments.includes(n.parent))) return false;
+  const callee = call.expression;
+  if (ts.isIdentifier(callee)) return isTestOrSuiteName(callee.text);
+  return ts.isPropertyAccessExpression(callee) && (callee.name.text === 'test' || callee.name.text === 'it'
+    || isTestOrSuiteName(rootIdentifier(callee)?.text));
+}
+
+function skippedDetail(n, contextNames) {
+  if (isSkipAccess(n, contextNames)) return `\`${dotted(n)}\` counts as a pass without running`;
+  if (isSkipOption(n)) return `\`{ ${n.name.text} }\` counts as a pass without running`;
+  if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && SKIP_CALLS.has(n.expression.text)) {
+    return `\`${n.expression.text}\` counts as a pass without running`;
+  }
+  return null;
+}
+
+function checkSkippedTests(ctx) {
+  const contextNames = new Set([...ctx.tests].flatMap(fn => fn.parameters.slice(0, 1))
+    .filter(param => ts.isIdentifier(param.name)).map(param => param.name.text));
+  walk(ctx.sf, n => {
+    const detail = skippedDetail(n, contextNames);
+    if (detail) ctx.add(n.getStart(ctx.sf), 'skipped-test', detail);
+  });
+}
+
 // invisible-whitespace: literal code points only; escapes never match ---------------------------
 
 const isVisible = ch => ch !== undefined && /^[^\s'"`\u200B-\u200F\uFEFF]$/u.test(ch);
@@ -509,6 +554,7 @@ const CHECKS = [
   [['global-patch'], checkMockMethods],
   [['fake-timers'], checkFakeTimers],
   [['focused-test'], checkFocusedTests],
+  [['skipped-test'], checkSkippedTests],
   [['invisible-whitespace'], checkInvisibleWhitespace],
 ];
 
@@ -520,6 +566,11 @@ function analyzeFile(file, text, violations, exemptions, rules) {
   }
   if (rules) ctx.found = ctx.found.filter(f => rules.includes(f.rule));
   settleFindings(ctx, violations, exemptions);
+}
+
+// True when the file declares at least one test with a callback; an empty suite does not count.
+function declaresTest(file, text) {
+  return createContext(file, text).tests.size > 0;
 }
 
 function findViolations(files) {
@@ -597,5 +648,5 @@ function main() {
   process.exit(exitCode);
 }
 
-module.exports = { findViolations, analyze, runScan };
+module.exports = { findViolations, analyze, runScan, globToRegExp, declaresTest };
 if (require.main === module) main();
