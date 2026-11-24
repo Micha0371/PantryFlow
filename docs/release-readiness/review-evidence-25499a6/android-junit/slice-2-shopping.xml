@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuites>
+  <testsuite name="Test Suite" device="test" tests="1" failures="0" time="242.541" timestamp="2026-11-24T10:51:29">
+    <testcase id="Slice 2 shopping journey" name="Slice 2 shopping journey" classname="Slice 2 shopping journey" file=".maestro/slice-2-shopping.yaml" time="242.488" timestamp="2026-11-24T10:51:30" status="SUCCESS"/>
+  </testsuite>
+</testsuites>

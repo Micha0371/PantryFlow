@@ -1,0 +1,60 @@
+node v26.10.0, PGlite 0.3.16, PostgreSQL 17.5
+
+PART 1: statement shapes (rows the other user sees or changes, or the error code)
+  intact  pgTAP pantry count: 0
+  intact  pgTAP pantry foreign insert: ERR 42501
+  intact  pgTAP pantry update WHERE+RETURNING: 0
+  intact  pgTAP pantry delete WHERE+RETURNING: 0
+  intact  pgTAP shopping count: 0
+  intact  pgTAP shopping foreign insert: ERR 42501
+  intact  pgTAP shopping update RETURNING: 0
+  intact  pgTAP shopping delete RETURNING: 0
+  intact  pgTAP profiles count: 1
+  intact  pgTAP households count: 1
+  intact  API pantry insert RETURNING: ERR 42501
+  intact  API pantry update WHERE+RETURNING: 0
+  intact  API shopping insert RETURNING: ERR 42501
+  intact  API shopping update WHERE+RETURNING: 0
+  intact  API profile update WHERE+RETURNING: 0
+  intact  BARE pantry update: 0
+  intact  BARE pantry delete: 0
+  intact  BARE shopping update: 0
+  intact  BARE shopping delete: 0
+  intact  BARE profile update: 1
+  pantry SELECT open: noticed by "pgTAP pantry count" (0 -> 1)
+  pantry INSERT any household: noticed by "pgTAP pantry foreign insert" (ERR 42501 -> 1)
+  pantry UPDATE open: noticed by "BARE pantry update" (0 -> 1)
+  pantry DELETE open: noticed by "BARE pantry delete" (0 -> 1)
+  shopping SELECT open: noticed by "pgTAP shopping count" (0 -> 1)
+  shopping INSERT any household: noticed by "pgTAP shopping foreign insert" (ERR 42501 -> 1)
+  shopping UPDATE open: noticed by "BARE shopping update" (0 -> 1)
+  shopping DELETE open: noticed by "BARE shopping delete" (0 -> 1)
+  profile SELECT open: noticed by "pgTAP profiles count" (1 -> 2)
+  profile UPDATE open: noticed by "BARE profile update" (1 -> 2)
+  household SELECT open: noticed by "pgTAP households count" (1 -> 2)
+
+PART 2: unmodified pgTAP files
+  none | slice_1_1.test.sql: plan 1..21, ok 21, not ok 0
+  none | shopping.test.sql: plan 1..43, ok 43, not ok 0
+  pantry SELECT open | slice_1_1.test.sql: plan 1..21, ok 20, not ok 1 -> not ok 14 - other household inventory invisible
+  pantry SELECT open | shopping.test.sql: plan 1..43, ok 43, not ok 0
+  pantry INSERT any household | slice_1_1.test.sql: plan 1..21, ok 20, not ok 1 -> not ok 19 - foreign household insert blocked
+  pantry INSERT any household | shopping.test.sql: plan 1..43, ok 43, not ok 0
+  pantry UPDATE open | slice_1_1.test.sql: plan 1..21, ok 21, not ok 0
+  pantry UPDATE open | shopping.test.sql: plan 1..43, ok 43, not ok 0
+  pantry DELETE open | slice_1_1.test.sql: plan 1..21, ok 21, not ok 0
+  pantry DELETE open | shopping.test.sql: plan 1..43, ok 43, not ok 0
+  shopping SELECT open | slice_1_1.test.sql: plan 1..21, ok 21, not ok 0
+  shopping SELECT open | shopping.test.sql: plan 1..43, ok 42, not ok 1 -> not ok 37 - foreign shopping invisible
+  shopping INSERT any household | slice_1_1.test.sql: plan 1..21, ok 21, not ok 0
+  shopping INSERT any household | shopping.test.sql: plan 1..43, ok 39, not ok 4 -> not ok 19 - foreign household insert denied ; not ok 37 - foreign shopping invisible ; not ok 38 - foreign update touches zero ; not ok 39 - foreign delete touches zero
+  shopping UPDATE open | slice_1_1.test.sql: plan 1..21, ok 21, not ok 0
+  shopping UPDATE open | shopping.test.sql: plan 1..43, ok 43, not ok 0
+  shopping DELETE open | slice_1_1.test.sql: plan 1..21, ok 21, not ok 0
+  shopping DELETE open | shopping.test.sql: plan 1..43, ok 43, not ok 0
+  profile SELECT open | slice_1_1.test.sql: plan 1..21, ok 20, not ok 1 -> not ok 15 - only own profile visible
+  profile SELECT open | shopping.test.sql: plan 1..43, ok 43, not ok 0
+  profile UPDATE open | slice_1_1.test.sql: plan 1..21, ok 21, not ok 0
+  profile UPDATE open | shopping.test.sql: plan 1..43, ok 43, not ok 0
+  household SELECT open | slice_1_1.test.sql: plan 1..21, ok 20, not ok 1 -> not ok 16 - only own household visible
+  household SELECT open | shopping.test.sql: plan 1..43, ok 43, not ok 0

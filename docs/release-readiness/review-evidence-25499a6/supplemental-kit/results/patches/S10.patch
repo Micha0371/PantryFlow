@@ -1,0 +1,15 @@
+diff --git a/pantry-flow/supabase/migrations/00004_shopping_items.sql b/pantry-flow/supabase/migrations/00004_shopping_items.sql
+index 31b9fc4..7db9294 100644
+--- a/pantry-flow/supabase/migrations/00004_shopping_items.sql
++++ b/pantry-flow/supabase/migrations/00004_shopping_items.sql
+@@ -66,9 +66,7 @@ GRANT UPDATE (pantry_item_id, name, is_checked)
+   ON public.pantry_shopping_items TO authenticated;
+ 
+ CREATE POLICY shopping_select_member ON public.pantry_shopping_items
+-  FOR SELECT TO authenticated USING (
+-    household_id IN (SELECT household_id FROM public.pantry_household_members WHERE user_id = auth.uid())
+-  );
++  FOR SELECT TO authenticated USING (true);
+ CREATE POLICY shopping_insert_member ON public.pantry_shopping_items
+   FOR INSERT TO authenticated WITH CHECK (
+     created_by = auth.uid() AND household_id IN (

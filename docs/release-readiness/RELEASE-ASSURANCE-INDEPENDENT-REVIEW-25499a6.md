@@ -210,3 +210,7 @@ R1's shopping INSERT/UPDATE/DELETE and profile UPDATE experiments extend beyond 
 7. Satisfy the remaining nonwaivable lines in [BETA-01](2026-11-21-beta-entry-checklist.md), including current advisory review, privacy publication, localization checks and artifact trust. Apply explicit dated waivers only where the established checklist permits them.
 
 These are necessary corrections, not sufficient release approval. An internally consistent document, a passing baseline and even a successful exact-commit Android workflow do not close the outstanding beta gates.
+
+## Follow-up evidence received after this review
+
+The [supplemental independent review](RELEASE-ASSURANCE-FOLLOWUP-25499a6.md) records later evidence without rewriting the observations above: S13 is timeout-only, combined-probe logs are now supplied, X1 isolates D2's mixed guard change, the reviewer reproduced actual unmodified pgTAP SQL in PGlite under all five permissive write regressions, and exact-commit Android success plus artifact/read-backs are independently verified. TI-3 is now closed for that debug-emulator/local-stack environment; the initial body remains the record of evidence available at the initial review. The original assessment remains unchanged. Development GO and beta/public NO-GO remain unchanged.

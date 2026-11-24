@@ -1,0 +1,26 @@
+﻿2026-11-24T10:30:57.0741858Z Current runner version: '2.338.2'
+2026-11-24T10:30:57.0780545Z Version: 20261111.635
+2026-11-24T10:30:57.0790923Z Ubuntu
+2026-11-24T10:30:57.0792497Z LTS
+2026-11-24T10:30:57.0794966Z Image: ubuntu-26.04
+2026-11-24T10:30:57.0795830Z Version: 20261116.202.1
+2026-11-24T10:30:57.0800757Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu26%2F20261116.202
+2026-11-24T10:45:00.1856052Z API level: 35
+2026-11-24T10:45:00.1856494Z System image API level: 35
+2026-11-24T10:51:17.4262755Z 1/1 Flow Passed in 4m 53s
+2026-11-24T10:51:19.3752416Z Verified Android database outcomes, household isolation and confirmation-required registration.
+2026-11-24T10:55:32.5428607Z 1/1 Flow Passed in 4m 3s
+2026-11-24T10:55:34.4638626Z Verified Android shopping outcomes, the pantry link, completion state and household isolation.
+2026-11-24T10:57:19.0844813Z 1/1 Flow Passed in 1m 34s
+2026-11-24T10:57:20.9984568Z Verified Android status outcomes: Milk out, the linked add, the duplicate and declined prompts, and household isolation.
+2026-11-24T10:58:41.7889203Z 1/1 Flow Passed in 1m 10s
+2026-11-24T10:58:43.6874972Z Verified the search journey wrote nothing: Milk, Rice and Rye flour unchanged.
+2026-11-24T10:59:38.9150901Z 1/1 Flow Passed in 44s
+2026-11-24T10:59:40.7556191Z Verified the entry journey: Oats and Tea added with defaults, no duplicate Rice, nothing for the other household.
+2026-11-24T11:00:24.5142815Z 1/1 Flow Passed in 33s
+2026-11-24T11:00:51.8816237Z 1/1 Flow Passed in 17s
+2026-11-24T11:00:53.6337856Z Verified first-signup Android session and reset only the reserved local confirmation account.
+2026-11-24T11:01:34.6093236Z 1/1 Flow Passed in 32s
+2026-11-24T11:03:10.6684442Z 1/1 Flow Passed in 20s
+2026-11-24T11:03:38.8511513Z 1/1 Flow Passed in 17s
+2026-11-24T11:03:40.8000813Z Verified native signup, expired email recovery, PKCE resend, confirmation and independent empty household.

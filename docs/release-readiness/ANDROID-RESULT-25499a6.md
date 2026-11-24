@@ -17,3 +17,11 @@ When a terminal result is available, append a dated row and a new sanitized run/
 A successful Android job with the emulator test step and required fast/database jobs successful on this exact SHA closes **TI-3's harness-execution gap for the debug emulator and local-stack environment**. A failure or cancellation does not close it and needs investigation. No terminal result was available when this follow-up observation was recorded.
 
 Even success cannot establish release signing, hosted signup after the Auth change, hosted shopping isolation, populated-account deletion, secure session backup behavior or real-device network/expiry recovery. Development remains GO; supervised beta and public release remain NO-GO until their separate gates are met.
+
+## Terminal result appended after the supplied evidence kit
+
+**2026-11-24: success verified.** The [new terminal snapshot](review-evidence-25499a6/ci-terminal-45374918480.json) independently confirms the exact SHA and attempt above, all five jobs successful, and the Android emulator step successful. The Android job completed at **12:03:51 Berlin time**; the emulator step completed at **12:03:44**. Earlier skipped/in-progress observations above remain true for their observation times.
+
+Artifact **14914315833** was downloaded with signed-in access and its SHA-256 verified: `86b5decedbae6c254f0102afeaa84088f1f19b3aae21c19c7c839a88aaab0809`. The [artifact summary](review-evidence-25499a6/android-artifact-summary.json) records nine passing JUnit cases with no failures/errors/skips. The [selected signed-in job-log lines](review-evidence-25499a6/android-job-138380547744-selected.log) independently record ten Maestro passes and database read-back confirmation for each of six top-level scenarios. Registration runs twice and overwrites the same XML path, accounting for the nine retained reports. The runner image was ubuntu-26.04 version 20261116.202.1, runner 2.338.2, API level 35.
+
+**Current TI-3 disposition: VERIFIED for the assessed debug-emulator/local-stack harness.** This closes the execution gap prospectively. It does not retroactively satisfy the acceptance rule at the time #66, #67 or #70 merged, establish Android mutation sensitivity, or change beta/public NO-GO. The [follow-up independent review](RELEASE-ASSURANCE-FOLLOWUP-25499a6.md) records the remaining evidence boundaries.

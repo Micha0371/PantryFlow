@@ -1,0 +1,13 @@
+diff --git a/pantry-flow/lib/pantry-data.ts b/pantry-flow/lib/pantry-data.ts
+index 5725afd..451f95b 100644
+--- a/pantry-flow/lib/pantry-data.ts
++++ b/pantry-flow/lib/pantry-data.ts
+@@ -80,7 +80,7 @@ export async function writeItemStatus(
+     if (error) {
+       // A coded error is a confirmed rejection; anything else may have committed.
+       const code = typeof error === 'object' && 'code' in error ? error.code : undefined;
+-      throw typeof code === 'string' && code !== '' ? error : uncertain(error);
++      throw error;
+     }
+     return data ? parseItem(data) : null;
+   };

@@ -1,0 +1,231 @@
+{
+  "artifact_id": 14914315833,
+  "artifact_sha256": "86b5decedbae6c254f0102afeaa84088f1f19b3aae21c19c7c839a88aaab0809",
+  "artifact_bytes": 1163177,
+  "run_id": 45374918480,
+  "job_id": 138380547744,
+  "assessed_commit": "25499a656c1e419883d95b6e9ade8cd0fa4fc791",
+  "reports": [
+    {
+      "report": "confirmation-complete.xml",
+      "sha256": "4296fb0109ce5994d5f7ffe65e7a85dd036abc0f82c428d1ccdd1e23923847c8",
+      "suites": [
+        {
+          "name": "Test Suite",
+          "device": "test",
+          "tests": "1",
+          "failures": "0",
+          "time": "16.994",
+          "timestamp": "2026-11-24T11:03:21"
+        }
+      ],
+      "cases": [
+        {
+          "name": "Native PKCE confirmation, restart persistence and invalid-link recovery",
+          "time": "16.978",
+          "failures": 0,
+          "errors": 0,
+          "skips": 0
+        }
+      ]
+    },
+    {
+      "report": "confirmation-first-complete.xml",
+      "sha256": "0e2ff6482ab3dd8d651a4c5a81cb46df2a8ccc533c5ae5ad8d1ea4c83497f4d4",
+      "suites": [
+        {
+          "name": "Test Suite",
+          "device": "test",
+          "tests": "1",
+          "failures": "0",
+          "time": "16.791",
+          "timestamp": "2026-11-24T11:00:35"
+        }
+      ],
+      "cases": [
+        {
+          "name": "Native PKCE confirmation, restart persistence and invalid-link recovery",
+          "time": "16.768",
+          "failures": 0,
+          "errors": 0,
+          "skips": 0
+        }
+      ]
+    },
+    {
+      "report": "confirmation-register.xml",
+      "sha256": "9d63dc2e095489237649b32d0638b950ef33e1a64628858214b023bca714fb01",
+      "suites": [
+        {
+          "name": "Test Suite",
+          "device": "test",
+          "tests": "1",
+          "failures": "0",
+          "time": "32.171",
+          "timestamp": "2026-11-24T11:01:02"
+        }
+      ],
+      "cases": [
+        {
+          "name": "Confirmation-required native registration",
+          "time": "32.155",
+          "failures": 0,
+          "errors": 0,
+          "skips": 0
+        }
+      ]
+    },
+    {
+      "report": "confirmation-resend.xml",
+      "sha256": "48f122fc59efd151ef7c01c4d2b67f40eaf405783f89f4399b3b05ceaa718cc5",
+      "suites": [
+        {
+          "name": "Test Suite",
+          "device": "test",
+          "tests": "1",
+          "failures": "0",
+          "time": "20.133",
+          "timestamp": "2026-11-24T11:02:50"
+        }
+      ],
+      "cases": [
+        {
+          "name": "Expired native email link recovery and resend",
+          "time": "20.114",
+          "failures": 0,
+          "errors": 0,
+          "skips": 0
+        }
+      ]
+    },
+    {
+      "report": "results.xml",
+      "sha256": "b30af8211b3a17e471b76e7a5cebdbef4093b9c59384f73bbe91e9b1162a210a",
+      "suites": [
+        {
+          "name": "Test Suite",
+          "device": "test",
+          "tests": "1",
+          "failures": "0",
+          "time": "292.643",
+          "timestamp": "2026-11-24T10:46:24"
+        }
+      ],
+      "cases": [
+        {
+          "name": "Slice 1.1 critical behavioral journey",
+          "time": "292.593",
+          "failures": 0,
+          "errors": 0,
+          "skips": 0
+        }
+      ]
+    },
+    {
+      "report": "slice-2-shopping.xml",
+      "sha256": "12bc7bedbb4c224a5304fbcc8030019a6e8468588d390ef7c681b6ea064c1419",
+      "suites": [
+        {
+          "name": "Test Suite",
+          "device": "test",
+          "tests": "1",
+          "failures": "0",
+          "time": "242.541",
+          "timestamp": "2026-11-24T10:51:29"
+        }
+      ],
+      "cases": [
+        {
+          "name": "Slice 2 shopping journey",
+          "time": "242.488",
+          "failures": 0,
+          "errors": 0,
+          "skips": 0
+        }
+      ]
+    },
+    {
+      "report": "slice-3-entry.xml",
+      "sha256": "548a183f79ca53b70b0616230af5b60a0f8a1122fdc1888803c2816d592374d2",
+      "suites": [
+        {
+          "name": "Test Suite",
+          "device": "test",
+          "tests": "1",
+          "failures": "0",
+          "time": "44.083",
+          "timestamp": "2026-11-24T10:58:54"
+        }
+      ],
+      "cases": [
+        {
+          "name": "Slice 3 faster item entry journey",
+          "time": "44.037",
+          "failures": 0,
+          "errors": 0,
+          "skips": 0
+        }
+      ]
+    },
+    {
+      "report": "slice-3-search.xml",
+      "sha256": "3f5b9c2c6ea3fe4a48a83be06e329dd642a5b30505b8ea501475e5b1c1580b49",
+      "suites": [
+        {
+          "name": "Test Suite",
+          "device": "test",
+          "tests": "1",
+          "failures": "0",
+          "time": "70.237",
+          "timestamp": "2026-11-24T10:57:31"
+        }
+      ],
+      "cases": [
+        {
+          "name": "Slice 3 pantry search journey",
+          "time": "70.203",
+          "failures": 0,
+          "errors": 0,
+          "skips": 0
+        }
+      ]
+    },
+    {
+      "report": "slice-3-status.xml",
+      "sha256": "3df265e8679d75734442d2d75757060e7684c2947719135b802c7d4827cac79c",
+      "suites": [
+        {
+          "name": "Test Suite",
+          "device": "test",
+          "tests": "1",
+          "failures": "0",
+          "time": "93.976",
+          "timestamp": "2026-11-24T10:55:45"
+        }
+      ],
+      "cases": [
+        {
+          "name": "Slice 3 pantry status journey",
+          "time": "93.934",
+          "failures": 0,
+          "errors": 0,
+          "skips": 0
+        }
+      ]
+    }
+  ],
+  "junit_report_count": 9,
+  "junit_case_count": 9,
+  "logcat": {
+    "bytes": 337721,
+    "sha256": "53949a9a02e6a12a93aff2eca5f33d4bee597ce1a732e417a0d7905f23774c8e",
+    "lines": 1122,
+    "marker_counts": {
+      "nativeAssetFailure": 0,
+      "fatalException": 0,
+      "androidRuntimeFatalForTestPackage": 0
+    },
+    "limit": "Targeted text scan only, not a general crash-free, privacy or performance certification. Raw logcat and screenshots remain ignored and are not published."
+  },
+  "limit": "Nine XML files represent ten Maestro invocations: confirmation-register.xml is overwritten by the second register invocation. Both register passes are separately recorded in the signed-in job log. Six top-level scenarios, not nine or ten independent scenarios."
+}

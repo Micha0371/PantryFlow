@@ -1,0 +1,14 @@
+diff --git a/pantry-flow/lib/auth.tsx b/pantry-flow/lib/auth.tsx
+index b4fb8d8..d232d01 100644
+--- a/pantry-flow/lib/auth.tsx
++++ b/pantry-flow/lib/auth.tsx
+@@ -87,8 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
+     return 'signed_in';
+   }, []);
+   const signOut = useCallback(async () => {
+-    const { error: err } = await supabase.auth.signOut();
+-    if (err) throw err;
++    await supabase.auth.signOut();
+     generation.current++;
+     if (mounted.current) { setSession(null); setError(null); }
+   }, []);

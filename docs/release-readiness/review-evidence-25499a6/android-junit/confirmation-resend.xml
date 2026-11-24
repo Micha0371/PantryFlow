@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuites>
+  <testsuite name="Test Suite" device="test" tests="1" failures="0" time="20.133" timestamp="2026-11-24T11:02:50">
+    <testcase id="Expired native email link recovery and resend" name="Expired native email link recovery and resend" classname="Expired native email link recovery and resend" file=".maestro/confirmation-resend.yaml" time="20.114" timestamp="2026-11-24T11:02:50" status="SUCCESS"/>
+  </testsuite>
+</testsuites>

@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuites>
+  <testsuite name="Test Suite" device="test" tests="1" failures="0" time="16.791" timestamp="2026-11-24T11:00:35">
+    <testcase id="Native PKCE confirmation, restart persistence and invalid-link recovery" name="Native PKCE confirmation, restart persistence and invalid-link recovery" classname="Native PKCE confirmation, restart persistence and invalid-link recovery" file=".maestro/confirmation-complete.yaml" time="16.768" timestamp="2026-11-24T11:00:35" status="SUCCESS"/>
+  </testsuite>
+</testsuites>

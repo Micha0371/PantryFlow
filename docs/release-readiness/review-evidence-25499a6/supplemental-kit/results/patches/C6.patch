@@ -1,0 +1,46 @@
+diff --git a/pantry-flow/hooks/household-list.ts b/pantry-flow/hooks/household-list.ts
+index 00cd525..5fd9055 100644
+--- a/pantry-flow/hooks/household-list.ts
++++ b/pantry-flow/hooks/household-list.ts
+@@ -53,14 +53,13 @@ export function useHouseholdList<T extends { id: string; household_id: string }>
+   }, [householdId, user?.id, load, loadError]);
+ 
+   useEffect(() => {
+-    setItems([]);
+     void fetchItems();
+     return () => { generation.current++; };
+   }, [fetchItems]);
+ 
+   const retry = householdError || !householdId ? refreshHousehold : fetchItems;
+   // Hide the previous household synchronously, before effects run.
+-  const visibleItems = householdId ? items.filter(it => it.household_id === householdId) : [];
++  const visibleItems = items;
+   return {
+     user, householdId, scope, isCurrent, loadedScope, loadCount, generation, pendingItems,
+     setItems, setLoading, setError, visibleItems,
+diff --git a/pantry-flow/hooks/household-scope.tsx b/pantry-flow/hooks/household-scope.tsx
+index 2124a09..031b748 100644
+--- a/pantry-flow/hooks/household-scope.tsx
++++ b/pantry-flow/hooks/household-scope.tsx
+@@ -7,7 +7,7 @@ const HouseholdContext = createContext<ReturnType<typeof useHousehold> | undefin
+ 
+ export function HouseholdProvider({ children }: { children: ReactNode }) {
+   const { user } = useAuth();
+-  return <ScopedHouseholdProvider key={user?.id ?? 'guest'}>{children}</ScopedHouseholdProvider>;
++  return <ScopedHouseholdProvider>{children}</ScopedHouseholdProvider>;
+ }
+ function ScopedHouseholdProvider({ children }: { children: ReactNode }) {
+   const value = useHousehold();
+diff --git a/pantry-flow/hooks/usePantryItems.tsx b/pantry-flow/hooks/usePantryItems.tsx
+index 1c0161a..7b94505 100644
+--- a/pantry-flow/hooks/usePantryItems.tsx
++++ b/pantry-flow/hooks/usePantryItems.tsx
+@@ -149,7 +149,7 @@ function usePantryState() {
+ const PantryContext = createContext<ReturnType<typeof usePantryState> | undefined>(undefined);
+ export function PantryProvider({ children }: { children: ReactNode }) {
+   const { user } = useAuth();
+-  return <ScopedPantryProvider key={user?.id ?? 'guest'}>{children}</ScopedPantryProvider>;
++  return <ScopedPantryProvider>{children}</ScopedPantryProvider>;
+ }
+ function ScopedPantryProvider({ children }: { children: ReactNode }) {
+   const value = usePantryState();

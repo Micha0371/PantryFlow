@@ -4,6 +4,8 @@
 
 Baseline: `25499a656c1e419883d95b6e9ade8cd0fa4fc791`. The [original assessment](RELEASE-ASSURANCE.md) is preserved byte-for-byte. The [independent review](RELEASE-ASSURANCE-INDEPENDENT-REVIEW-25499a6.md) supplies finding severity, confidence and claim dispositions; its findings, rather than its author's historical implementation involvement, drive this plan. [Probe ledger](review-evidence-25499a6/probe-ledger.json): **34 total, including compound D2; 33 countable, 23 reported detections and 10 survivors**. These are sample counts, not a coverage percentage. D2 changed two controls and supplies no isolated detection result.
 
+**Evidence update:** the [follow-up review](RELEASE-ASSURANCE-FOLLOWUP-25499a6.md) resolves the 23 reported detections into **22 assertion failures and one timeout-only outcome, S13**. It also independently reproduces the pgTAP assertion gap in PGlite and verifies exact-commit Android success. C1–C7 and X1 are additional experiments, outside the original 34. Implementation approval remains pending; the order below is unchanged.
+
 ## Priority 1 Close the five masked write restrictions
 
 **Addresses high-severity F01, SP-2 and SP-6. First implementation change after plan approval.** Keep intact production policies unchanged unless a separately reviewed defect warrants a fix; the demonstrated defect is missing independent regression assertions.
@@ -52,7 +54,8 @@ With separate authorization for disposable hosted accounts, exercise registratio
 
 | Evidence | Minimum disposition before supervised beta | Existing gate or review finding |
 |---|---|---|
-| Exact-commit harness | Record final fast/database/Android results and actual emulator-step result at assessed or subsequent beta source SHA. Preserve earlier skipped/in-progress observations. See the [append-only Android record](ANDROID-RESULT-25499a6.md). | TI-3, F04 |
+| Exact-commit harness | **Completed for assessed SHA `25499a6` in the debug emulator/local-stack environment**, including artifact and read-backs. Preserve earlier observations and repeat required checks for a changed beta source SHA. See the [append-only Android record](ANDROID-RESULT-25499a6.md). | TI-3, F04 |
+| Effective security assertions | Correct S13's unresolved mocked exchange in a separate approved test change so weakening the callback guard produces a prompt assertion failure under the normal command; do not count an extra probe-only timeout as assertion effectiveness | SP-4, TI-4; follow-up review |
 | Hosted shopping isolation | Bounded two-account read/write checks using only authorized disposable fixture IDs, plus a dated catalog baseline or drift disposition | SP-6, F01; B1 |
 | Dependency exposure | Reassess the actual beta lockfile and record advisories, affected runtime/tooling scope and approved dispositions; do not invent or reuse an obsolete audit | SP-10; B6 |
 | Network, background and expiry | Define and execute representative device scenarios; retain resulting state/error behavior, including lost committed-write responses. Record remaining unknown add/edit/delete outcomes explicitly | FC-3, OR-3 |
@@ -75,7 +78,7 @@ The original assessment remains a historical artifact. Use an addendum or succes
 | DI-2 | PARTIALLY VERIFIED until a stale-name-clobber mutant fails the relevant assertion; CAS removal is a different property |
 | DI-3 | VERIFIED only for the enumerated unit contracts, not every mutation or stable multi-page snapshot |
 | SP-1 / SP-3 | Retain local, table-specific detector boundaries; do not extend automatically to every policy or hosted data |
-| SP-4 | Component guard subclaims supported; broader client/link configuration PARTIAL while PKCE configuration mutation survives |
+| SP-4 | PARTIAL: PKCE configuration mutation survives, and S13 only times out rather than failing its callback assertion; retain supported component guard evidence separately |
 | TI-1 / TI-2 | Specific empty-run/inventory guarantees and top-level Node independence only; broader runtime completeness/independence qualified |
 
 Also correct TI-4's timeout scope, distinguish policy deletion from permissive policy weakening, and keep unknown combined-probe results unverified. The complete dispositions remain in the independent review, including claims already correctly marked FAILED, PARTIAL or UNVERIFIED.

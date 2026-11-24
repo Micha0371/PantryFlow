@@ -6,6 +6,10 @@ Assessed source: `25499a656c1e419883d95b6e9ade8cd0fa4fc791`. Evidence is documen
 
 [probe-ledger.json](probe-ledger.json) accounts for **all 34 probes**: S1–S14, D1–D8, F1–F9 and A1–A3. There are 24 reported detections and 10 survivors. D2 changes both the legacy duplicate guard and the unique index and is excluded from the countable sample: **23 detections among 33 countable probes**. This is not a coverage percentage, a representative sample or proof of comprehensive assertion effectiveness.
 
+**Follow-up correction:** the supplied, checksum-verified [complete kit](supplemental-kit/README.md) resolves those 23 nonzero outcomes into **22 assertion failures and one timeout-only outcome (S13)**. Ten survived. Do not count S13 as proof that a security assertion fails. C1–C7 and X1 are additional experiments outside the original 34; see the [follow-up independent review](../RELEASE-ASSURANCE-FOLLOWUP-25499a6.md). Historical captures and the original ledger remain unchanged.
+
+[probe-ledger-followup.json](probe-ledger-followup.json) records the corrected current interpretation for every original probe and links C1–C7/X1 separately.
+
 Each ledger entry links a reconstructed [mutation diff](mutation-diffs). These diffs were generated in memory from the inspected author transformations and the assessed Git object. They were not recovered from historical mutant worktrees and do not authenticate the old execution. No product source or test was changed to generate them.
 
 ## Independent reviewer evidence
@@ -49,6 +53,7 @@ Set-Content -LiteralPath (Join-Path $probeCopy '.review-probe-disposable') -Valu
 $env:PANTRY_REVIEW_PROBE_ROOT = Join-Path $probeCopy 'pantry-flow'
 Push-Location $env:PANTRY_REVIEW_PROBE_ROOT
 npm ci --ignore-scripts
+node scripts/patch-expo-windows.cjs
 Pop-Location
 python docs/release-readiness/review-evidence-25499a6/author-probes.py
 python docs/release-readiness/review-evidence-25499a6/author-combo.py
@@ -56,3 +61,14 @@ node docs/release-readiness/review-evidence-25499a6/author-replay.cjs
 ```
 
 Use fresh output filenames with date, assessed SHA and environment. The author driver treats any nonzero suite exit as detection and summarizes failing names; retain full assertion diagnostics before crediting a new execution. Portability adaptation and syntax checks do not make this historical campaign independently reproduced. Missing combined-run evidence remains missing until a separately identified execution supplies it.
+
+**Windows correction and preferred driver:** the explicit Expo patch above is required after installing with scripts disabled; it is a no-op outside Windows. Its earlier omission was an error in this package's reproduction instructions. Run and verify an unmodified baseline before applying any mutant. The legacy adapters above are historical evidence and lack a baseline refusal guard. For newly credited runs, prefer [supplemental-kit/run_probes.py](supplemental-kit/run_probes.py), which checks the assessed SHA, a clean clone and a green baseline before starting, and rechecks the baseline after restoring all mutations. Follow its [reproduction instructions](supplemental-kit/README.md), including the Expo patch. Do not use a failing baseline to label mutants as detected.
+
+## Follow-up evidence
+
+- [supplied kit validation](supplemental-kit-validation.json): archive SHA-256 and all manifest files verified; all 44 raw Node summaries agree with recorded results; all 34 original mutation change-lines match reconstructed patches. This is independent evidence inspection, not a full independent campaign rerun.
+- [reproduce-pgtap.cjs](reproduce-pgtap.cjs), [reviewer-pgtap.out](reviewer-pgtap.out): reviewer-authored execution of the two committed, unmodified pgTAP files in PGlite. All 64 pass intact and for each of five permissive write-policy replacements. No local Supabase server or HTTP mutant execution is claimed.
+- [reviewer-full-replay.json](reviewer-full-replay.json), [output](reviewer-full-replay.out): the supplied replay script was also re-executed by the reviewer against disposable copies of committed SQL inputs; its statement shapes and pgTAP outcomes exactly match the supplied replay results.
+- [terminal CI observation](ci-terminal-45374918480.json), [Android JUnit files](android-junit), [artifact summary](android-artifact-summary.json), [selected signed-in job-log lines](android-job-138380547744-selected.log): independently downloaded exact-commit evidence, including all six read-back confirmations. Raw artifact/logcat/screenshots stay ignored; only reviewed reports and allowlisted log lines are published.
+
+The 145 supplied kit files are preserved exactly, including their own SHA256SUMS. The outer ZIP remains ignored; its verified digest is `0ca2ca4fcd177cb1a46678330c0c3c7088628568b339f3670241108767d061cd`. An integrity check binds the supplied files, but does not by itself authenticate every historical execution. The Android archive was downloaded independently and matched GitHub's artifact digest.

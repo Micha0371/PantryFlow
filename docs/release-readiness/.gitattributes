@@ -4,3 +4,6 @@ RELEASE-ASSURANCE.md -text whitespace=cr-at-eol
 review-evidence-25499a6/** text eol=lf
 # Context lines in captured diffs intentionally contain a single space.
 review-evidence-25499a6/mutation-diffs/*.patch -whitespace
+# Preserve supplied kit checksums across checkout platforms.
+review-evidence-25499a6/supplemental-kit/** -text -whitespace
+review-evidence-25499a6/supplemental-kit/results/patches/*.patch -whitespace

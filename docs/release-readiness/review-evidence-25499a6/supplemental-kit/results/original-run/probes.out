@@ -1,0 +1,36 @@
+BASE {'node': (0, [], ['526']), 'jest': (0, ['Tests:       18 passed, 18 total'])}
+DETECTED  S1 | pantry SELECT policy open to all | node failures: 1 ['other users and anonymous clients cannot read or mutate an existing item'] | jest rc 0
+SURVIVED  S2 | pantry UPDATE policy open to all | node failures: 0 [] | jest rc 0
+SURVIVED  S3 | pantry DELETE policy open to all | node failures: 0 [] | jest rc 0
+DETECTED  S4 | pantry INSERT: creator not checked | node failures: 1 ['creator spoofing, null attribution and cross-household insertion are rejected'] | jest rc 0
+SURVIVED  S5 | pantry INSERT: household not checked | node failures: 0 [] | jest rc 0
+DETECTED  S6 | premium flag writable by users | node failures: 1 ['users may edit profile fields but cannot self-assign premium or change identity'] | jest rc 0
+DETECTED  S7 | creator column writable by users | node failures: 1 ['creator spoofing, null attribution and cross-household insertion are rejected'] | jest rc 0
+SURVIVED  S8 | profile SELECT policy open to all | node failures: 0 [] | jest rc 0
+SURVIVED  S9 | household SELECT policy open to all | node failures: 0 [] | jest rc 0
+SURVIVED  S10 | shopping SELECT policy open to all | node failures: 0 [] | jest rc 0
+DETECTED  S11 | signed-out users reach protected routes | node failures: 1 ['protected routes do not mount children during restoration, failure or signed-out access'] | jest rc 0
+SURVIVED  S12 | PKCE flow replaced by implicit | node failures: 0 [] | jest rc 0
+DETECTED  S13 | confirmation link accepted while signed in | node failures: 1 ['expired codes remain recoverable and a callback cannot replace an already signed-in account'] | jest rc 0
+DETECTED  S14 | error parameters in a confirmation link ignored | node failures: 1 ['confirmation rejects missing, ambiguous, malformed and error links without exchanging credentials'] | jest rc 0
+DETECTED  D1 | duplicate index missing | node failures: 3 ['00003 aborts on legacy duplicate names without merging or deleting', 'duplicate add and rename are blocked regardless of category, location or status'] | jest rc 0
+DETECTED  D2 | legacy duplicate guard in 00003 removed | node failures: 3 ['00003 aborts on legacy duplicate names without merging or deleting', 'duplicate add and rename are blocked regardless of category, location or status'] | jest rc 0
+DETECTED  D3 | deleting an author deletes shared items | node failures: 1 ['deleting an author preserves items in a surviving household and clears attribution'] | jest rc 0
+DETECTED  D4 | status write without compare-and-set | node failures: 2 ['a stale cache retries once against the database status and reports it as previous', 'a status change writes only status, filtered by id, household and the cached status'] | jest rc 0
+DETECTED  D5 | status write: uncoded failure treated as rejected | node failures: 8 ['a codeless gateway error on the CAS is uncertain: coded unknown, row kept, marked, one re-read', 'an authoritative row for the item clears its mark'] | jest rc 0
+DETECTED  D6 | delete of zero rows reported as success | node failures: 4 ['a delete that removes no row rejects', 'a later successful write wins over a pending recovery read, and the missing row stays out (CR-01)'] | jest rc 0
+DETECTED  D7 | truncated list accepted as complete | node failures: 3 ['a smaller server cap or failed page is an error, never a partial inventory', 'fetchAllPages rejects a short page when the count says more rows exist'] | jest rc 0
+DETECTED  D8 | language save of zero rows reported as success | node failures: 1 ['a profile update that touches no row is a failure'] | jest rc 0
+DETECTED  F1 | late read of a previous user or household applied | node failures: 4 ['a missing result that arrives after a household change neither re-reads nor touches the new list (CR-01)', "a write that settles after a household change does not strand the new household's first read"] | jest rc 0
+SURVIVED  F2 | rows of another household stay visible | node failures: 0 [] | jest rc 0
+DETECTED  F3 | older read overwrites newer one | node failures: 8 ['a later successful write wins over a pending recovery read, and the missing row stays out (CR-01)', 'a missing-record re-read loses to a newer read and to a household change'] | jest rc 0
+SURVIVED  F4 | pantry state not reset on user change | node failures: 0 [] | jest rc 0
+DETECTED  F5 | double submit not locked | node failures: 3 ['mutation lock is immediate and navigating away abandons completion callbacks', 'repeated Return while busy creates one item'] | jest rc 0
+DETECTED  F6 | finished request navigates an abandoned screen | node failures: 9 ['Cancel closes the screen while the prompt is unanswered, and a late answer does nothing', 'a failure notice answered late, after Cancel, does nothing more (KAN-85)'] | jest rc 0
+DETECTED  F7 | failed sign-out shown as success | node failures: 1 ['signup distinguishes email confirmation from an authenticated session'] | jest rc 0
+DETECTED  F8 | failed session restore hidden | node failures: 1 ['rejected session restoration settles loading, exposes retry, and recovers'] | jest rc 0
+DETECTED  F9 | missing German key | node failures: 1 ['German and English catalogues have exactly the same keys, and no German text is empty'] | jest rc 0
+DETECTED  A1 | chips lose the checked state | node failures: 2 ['chips expose radio semantics with the checked state', 'the language row shows English and Deutsch in their own language with the current one checked'] | jest rc 0
+SURVIVED  A2 | pantry row loses role | node failures: 0 [] | jest rc 0
+DETECTED  A3 | field error not announced | node failures: 5 ['InlineError keeps one polite live region mounted and puts the alert inside it', 'a failed toggle shows the translated error and keeps the list'] | jest rc 0
+DONE

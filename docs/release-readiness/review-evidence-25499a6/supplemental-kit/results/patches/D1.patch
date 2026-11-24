@@ -1,0 +1,13 @@
+diff --git a/pantry-flow/supabase/migrations/00003_strict_duplicate_prevention.sql b/pantry-flow/supabase/migrations/00003_strict_duplicate_prevention.sql
+index aec919e..a11e6de 100644
+--- a/pantry-flow/supabase/migrations/00003_strict_duplicate_prevention.sql
++++ b/pantry-flow/supabase/migrations/00003_strict_duplicate_prevention.sql
+@@ -46,7 +46,7 @@ ALTER TABLE public.pantry_items ADD CONSTRAINT pantry_items_name_trimmed
+   CHECK (name = public.pantry_trim_item_name(name) AND name <> '');
+ 
+ -- PostgreSQL's unique index arbitrates concurrent writes, including renames.
+-CREATE UNIQUE INDEX pantry_items_household_normalized_name_key
++CREATE INDEX pantry_items_household_normalized_name_key
+   ON public.pantry_items (household_id, lower(public.pantry_trim_item_name(name)));
+ 
+ COMMIT;

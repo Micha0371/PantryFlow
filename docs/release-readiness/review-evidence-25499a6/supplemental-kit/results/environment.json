@@ -1,0 +1,30 @@
+{
+ "utc": "2026-11-24T10:37:10+00:00",
+ "commit": "25499a656c1e419883d95b6e9ade8cd0fa4fc791",
+ "clone_status_empty": true,
+ "os": "Windows-11-10.0.26300-SP0",
+ "logical_cpus": 16,
+ "python": "3.14.7",
+ "node": "v26.10.0",
+ "npm": "11.18.0",
+ "git": "git version 2.56.0.windows.3",
+ "core.autocrlf": "true",
+ "install": "npm ci --ignore-scripts --no-audit --no-fund; on Windows also: node scripts/patch-expo-windows.cjs",
+ "package_lock_sha256": "d7d85fd30be3433bcfc49aa1326b0734c477cc30cca6e5f708bd161189adddd5",
+ "pglite_server": "PostgreSQL 17.5 on aarch64-unknown-linux-gnu, compiled by emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 3.1.74 (1092ec30a3fb1d46b1782ff1b4db5094d3d06ae5), 32-bit",
+ "packages": {
+  "@electric-sql/pglite": "0.3.16",
+  "jest": "30.5.2",
+  "jest-expo": "58.0.14",
+  "typescript": "6.0.3",
+  "react": "19.3.0",
+  "react-native": "0.88.1",
+  "expo": "58.0.23",
+  "@supabase/supabase-js": "2.119.0",
+  "@testing-library/react-native": "14.1.0"
+ },
+ "commands": {
+  "node": "node scripts/run-node-tests.cjs --test-concurrency=2 --test-timeout=60000",
+  "components": "node node_modules/jest/bin/jest.js --runInBand"
+ }
+}

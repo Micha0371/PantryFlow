@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuites>
+  <testsuite name="Test Suite" device="test" tests="1" failures="0" time="32.171" timestamp="2026-11-24T11:01:02">
+    <testcase id="Confirmation-required native registration" name="Confirmation-required native registration" classname="Confirmation-required native registration" file=".maestro/confirmation-register.yaml" time="32.155" timestamp="2026-11-24T11:01:02" status="SUCCESS"/>
+  </testsuite>
+</testsuites>

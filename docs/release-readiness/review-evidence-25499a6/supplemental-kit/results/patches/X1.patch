@@ -1,0 +1,13 @@
+diff --git a/pantry-flow/supabase/migrations/00003_strict_duplicate_prevention.sql b/pantry-flow/supabase/migrations/00003_strict_duplicate_prevention.sql
+index aec919e..a0e4ab8 100644
+--- a/pantry-flow/supabase/migrations/00003_strict_duplicate_prevention.sql
++++ b/pantry-flow/supabase/migrations/00003_strict_duplicate_prevention.sql
+@@ -15,7 +15,7 @@ BEGIN
+   IF EXISTS (
+     SELECT 1 FROM public.pantry_items
+     GROUP BY household_id, lower(public.pantry_trim_item_name(name))
+-    HAVING count(*) > 1
++    HAVING count(*) > 1000000
+   ) THEN
+     RAISE EXCEPTION USING ERRCODE = '23505',
+       MESSAGE = 'Existing household items have duplicate normalized names. Resolve conflicts explicitly before applying Slice 1.1.';
