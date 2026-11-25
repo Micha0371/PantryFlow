@@ -1,0 +1,9 @@
+# Failed test 3: "items_update_member: foreign state unchanged"
+#         have: {"id": "<fixture-uuid>", "name": "Foreign pantry", "status": "out", "category": "other", "location": "pantry", "created_at": "2026-11-25T21:03:27.670667+00:00", "created_by": "<fixture-uuid>", "updated_at": "2026-11-25T21:03:27.670667+00:00", "household_id": "<fixture-uuid>"}
+#         want: {"id": "<fixture-uuid>", "name": "Foreign pantry", "status": "in_stock", "category": "other", "location": "pantry", "created_at": "2026-11-25T21:03:27.670667+00:00", "created_by": "<fixture-uuid>", "updated_at": "2026-11-25T21:03:27.670667+00:00", "household_id": "<fixture-uuid>"}
+
+Selected HTTP diagnostics:
+# items_update_member: bare HTTP blocked by gateway (21000); not an RLS detector
+# pass 1
+# fail 0
+# cancelled 0

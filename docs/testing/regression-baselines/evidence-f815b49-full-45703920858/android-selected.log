@@ -1,0 +1,18 @@
+2026-11-25T21:40:12.1046466Z BUILD SUCCESSFUL in 8m 6s
+2026-11-25T21:46:03.6880815Z 1/1 Flow Passed in 4m 33s
+2026-11-25T21:46:05.1675133Z Verified Android database outcomes, household isolation and confirmation-required registration.
+2026-11-25T21:49:57.1194815Z 1/1 Flow Passed in 3m 45s
+2026-11-25T21:49:58.6129756Z Verified Android shopping outcomes, the pantry link, completion state and household isolation.
+2026-11-25T21:51:33.6825955Z 1/1 Flow Passed in 1m 29s
+2026-11-25T21:51:35.1966816Z Verified Android status outcomes: Milk out, the linked add, the duplicate and declined prompts, and household isolation.
+2026-11-25T21:52:42.6985446Z 1/1 Flow Passed in 1m 1s
+2026-11-25T21:52:44.1574415Z Verified the search journey wrote nothing: Milk, Rice and Rye flour unchanged.
+2026-11-25T21:53:28.0322454Z 1/1 Flow Passed in 37s
+2026-11-25T21:53:29.4993890Z Verified the entry journey: Oats and Tea added with defaults, no duplicate Rice, nothing for the other household.
+2026-11-25T21:54:04.4403986Z 1/1 Flow Passed in 29s
+2026-11-25T21:54:25.5029115Z 1/1 Flow Passed in 14s
+2026-11-25T21:54:27.0063707Z Verified first-signup Android session and reset only the reserved local confirmation account.
+2026-11-25T21:55:00.4709937Z 1/1 Flow Passed in 28s
+2026-11-25T21:56:29.6748863Z 1/1 Flow Passed in 18s
+2026-11-25T21:56:51.2519204Z 1/1 Flow Passed in 15s
+2026-11-25T21:56:52.9956039Z Verified native signup, expired email recovery, PKCE resend, confirmation and independent empty household.

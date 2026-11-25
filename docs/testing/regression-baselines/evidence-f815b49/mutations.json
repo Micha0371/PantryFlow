@@ -1,0 +1,255 @@
+{
+  "artifact_id": 15064155493,
+  "artifact_sha256": "73a49bc0746d4372f5418f363c7db58a4d8b488a62e527781c9d1f521a1d8419",
+  "sourceCommit": "f815b4946a7631a6860cf477e68af73894f7d403",
+  "dirty": false,
+  "source_blob_hashes_verified": true,
+  "files": {
+    "tests/integration/write-isolation.integration.ts": "f44f721c714dd80d518c523d21bd24ee8421566fc23e8398898485df576ea8bb",
+    "supabase/tests/database/write_isolation.test.sql": "5bfaeb86be73443e74bda515d1e16c3c7a1ce6f092890fece617f74cef5f8a75",
+    "scripts/check-rls-mutations.cjs": "8d8dbd7da042c645aeefc3a47a343c2244eb4eddd8429a16703c7bea81ccf666",
+    "scripts/run-local-db.cjs": "888788c325272341acb8ede4828d8ed945349fdba7809ab2b460ec6a4e783145",
+    "tests/integration/local-stack.ts": "dc0cc93c94c69d860e6aed936695c2d19bb3f6cd70f344417faf3d5c8cc3f774",
+    "package-lock.json": "39466a7c34634924bdc76689055bb878fb5b51cc239b6b0be87c80df5e1e810a",
+    "supabase/migrations/00001_first_slice.sql": "4e645c63c06b09f820535af23a06f602b63ace7b5073aba8abe5c126646f0bd9",
+    "supabase/migrations/00002_review_hardening.sql": "0838664c575be3e22a891a4eac4df609e8dd6a114de6ddb638d052b65c470106",
+    "supabase/migrations/00003_strict_duplicate_prevention.sql": "2d2cd945aa3606aecf08f8f1561c599ef8f76f858062713a4d65fafbb7981c5c",
+    "supabase/migrations/00004_shopping_items.sql": "90d8d6ef30a579eddc58c40882da67fd2f1b349c7b2687c5d62c77640ac0c0f6"
+  },
+  "node": "v26.13.1",
+  "postgres": "17.11",
+  "postgrestImage": "public.ecr.aws/supabase/postgrest:v16.5",
+  "baseline_before": {
+    "sql": {
+      "exit": 0,
+      "command": [
+        "node",
+        "<locked-supabase-cli>",
+        "test",
+        "db",
+        "supabase/tests/database/write_isolation.test.sql"
+      ]
+    },
+    "http": {
+      "exit": 0,
+      "command": [
+        "node",
+        "node_modules/tsx/dist/cli.mjs",
+        "--test",
+        "--test-reporter=tap",
+        "--test-randomize",
+        "--test-concurrency=1",
+        "tests/integration/write-isolation.integration.ts"
+      ]
+    }
+  },
+  "mutants": [
+    {
+      "policy": "items_update_member",
+      "sql_exit": 1,
+      "http_exit": 0,
+      "sql_failure": "items_update_member: foreign state unchanged",
+      "http_outcome": "gateway rejected bare write (21000); not an RLS detector",
+      "sql_command": [
+        "node",
+        "<locked-supabase-cli>",
+        "test",
+        "db",
+        "supabase/tests/database/write_isolation.test.sql"
+      ],
+      "http_command": [
+        "node",
+        "node_modules/tsx/dist/cli.mjs",
+        "--test",
+        "--test-reporter=tap",
+        "--test-randomize",
+        "--test-concurrency=1",
+        "--test-name-pattern=^items_update_member HTTP ",
+        "tests/integration/write-isolation.integration.ts"
+      ],
+      "mutation_sql": "ALTER POLICY items_update_member ON public.pantry_items USING (true) WITH CHECK (true);",
+      "mutation_diff_sha256": "8b38b8891577be8f3657e9371049ae869148bfc94da88e67f73e4d0d9d5aa4e6"
+    },
+    {
+      "policy": "items_delete_member",
+      "sql_exit": 1,
+      "http_exit": 0,
+      "sql_failure": "items_delete_member: foreign state unchanged",
+      "http_outcome": "gateway rejected bare write (21000); not an RLS detector",
+      "sql_command": [
+        "node",
+        "<locked-supabase-cli>",
+        "test",
+        "db",
+        "supabase/tests/database/write_isolation.test.sql"
+      ],
+      "http_command": [
+        "node",
+        "node_modules/tsx/dist/cli.mjs",
+        "--test",
+        "--test-reporter=tap",
+        "--test-randomize",
+        "--test-concurrency=1",
+        "--test-name-pattern=^items_delete_member HTTP ",
+        "tests/integration/write-isolation.integration.ts"
+      ],
+      "mutation_sql": "ALTER POLICY items_delete_member ON public.pantry_items USING (true);",
+      "mutation_diff_sha256": "e2fa82de97df332065b107a78e77f5490c69bb13eb2cc7d424ffa6b7481c84fa"
+    },
+    {
+      "policy": "shopping_update_member",
+      "sql_exit": 1,
+      "http_exit": 0,
+      "sql_failure": "shopping_update_member: foreign state unchanged",
+      "http_outcome": "gateway rejected bare write (21000); not an RLS detector",
+      "sql_command": [
+        "node",
+        "<locked-supabase-cli>",
+        "test",
+        "db",
+        "supabase/tests/database/write_isolation.test.sql"
+      ],
+      "http_command": [
+        "node",
+        "node_modules/tsx/dist/cli.mjs",
+        "--test",
+        "--test-reporter=tap",
+        "--test-randomize",
+        "--test-concurrency=1",
+        "--test-name-pattern=^shopping_update_member HTTP ",
+        "tests/integration/write-isolation.integration.ts"
+      ],
+      "mutation_sql": "ALTER POLICY shopping_update_member ON public.pantry_shopping_items USING (true) WITH CHECK (true);",
+      "mutation_diff_sha256": "2b7c209cecc71ba31d97ab791d746b0adb7d254de0b15d8aadfc98844ea84f91"
+    },
+    {
+      "policy": "shopping_delete_member",
+      "sql_exit": 1,
+      "http_exit": 0,
+      "sql_failure": "shopping_delete_member: foreign state unchanged",
+      "http_outcome": "gateway rejected bare write (21000); not an RLS detector",
+      "sql_command": [
+        "node",
+        "<locked-supabase-cli>",
+        "test",
+        "db",
+        "supabase/tests/database/write_isolation.test.sql"
+      ],
+      "http_command": [
+        "node",
+        "node_modules/tsx/dist/cli.mjs",
+        "--test",
+        "--test-reporter=tap",
+        "--test-randomize",
+        "--test-concurrency=1",
+        "--test-name-pattern=^shopping_delete_member HTTP ",
+        "tests/integration/write-isolation.integration.ts"
+      ],
+      "mutation_sql": "ALTER POLICY shopping_delete_member ON public.pantry_shopping_items USING (true);",
+      "mutation_diff_sha256": "e61ececc02845172e6f181edec326746d2e84422bbc2be762ee50eab3683ca1e"
+    },
+    {
+      "policy": "profiles_update_own",
+      "sql_exit": 1,
+      "http_exit": 0,
+      "sql_failure": "profiles_update_own: foreign state unchanged",
+      "http_outcome": "gateway rejected bare write (21000); not an RLS detector",
+      "sql_command": [
+        "node",
+        "<locked-supabase-cli>",
+        "test",
+        "db",
+        "supabase/tests/database/write_isolation.test.sql"
+      ],
+      "http_command": [
+        "node",
+        "node_modules/tsx/dist/cli.mjs",
+        "--test",
+        "--test-reporter=tap",
+        "--test-randomize",
+        "--test-concurrency=1",
+        "--test-name-pattern=^profiles_update_own HTTP ",
+        "tests/integration/write-isolation.integration.ts"
+      ],
+      "mutation_sql": "ALTER POLICY profiles_update_own ON public.profiles USING (true) WITH CHECK (true);",
+      "mutation_diff_sha256": "77b5d06f4b06a528d56aea4b235d97b84b3a0a25e52e39165d6d81108dc3b4ea"
+    },
+    {
+      "policy": "items_insert_member",
+      "sql_exit": 1,
+      "http_exit": 1,
+      "sql_failure": "items_insert_member: foreign row absent",
+      "http_outcome": "explicit foreign-state assertion failure",
+      "sql_command": [
+        "node",
+        "<locked-supabase-cli>",
+        "test",
+        "db",
+        "supabase/tests/database/write_isolation.test.sql"
+      ],
+      "http_command": [
+        "node",
+        "node_modules/tsx/dist/cli.mjs",
+        "--test",
+        "--test-reporter=tap",
+        "--test-randomize",
+        "--test-concurrency=1",
+        "--test-name-pattern=^items_insert_member HTTP ",
+        "tests/integration/write-isolation.integration.ts"
+      ],
+      "mutation_sql": "ALTER POLICY items_insert_member ON public.pantry_items WITH CHECK (created_by = auth.uid());",
+      "mutation_diff_sha256": "d7c9078b358724d35c6dc8d291d0cb605cf2c2d6470ddecf93d8d1b45beec9a2"
+    },
+    {
+      "policy": "shopping_insert_member",
+      "sql_exit": 1,
+      "http_exit": 1,
+      "sql_failure": "shopping_insert_member: foreign row absent",
+      "http_outcome": "explicit foreign-state assertion failure",
+      "sql_command": [
+        "node",
+        "<locked-supabase-cli>",
+        "test",
+        "db",
+        "supabase/tests/database/write_isolation.test.sql"
+      ],
+      "http_command": [
+        "node",
+        "node_modules/tsx/dist/cli.mjs",
+        "--test",
+        "--test-reporter=tap",
+        "--test-randomize",
+        "--test-concurrency=1",
+        "--test-name-pattern=^shopping_insert_member HTTP ",
+        "tests/integration/write-isolation.integration.ts"
+      ],
+      "mutation_sql": "ALTER POLICY shopping_insert_member ON public.pantry_shopping_items WITH CHECK (created_by = auth.uid());",
+      "mutation_diff_sha256": "851e640eaaa2a0489a96e0151f9cb384dfd494ddebf49368eae15288cb1bfd16"
+    }
+  ],
+  "baseline_after": {
+    "sql": {
+      "exit": 0,
+      "command": [
+        "node",
+        "<locked-supabase-cli>",
+        "test",
+        "db",
+        "supabase/tests/database/write_isolation.test.sql"
+      ]
+    },
+    "http": {
+      "exit": 0,
+      "command": [
+        "node",
+        "node_modules/tsx/dist/cli.mjs",
+        "--test",
+        "--test-reporter=tap",
+        "--test-randomize",
+        "--test-concurrency=1",
+        "tests/integration/write-isolation.integration.ts"
+      ]
+    }
+  },
+  "execution_utc": "2026-11-25T21:02:40.911Z"
+}

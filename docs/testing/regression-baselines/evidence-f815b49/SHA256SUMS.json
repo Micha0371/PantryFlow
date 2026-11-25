@@ -1,0 +1,16 @@
+{
+  ".gitattributes": "1647b87570efd90a397fe5917e0f6110540aec81ac9258d6faad4ff3952509f5",
+  "2026-11-25-post-73-f815b49.md": "ec11f72c29f4d35bfbcf4ac89b05848e356e23500ac9abf82af2b4fd44f1fc80",
+  "evidence-f815b49/ci-observation.json": "ee8b7eddd269ef3c7874cff65c05f8548c826fab5ff9901f39c818595f512652",
+  "evidence-f815b49/database-selected.log": "142122f55631168132665b4e706f81eabd2b08381d21ea9b8d2bfd06e25843b4",
+  "evidence-f815b49/fast-selected.log": "65abf55ece5e23314019328c7a4bfd71103eb7b2d9fcea6b97d2a020627692eb",
+  "evidence-f815b49/isolated-selected.log": "97b4b02dc20e9143589da28531e76152cdf845b6f131d0dab2b25fa957a67ade",
+  "evidence-f815b49/items_delete_member.log": "bfb0e95937183a6c1cd67b5a6154f4e0eb6a3da0122c8badf7f02efe26b242eb",
+  "evidence-f815b49/items_insert_member.log": "9611a32a6dc765b1d3b3e955d68c73ea4a36b7b494eb2bb136bc3411d9a09089",
+  "evidence-f815b49/items_update_member.log": "1438fcc5f965ecec2ff9e169a5bd9e1d74332b85f4cbde9aa04c15c59bf3c2ab",
+  "evidence-f815b49/mutations.json": "eb67d4b92ed8454ba7876a2af5720fea99d1a99401df2bdc9e2f2dadc506a46a",
+  "evidence-f815b49/profiles_update_own.log": "e771e3ba242be05243295552c694bd85a702c7e6887a753bb4540f40e6d4e28b",
+  "evidence-f815b49/shopping_delete_member.log": "a957cc3ccac65de27ff0d07bf696b0dd44e8e0bbfdd6ec62a1c1cb3686facd46",
+  "evidence-f815b49/shopping_insert_member.log": "701578cde34915799e1072b9b8780289db48b09d49c55eef7fdd77e30966f348",
+  "evidence-f815b49/shopping_update_member.log": "2498e6b9b28afe4ffac9b10e2fda6bfaf4f637e901c6e6890d1252f2a5da99b3"
+}
