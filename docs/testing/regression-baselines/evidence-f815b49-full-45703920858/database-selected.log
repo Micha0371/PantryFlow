@@ -1,0 +1,13 @@
+2026-11-25T21:25:10.3654423Z Files=4, Tests=88,  0 wallclock secs ( 0.02 usr  0.00 sys +  0.02 cusr  0.01 csys =  0.05 CPU)
+2026-11-25T21:27:04.5539071Z ℹ tests 41
+2026-11-25T21:27:04.5539740Z ℹ pass 41
+2026-11-25T21:27:04.5545635Z ℹ fail 0
+2026-11-25T21:27:04.5546172Z ℹ skipped 0
+2026-11-25T21:27:47.9203389Z items_update_member: SQL foreign-state assertion detected mutant; HTTP: gateway rejected bare write (21000); not an RLS detector
+2026-11-25T21:28:05.5906622Z items_delete_member: SQL foreign-state assertion detected mutant; HTTP: gateway rejected bare write (21000); not an RLS detector
+2026-11-25T21:28:23.2399577Z shopping_update_member: SQL foreign-state assertion detected mutant; HTTP: gateway rejected bare write (21000); not an RLS detector
+2026-11-25T21:28:40.9449494Z shopping_delete_member: SQL foreign-state assertion detected mutant; HTTP: gateway rejected bare write (21000); not an RLS detector
+2026-11-25T21:28:58.6855141Z profiles_update_own: SQL foreign-state assertion detected mutant; HTTP: gateway rejected bare write (21000); not an RLS detector
+2026-11-25T21:29:16.3999471Z items_insert_member: SQL foreign-state assertion detected mutant; HTTP: explicit foreign-state assertion failure
+2026-11-25T21:29:34.1778354Z shopping_insert_member: SQL foreign-state assertion detected mutant; HTTP: explicit foreign-state assertion failure
+2026-11-25T21:29:58.7186605Z All seven SQL mutants detected; HTTP insert detectors/gateway boundaries recorded; intact baselines passed before and after.

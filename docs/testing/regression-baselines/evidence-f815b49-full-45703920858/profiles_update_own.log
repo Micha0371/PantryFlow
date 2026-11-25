@@ -1,0 +1,9 @@
+# Failed test 15: "profiles_update_own: foreign state unchanged"
+#         have: {"id": "<fixture-uuid>", "name": "Updated profile", "language": "en", "created_at": "2026-11-25T21:28:56.571523+00:00", "is_premium": false, "updated_at": "2026-11-25T21:28:56.571523+00:00"}
+#         want: {"id": "<fixture-uuid>", "name": "Foreign profile", "language": "en", "created_at": "2026-11-25T21:28:56.571523+00:00", "is_premium": false, "updated_at": "2026-11-25T21:28:56.571523+00:00"}
+
+Selected HTTP diagnostics:
+# profiles_update_own: bare HTTP blocked by gateway (21000); not an RLS detector
+# pass 1
+# fail 0
+# cancelled 0

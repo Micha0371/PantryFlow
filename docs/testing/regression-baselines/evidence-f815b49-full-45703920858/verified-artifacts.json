@@ -1,0 +1,337 @@
+{
+  "target": "f815b4946a7631a6860cf477e68af73894f7d403",
+  "run": 45703920858,
+  "attempt": 1,
+  "artifacts": {
+    "android": {
+      "id": 15066826562,
+      "sha256": "562b6ac369a3b75b607b72929ecb1e49ebba96972b388aee4df5c5a631dc7389",
+      "bytes": 1160755,
+      "junit": [
+        {
+          "file": "confirmation-complete.xml",
+          "sha256": "59b3410bb7d6bde7b0a67d7368cedd958beccfe287fbce539a2e2b181fa21f1c",
+          "case": "Native PKCE confirmation, restart persistence and invalid-link recovery",
+          "status": "SUCCESS"
+        },
+        {
+          "file": "confirmation-first-complete.xml",
+          "sha256": "d597252a8f9e2e65557b2873db2d29e20ac1e152935063274ff0dd471b327bef",
+          "case": "Native PKCE confirmation, restart persistence and invalid-link recovery",
+          "status": "SUCCESS"
+        },
+        {
+          "file": "confirmation-register.xml",
+          "sha256": "cb3a34733646580a49a1799cd513a6b84d6d1cb562d9152b0c55bfa5b2b37700",
+          "case": "Confirmation-required native registration",
+          "status": "SUCCESS"
+        },
+        {
+          "file": "confirmation-resend.xml",
+          "sha256": "9a7bbea510a040af9c896a8bd1ffe32e6e89cd777565b68f429f76f938aa696f",
+          "case": "Expired native email link recovery and resend",
+          "status": "SUCCESS"
+        },
+        {
+          "file": "results.xml",
+          "sha256": "67fd7baa537da7dc8bfa7df71be49a223028f1ff6a12cc1bc4924e9f2dd1240a",
+          "case": "Slice 1.1 critical behavioral journey",
+          "status": "SUCCESS"
+        },
+        {
+          "file": "slice-2-shopping.xml",
+          "sha256": "58226e43c2e56cc54a41bc320781e541cdedd3908f8ff12b084cc10c52a3a403",
+          "case": "Slice 2 shopping journey",
+          "status": "SUCCESS"
+        },
+        {
+          "file": "slice-3-entry.xml",
+          "sha256": "00e17e65dab4488f4fa538bb6ce6916d9fe671beee454eac3687d070f5aad3f8",
+          "case": "Slice 3 faster item entry journey",
+          "status": "SUCCESS"
+        },
+        {
+          "file": "slice-3-search.xml",
+          "sha256": "a68005498362e5d7583c940dc4edab7f1139b7e270b245c12e9671eb8d8a1885",
+          "case": "Slice 3 pantry search journey",
+          "status": "SUCCESS"
+        },
+        {
+          "file": "slice-3-status.xml",
+          "sha256": "74d9a8912c634a132bb927b03c4b55e118a562cf04e89d5965a516bd75eab677",
+          "case": "Slice 3 pantry status journey",
+          "status": "SUCCESS"
+        }
+      ],
+      "logcat": {
+        "sha256": "0efb4ce99b5de4468ec857f6c88848bfc2c5b17e5cfb11c6e2259b575f2c090b",
+        "lines": 1137,
+        "asset_error_matches": 0,
+        "fatal_exception_matches": 0
+      },
+      "limit": "Nine reports represent six scenarios and ten invocations; registration overwrites one XML. Raw logcat/screenshots stay ignored. Targeted scan is not a general crash/security guarantee."
+    },
+    "database": {
+      "id": 15065470166,
+      "sha256": "1805381f325553557511e2414672816700bb50e9545eccdd431e53cd73b00ede",
+      "bytes": 28478,
+      "sourceCommit": "f815b4946a7631a6860cf477e68af73894f7d403",
+      "dirty": false,
+      "source_hashes": {
+        "tests/integration/write-isolation.integration.ts": "f44f721c714dd80d518c523d21bd24ee8421566fc23e8398898485df576ea8bb",
+        "supabase/tests/database/write_isolation.test.sql": "5bfaeb86be73443e74bda515d1e16c3c7a1ce6f092890fece617f74cef5f8a75",
+        "scripts/check-rls-mutations.cjs": "8d8dbd7da042c645aeefc3a47a343c2244eb4eddd8429a16703c7bea81ccf666",
+        "scripts/run-local-db.cjs": "888788c325272341acb8ede4828d8ed945349fdba7809ab2b460ec6a4e783145",
+        "tests/integration/local-stack.ts": "dc0cc93c94c69d860e6aed936695c2d19bb3f6cd70f344417faf3d5c8cc3f774",
+        "package-lock.json": "39466a7c34634924bdc76689055bb878fb5b51cc239b6b0be87c80df5e1e810a",
+        "supabase/migrations/00001_first_slice.sql": "4e645c63c06b09f820535af23a06f602b63ace7b5073aba8abe5c126646f0bd9",
+        "supabase/migrations/00002_review_hardening.sql": "0838664c575be3e22a891a4eac4df609e8dd6a114de6ddb638d052b65c470106",
+        "supabase/migrations/00003_strict_duplicate_prevention.sql": "2d2cd945aa3606aecf08f8f1561c599ef8f76f858062713a4d65fafbb7981c5c",
+        "supabase/migrations/00004_shopping_items.sql": "90d8d6ef30a579eddc58c40882da67fd2f1b349c7b2687c5d62c77640ac0c0f6"
+      },
+      "source_blob_hashes_verified": true,
+      "node": "v26.13.1",
+      "postgres": "17.11",
+      "postgrestImage": "public.ecr.aws/supabase/postgrest:v16.5",
+      "baseline_before": {
+        "sql": {
+          "exit": 0,
+          "command": [
+            "node",
+            "<locked-supabase-cli>",
+            "test",
+            "db",
+            "supabase/tests/database/write_isolation.test.sql"
+          ]
+        },
+        "http": {
+          "exit": 0,
+          "command": [
+            "node",
+            "node_modules/tsx/dist/cli.mjs",
+            "--test",
+            "--test-reporter=tap",
+            "--test-randomize",
+            "--test-concurrency=1",
+            "tests/integration/write-isolation.integration.ts"
+          ]
+        }
+      },
+      "mutants": [
+        {
+          "policy": "items_update_member",
+          "sql": {
+            "exit": 1,
+            "command": [
+              "node",
+              "<locked-supabase-cli>",
+              "test",
+              "db",
+              "supabase/tests/database/write_isolation.test.sql"
+            ]
+          },
+          "http": {
+            "exit": 0,
+            "command": [
+              "node",
+              "node_modules/tsx/dist/cli.mjs",
+              "--test",
+              "--test-reporter=tap",
+              "--test-randomize",
+              "--test-concurrency=1",
+              "--test-name-pattern=^items_update_member HTTP ",
+              "tests/integration/write-isolation.integration.ts"
+            ],
+            "outcome": "gateway rejected bare write (21000); not an RLS detector"
+          }
+        },
+        {
+          "policy": "items_delete_member",
+          "sql": {
+            "exit": 1,
+            "command": [
+              "node",
+              "<locked-supabase-cli>",
+              "test",
+              "db",
+              "supabase/tests/database/write_isolation.test.sql"
+            ]
+          },
+          "http": {
+            "exit": 0,
+            "command": [
+              "node",
+              "node_modules/tsx/dist/cli.mjs",
+              "--test",
+              "--test-reporter=tap",
+              "--test-randomize",
+              "--test-concurrency=1",
+              "--test-name-pattern=^items_delete_member HTTP ",
+              "tests/integration/write-isolation.integration.ts"
+            ],
+            "outcome": "gateway rejected bare write (21000); not an RLS detector"
+          }
+        },
+        {
+          "policy": "shopping_update_member",
+          "sql": {
+            "exit": 1,
+            "command": [
+              "node",
+              "<locked-supabase-cli>",
+              "test",
+              "db",
+              "supabase/tests/database/write_isolation.test.sql"
+            ]
+          },
+          "http": {
+            "exit": 0,
+            "command": [
+              "node",
+              "node_modules/tsx/dist/cli.mjs",
+              "--test",
+              "--test-reporter=tap",
+              "--test-randomize",
+              "--test-concurrency=1",
+              "--test-name-pattern=^shopping_update_member HTTP ",
+              "tests/integration/write-isolation.integration.ts"
+            ],
+            "outcome": "gateway rejected bare write (21000); not an RLS detector"
+          }
+        },
+        {
+          "policy": "shopping_delete_member",
+          "sql": {
+            "exit": 1,
+            "command": [
+              "node",
+              "<locked-supabase-cli>",
+              "test",
+              "db",
+              "supabase/tests/database/write_isolation.test.sql"
+            ]
+          },
+          "http": {
+            "exit": 0,
+            "command": [
+              "node",
+              "node_modules/tsx/dist/cli.mjs",
+              "--test",
+              "--test-reporter=tap",
+              "--test-randomize",
+              "--test-concurrency=1",
+              "--test-name-pattern=^shopping_delete_member HTTP ",
+              "tests/integration/write-isolation.integration.ts"
+            ],
+            "outcome": "gateway rejected bare write (21000); not an RLS detector"
+          }
+        },
+        {
+          "policy": "profiles_update_own",
+          "sql": {
+            "exit": 1,
+            "command": [
+              "node",
+              "<locked-supabase-cli>",
+              "test",
+              "db",
+              "supabase/tests/database/write_isolation.test.sql"
+            ]
+          },
+          "http": {
+            "exit": 0,
+            "command": [
+              "node",
+              "node_modules/tsx/dist/cli.mjs",
+              "--test",
+              "--test-reporter=tap",
+              "--test-randomize",
+              "--test-concurrency=1",
+              "--test-name-pattern=^profiles_update_own HTTP ",
+              "tests/integration/write-isolation.integration.ts"
+            ],
+            "outcome": "gateway rejected bare write (21000); not an RLS detector"
+          }
+        },
+        {
+          "policy": "items_insert_member",
+          "sql": {
+            "exit": 1,
+            "command": [
+              "node",
+              "<locked-supabase-cli>",
+              "test",
+              "db",
+              "supabase/tests/database/write_isolation.test.sql"
+            ]
+          },
+          "http": {
+            "exit": 1,
+            "command": [
+              "node",
+              "node_modules/tsx/dist/cli.mjs",
+              "--test",
+              "--test-reporter=tap",
+              "--test-randomize",
+              "--test-concurrency=1",
+              "--test-name-pattern=^items_insert_member HTTP ",
+              "tests/integration/write-isolation.integration.ts"
+            ],
+            "outcome": "explicit foreign-state assertion failure"
+          }
+        },
+        {
+          "policy": "shopping_insert_member",
+          "sql": {
+            "exit": 1,
+            "command": [
+              "node",
+              "<locked-supabase-cli>",
+              "test",
+              "db",
+              "supabase/tests/database/write_isolation.test.sql"
+            ]
+          },
+          "http": {
+            "exit": 1,
+            "command": [
+              "node",
+              "node_modules/tsx/dist/cli.mjs",
+              "--test",
+              "--test-reporter=tap",
+              "--test-randomize",
+              "--test-concurrency=1",
+              "--test-name-pattern=^shopping_insert_member HTTP ",
+              "tests/integration/write-isolation.integration.ts"
+            ],
+            "outcome": "explicit foreign-state assertion failure"
+          }
+        }
+      ],
+      "baseline_after": {
+        "sql": {
+          "exit": 0,
+          "command": [
+            "node",
+            "<locked-supabase-cli>",
+            "test",
+            "db",
+            "supabase/tests/database/write_isolation.test.sql"
+          ]
+        },
+        "http": {
+          "exit": 0,
+          "command": [
+            "node",
+            "node_modules/tsx/dist/cli.mjs",
+            "--test",
+            "--test-reporter=tap",
+            "--test-randomize",
+            "--test-concurrency=1",
+            "tests/integration/write-isolation.integration.ts"
+          ]
+        }
+      }
+    }
+  }
+}
