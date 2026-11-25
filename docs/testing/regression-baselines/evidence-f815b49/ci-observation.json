@@ -1,0 +1,369 @@
+{
+  "observed_on": "2026-11-25",
+  "target": "f815b4946a7631a6860cf477e68af73894f7d403",
+  "retrieval": "GitHub connector for run/job/check metadata; signed-in job logs and owner GitHub CLI artifact download. No workflow dispatched.",
+  "owner_decision": "Do not dispatch; record Android as pending",
+  "runs": [
+    {
+      "id": 45700051788,
+      "workflow_id": 424620502,
+      "path": "dynamic/github-code-scanning/codeql",
+      "event": "dynamic",
+      "head_sha": "f815b4946a7631a6860cf477e68af73894f7d403",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "created_at": "2026-11-25T20:58:54Z",
+      "updated_at": "2026-11-25T20:59:51Z",
+      "url": "https://github.com/Micha0371/PantryFlow/actions/runs/45700051788"
+    },
+    {
+      "id": 45700051503,
+      "workflow_id": 411354440,
+      "path": ".github/workflows/pantryflow-tests.yml",
+      "event": "push",
+      "head_sha": "f815b4946a7631a6860cf477e68af73894f7d403",
+      "status": "completed",
+      "conclusion": "success",
+      "attempt": 1,
+      "created_at": "2026-11-25T20:58:54Z",
+      "updated_at": "2026-11-25T21:06:28Z",
+      "url": "https://github.com/Micha0371/PantryFlow/actions/runs/45700051503"
+    }
+  ],
+  "jobs": [
+    {
+      "id": 139507500406,
+      "name": "isolated",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-25T20:58:56Z",
+      "completed_at": "2026-11-25T21:04:06Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm ci --ignore-scripts",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run test:isolated",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 139507500726,
+      "name": "windows-tooling",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-25T20:58:56Z",
+      "completed_at": "2026-11-25T21:00:09Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm ci",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run node --test tests/native-tooling.test.cjs",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 139507500750,
+      "name": "fast",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-25T20:58:56Z",
+      "completed_at": "2026-11-25T21:00:40Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm ci --ignore-scripts",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run test:fast 2>&1 | tee fast-tests.log",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 139507500802,
+      "name": "database",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-25T20:58:56Z",
+      "completed_at": "2026-11-25T21:06:27Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm ci --ignore-scripts",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run set -o pipefail",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Redact startup diagnostics",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Run npm run test:local 2>&1 | tee database-tests.log",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Prove bare-write RLS assertions detect permissive policies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run e2e:cleanup",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npx --no-install supabase stop --no-backup",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload failed startup diagnostics",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 139511595470,
+      "name": "android",
+      "status": "completed",
+      "conclusion": "skipped",
+      "started_at": "2026-11-25T21:06:28Z",
+      "completed_at": "2026-11-25T21:06:28Z",
+      "steps": []
+    }
+  ],
+  "checks": [
+    {
+      "id": 139511595470,
+      "name": "android",
+      "status": "completed",
+      "conclusion": "skipped",
+      "head_sha": "f815b4946a7631a6860cf477e68af73894f7d403"
+    },
+    {
+      "id": 139507963649,
+      "name": "SonarCloud Code Analysis",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "f815b4946a7631a6860cf477e68af73894f7d403"
+    },
+    {
+      "id": 139507508396,
+      "name": "Analyze (actions)",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "f815b4946a7631a6860cf477e68af73894f7d403"
+    },
+    {
+      "id": 139507508325,
+      "name": "Analyze (javascript-typescript)",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "f815b4946a7631a6860cf477e68af73894f7d403"
+    },
+    {
+      "id": 139507507878,
+      "name": "Analyze (python)",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "f815b4946a7631a6860cf477e68af73894f7d403"
+    },
+    {
+      "id": 139507500802,
+      "name": "database",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "f815b4946a7631a6860cf477e68af73894f7d403"
+    },
+    {
+      "id": 139507500750,
+      "name": "fast",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "f815b4946a7631a6860cf477e68af73894f7d403"
+    },
+    {
+      "id": 139507500726,
+      "name": "windows-tooling",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "f815b4946a7631a6860cf477e68af73894f7d403"
+    },
+    {
+      "id": 139507500406,
+      "name": "isolated",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "f815b4946a7631a6860cf477e68af73894f7d403"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 15064155493,
+      "name": "database-test-diagnostics",
+      "digest": "sha256:73a49bc0746d4372f5418f363c7db58a4d8b488a62e527781c9d1f521a1d8419",
+      "size_in_bytes": 28494,
+      "expired": false,
+      "expires_at": "2027-02-23T20:58:54Z"
+    },
+    {
+      "id": 15062243096,
+      "name": "fast-test-diagnostics",
+      "digest": "sha256:f006370889f007d0d1a5f5dbed7f8b787f4f34790e91f1ab99c3195145e7a18c",
+      "size_in_bytes": 17985,
+      "expired": false,
+      "expires_at": "2027-02-23T20:58:54Z"
+    }
+  ],
+  "full_android_on_target": "Unavailable at observation; only matching behavioral run skipped Android. Earlier successful 45398519288 is a different SHA and excluded."
+}

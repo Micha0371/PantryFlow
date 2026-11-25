@@ -1,0 +1,9 @@
+# Failed test 12: "shopping_delete_member: foreign state unchanged"
+#         have: NULL
+#         want: {"id": "<fixture-uuid>", "name": "Foreign shopping", "created_at": "2026-11-25T21:04:29.696693+00:00", "created_by": "<fixture-uuid>", "is_checked": false, "updated_at": "2026-11-25T21:04:29.696693+00:00", "completed_at": null, "household_id": "<fixture-uuid>", "pantry_item_id": null}
+
+Selected HTTP diagnostics:
+# shopping_delete_member: bare HTTP blocked by gateway (21000); not an RLS detector
+# pass 1
+# fail 0
+# cancelled 0

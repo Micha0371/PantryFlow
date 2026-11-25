@@ -1,0 +1,9 @@
+# Failed test 6: "items_delete_member: foreign state unchanged"
+#         have: NULL
+#         want: {"id": "<fixture-uuid>", "name": "Foreign pantry", "status": "in_stock", "category": "other", "location": "pantry", "created_at": "2026-11-25T21:03:48.261978+00:00", "created_by": "<fixture-uuid>", "updated_at": "2026-11-25T21:03:48.261978+00:00", "household_id": "<fixture-uuid>"}
+
+Selected HTTP diagnostics:
+# items_delete_member: bare HTTP blocked by gateway (21000); not an RLS detector
+# pass 1
+# fail 0
+# cancelled 0

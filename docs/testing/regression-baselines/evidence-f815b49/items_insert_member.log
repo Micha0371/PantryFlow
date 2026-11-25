@@ -1,0 +1,11 @@
+# Failed test 17: "items_insert_member: foreign minimal insert rejected"
+# Failed test 19: "items_insert_member: foreign row absent"
+#         have: 1
+#         want: 0
+
+Selected HTTP diagnostics:
+    items_insert_member: foreign row absent
+  code: 'ERR_ASSERTION'
+# pass 0
+# fail 1
+# cancelled 0
