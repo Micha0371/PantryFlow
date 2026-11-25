@@ -1,0 +1,10 @@
+{
+  "policyname": "shopping_update_member",
+  "tablename": "pantry_shopping_items",
+  "roles": [
+    "authenticated"
+  ],
+  "cmd": "UPDATE",
+  "qual": "true",
+  "with_check": "true"
+}

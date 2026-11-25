@@ -1,0 +1,16 @@
+<app>/supabase/tests/database/write_isolation.test.sql .. 
+# Failed test 9: "shopping_update_member: foreign state unchanged"
+#         have: {"id": "<fixture-uuid>", "name": "Foreign shopping", "created_at": "2026-11-24T12:44:26.073156+00:00", "created_by": "<fixture-uuid>", "is_checked": true, "updated_at": "2026-11-24T12:44:26.073156+00:00", "completed_at": "2026-11-24T12:44:26.073156+00:00", "household_id": "<fixture-uuid>", "pantry_item_id": null}
+#         want: {"id": "<fixture-uuid>", "name": "Foreign shopping", "created_at": "2026-11-24T12:44:26.073156+00:00", "created_by": "<fixture-uuid>", "is_checked": false, "updated_at": "2026-11-24T12:44:26.073156+00:00", "completed_at": null, "household_id": "<fixture-uuid>", "pantry_item_id": null}
+# Looks like you failed 1 test of 23
+Failed 1/23 subtests 
+
+Test Summary Report
+-------------------
+<app>/supabase/tests/database/write_isolation.test.sql (Wstat: 0 Tests: 23 Failed: 1)
+  Failed test:  9
+Files=1, Tests=23,  0 wallclock secs ( 0.02 usr  0.02 sys +  0.01 cusr  0.01 csys =  0.06 CPU)
+Result: FAIL
+Connecting to local database...
+psql:<app>/supabase/tests/database/write_isolation.test.sql:4: NOTICE:  extension "pgtap" already exists, skipping
+error running container: exit 1

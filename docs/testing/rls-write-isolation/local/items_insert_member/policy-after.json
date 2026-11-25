@@ -1,0 +1,10 @@
+{
+  "policyname": "items_insert_member",
+  "tablename": "pantry_items",
+  "roles": [
+    "authenticated"
+  ],
+  "cmd": "INSERT",
+  "qual": null,
+  "with_check": "(created_by = auth.uid())"
+}

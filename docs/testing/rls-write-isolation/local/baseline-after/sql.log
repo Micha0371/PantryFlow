@@ -1,0 +1,6 @@
+<app>/supabase/tests/database/write_isolation.test.sql .. ok
+All tests successful.
+Files=1, Tests=23,  0 wallclock secs ( 0.03 usr  0.01 sys +  0.00 cusr  0.01 csys =  0.05 CPU)
+Result: PASS
+Connecting to local database...
+psql:<app>/supabase/tests/database/write_isolation.test.sql:4: NOTICE:  extension "pgtap" already exists, skipping

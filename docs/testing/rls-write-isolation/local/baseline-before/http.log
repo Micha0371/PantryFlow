@@ -1,0 +1,60 @@
+TAP version 13
+# (node:69680) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+# (Use `node --trace-deprecation ...` to show where the warning was created)
+# Subtest: items_update_member HTTP preserves foreign state without returning
+ok 1 - items_update_member HTTP preserves foreign state without returning
+  ---
+  duration_ms: 1699.8646
+  type: 'test'
+  ...
+# items_update_member: bare HTTP blocked by gateway (21000); not an RLS detector
+# Subtest: shopping_update_member HTTP preserves foreign state without returning
+ok 2 - shopping_update_member HTTP preserves foreign state without returning
+  ---
+  duration_ms: 1584.8858
+  type: 'test'
+  ...
+# shopping_update_member: bare HTTP blocked by gateway (21000); not an RLS detector
+# Subtest: profiles_update_own HTTP preserves foreign state without returning
+ok 3 - profiles_update_own HTTP preserves foreign state without returning
+  ---
+  duration_ms: 1482.2523
+  type: 'test'
+  ...
+# profiles_update_own: bare HTTP blocked by gateway (21000); not an RLS detector
+# Subtest: items_insert_member HTTP rejects foreign household insert without returning
+ok 4 - items_insert_member HTTP rejects foreign household insert without returning
+  ---
+  duration_ms: 1520.1433
+  type: 'test'
+  ...
+# Subtest: shopping_delete_member HTTP preserves foreign state without returning
+ok 5 - shopping_delete_member HTTP preserves foreign state without returning
+  ---
+  duration_ms: 1616.1529
+  type: 'test'
+  ...
+# shopping_delete_member: bare HTTP blocked by gateway (21000); not an RLS detector
+# Subtest: items_delete_member HTTP preserves foreign state without returning
+ok 6 - items_delete_member HTTP preserves foreign state without returning
+  ---
+  duration_ms: 1577.6937
+  type: 'test'
+  ...
+# items_delete_member: bare HTTP blocked by gateway (21000); not an RLS detector
+# Subtest: shopping_insert_member HTTP rejects foreign household insert without returning
+ok 7 - shopping_insert_member HTTP rejects foreign household insert without returning
+  ---
+  duration_ms: 1541.5803
+  type: 'test'
+  ...
+1..7
+# Randomized test order seed: 2899418834
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 11511.8231

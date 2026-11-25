@@ -1,0 +1,4 @@
+# Retained textual evidence has stable bytes across Windows/Linux checkouts.
+* text eol=lf
+# Preserve pg_prove/TAP diagnostic spacing in captured logs.
+*.log -whitespace

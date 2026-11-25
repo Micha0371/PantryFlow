@@ -1,0 +1,23 @@
+--- policy-before.json
++++ policy-after.json
+@@ -1,10 +1,10 @@
+-{
+-  "policyname": "profiles_update_own",
+-  "tablename": "profiles",
+-  "roles": [
+-    "public"
+-  ],
+-  "cmd": "UPDATE",
+-  "qual": "(auth.uid() = id)",
+-  "with_check": null
+-}
++{
++  "policyname": "profiles_update_own",
++  "tablename": "profiles",
++  "roles": [
++    "public"
++  ],
++  "cmd": "UPDATE",
++  "qual": "true",
++  "with_check": "true"
++}

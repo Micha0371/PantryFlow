@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
+import { assertLocalRunAllowed } from '../../scripts/run-local-db.cjs';
 
 export const appRoot = path.resolve(__dirname, '../..');
 export const localUrl = 'http://127.0.0.1:54321';
@@ -18,6 +19,7 @@ export function validateLocalStatus(status: Record<string, string>) {
 // Explicit CLI cwd, never .env or hosted credentials. The admin client is only
 // for local fixture lifecycle. All behavioral assertions use ordinary clients.
 export function localStack() {
+  assertLocalRunAllowed();
   const launcher = path.join(appRoot, 'node_modules/supabase/dist/supabase.js');
   const status = validateLocalStatus(JSON.parse(execFileSync(process.execPath, [launcher, 'status', '-o', 'json'], {
     cwd: appRoot, encoding: 'utf8', timeout: 20000, stdio: ['ignore', 'pipe', 'pipe'],

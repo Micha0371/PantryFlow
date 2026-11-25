@@ -1,0 +1,266 @@
+{
+  "utc": "2026-11-24T12:42:15.597Z",
+  "sourceCommit": "76914a243d76e6f7ea4ac95fdcadb71dac1d16ff",
+  "dirty": true,
+  "node": "v26.10.0",
+  "postgres": "17.11",
+  "postgrestImage": "public.ecr.aws/supabase/postgrest:v16.5",
+  "files": {
+    "tests/integration/write-isolation.integration.ts": "f44f721c714dd80d518c523d21bd24ee8421566fc23e8398898485df576ea8bb",
+    "supabase/tests/database/write_isolation.test.sql": "5bfaeb86be73443e74bda515d1e16c3c7a1ce6f092890fece617f74cef5f8a75",
+    "scripts/check-rls-mutations.cjs": "8d8dbd7da042c645aeefc3a47a343c2244eb4eddd8429a16703c7bea81ccf666",
+    "scripts/run-local-db.cjs": "3c3731dc012a7a2c1723020b9621aeea75942ed223b38bf12ee2bde774ed235a",
+    "tests/integration/local-stack.ts": "d4a6bbf35c1ead923634e22866d92b938a983b01f83c7af137ee6c80cf2bb498",
+    "package-lock.json": "d7d85fd30be3433bcfc49aa1326b0734c477cc30cca6e5f708bd161189adddd5",
+    "supabase/migrations/00001_first_slice.sql": "45a77fcb77c9761f45e72764e36994785ec290ac4a17f2e0a8ef9b63344b1633",
+    "supabase/migrations/00002_review_hardening.sql": "0838664c575be3e22a891a4eac4df609e8dd6a114de6ddb638d052b65c470106",
+    "supabase/migrations/00003_strict_duplicate_prevention.sql": "2d2cd945aa3606aecf08f8f1561c599ef8f76f858062713a4d65fafbb7981c5c",
+    "supabase/migrations/00004_shopping_items.sql": "076a3884fe41ffcb137dc85d03ac713e4e51eaa3394915d00e2b61ac71446f96"
+  },
+  "baselineBefore": {
+    "sql": {
+      "exit": 0,
+      "command": [
+        "node.exe",
+        "<locked-supabase-cli>",
+        "test",
+        "db",
+        "supabase/tests/database/write_isolation.test.sql"
+      ]
+    },
+    "http": {
+      "exit": 0,
+      "command": [
+        "node.exe",
+        "node_modules/tsx/dist/cli.mjs",
+        "--test",
+        "--test-reporter=tap",
+        "--test-randomize",
+        "--test-concurrency=1",
+        "tests/integration/write-isolation.integration.ts"
+      ]
+    }
+  },
+  "mutants": [
+    {
+      "policy": "items_update_member",
+      "sql": {
+        "exit": 1,
+        "command": [
+          "node.exe",
+          "<locked-supabase-cli>",
+          "test",
+          "db",
+          "supabase/tests/database/write_isolation.test.sql"
+        ]
+      },
+      "http": {
+        "exit": 0,
+        "command": [
+          "node.exe",
+          "node_modules/tsx/dist/cli.mjs",
+          "--test",
+          "--test-reporter=tap",
+          "--test-randomize",
+          "--test-concurrency=1",
+          "--test-name-pattern=^items_update_member HTTP ",
+          "tests/integration/write-isolation.integration.ts"
+        ],
+        "outcome": "gateway rejected bare write (21000); not an RLS detector"
+      },
+      "detectedBy": "explicit SQL foreign-state assertion"
+    },
+    {
+      "policy": "items_delete_member",
+      "sql": {
+        "exit": 1,
+        "command": [
+          "node.exe",
+          "<locked-supabase-cli>",
+          "test",
+          "db",
+          "supabase/tests/database/write_isolation.test.sql"
+        ]
+      },
+      "http": {
+        "exit": 0,
+        "command": [
+          "node.exe",
+          "node_modules/tsx/dist/cli.mjs",
+          "--test",
+          "--test-reporter=tap",
+          "--test-randomize",
+          "--test-concurrency=1",
+          "--test-name-pattern=^items_delete_member HTTP ",
+          "tests/integration/write-isolation.integration.ts"
+        ],
+        "outcome": "gateway rejected bare write (21000); not an RLS detector"
+      },
+      "detectedBy": "explicit SQL foreign-state assertion"
+    },
+    {
+      "policy": "shopping_update_member",
+      "sql": {
+        "exit": 1,
+        "command": [
+          "node.exe",
+          "<locked-supabase-cli>",
+          "test",
+          "db",
+          "supabase/tests/database/write_isolation.test.sql"
+        ]
+      },
+      "http": {
+        "exit": 0,
+        "command": [
+          "node.exe",
+          "node_modules/tsx/dist/cli.mjs",
+          "--test",
+          "--test-reporter=tap",
+          "--test-randomize",
+          "--test-concurrency=1",
+          "--test-name-pattern=^shopping_update_member HTTP ",
+          "tests/integration/write-isolation.integration.ts"
+        ],
+        "outcome": "gateway rejected bare write (21000); not an RLS detector"
+      },
+      "detectedBy": "explicit SQL foreign-state assertion"
+    },
+    {
+      "policy": "shopping_delete_member",
+      "sql": {
+        "exit": 1,
+        "command": [
+          "node.exe",
+          "<locked-supabase-cli>",
+          "test",
+          "db",
+          "supabase/tests/database/write_isolation.test.sql"
+        ]
+      },
+      "http": {
+        "exit": 0,
+        "command": [
+          "node.exe",
+          "node_modules/tsx/dist/cli.mjs",
+          "--test",
+          "--test-reporter=tap",
+          "--test-randomize",
+          "--test-concurrency=1",
+          "--test-name-pattern=^shopping_delete_member HTTP ",
+          "tests/integration/write-isolation.integration.ts"
+        ],
+        "outcome": "gateway rejected bare write (21000); not an RLS detector"
+      },
+      "detectedBy": "explicit SQL foreign-state assertion"
+    },
+    {
+      "policy": "profiles_update_own",
+      "sql": {
+        "exit": 1,
+        "command": [
+          "node.exe",
+          "<locked-supabase-cli>",
+          "test",
+          "db",
+          "supabase/tests/database/write_isolation.test.sql"
+        ]
+      },
+      "http": {
+        "exit": 0,
+        "command": [
+          "node.exe",
+          "node_modules/tsx/dist/cli.mjs",
+          "--test",
+          "--test-reporter=tap",
+          "--test-randomize",
+          "--test-concurrency=1",
+          "--test-name-pattern=^profiles_update_own HTTP ",
+          "tests/integration/write-isolation.integration.ts"
+        ],
+        "outcome": "gateway rejected bare write (21000); not an RLS detector"
+      },
+      "detectedBy": "explicit SQL foreign-state assertion"
+    },
+    {
+      "policy": "items_insert_member",
+      "sql": {
+        "exit": 1,
+        "command": [
+          "node.exe",
+          "<locked-supabase-cli>",
+          "test",
+          "db",
+          "supabase/tests/database/write_isolation.test.sql"
+        ]
+      },
+      "http": {
+        "exit": 1,
+        "command": [
+          "node.exe",
+          "node_modules/tsx/dist/cli.mjs",
+          "--test",
+          "--test-reporter=tap",
+          "--test-randomize",
+          "--test-concurrency=1",
+          "--test-name-pattern=^items_insert_member HTTP ",
+          "tests/integration/write-isolation.integration.ts"
+        ],
+        "outcome": "explicit foreign-state assertion failure"
+      },
+      "detectedBy": "explicit SQL foreign-state assertion"
+    },
+    {
+      "policy": "shopping_insert_member",
+      "sql": {
+        "exit": 1,
+        "command": [
+          "node.exe",
+          "<locked-supabase-cli>",
+          "test",
+          "db",
+          "supabase/tests/database/write_isolation.test.sql"
+        ]
+      },
+      "http": {
+        "exit": 1,
+        "command": [
+          "node.exe",
+          "node_modules/tsx/dist/cli.mjs",
+          "--test",
+          "--test-reporter=tap",
+          "--test-randomize",
+          "--test-concurrency=1",
+          "--test-name-pattern=^shopping_insert_member HTTP ",
+          "tests/integration/write-isolation.integration.ts"
+        ],
+        "outcome": "explicit foreign-state assertion failure"
+      },
+      "detectedBy": "explicit SQL foreign-state assertion"
+    }
+  ],
+  "baselineAfter": {
+    "sql": {
+      "exit": 0,
+      "command": [
+        "node.exe",
+        "<locked-supabase-cli>",
+        "test",
+        "db",
+        "supabase/tests/database/write_isolation.test.sql"
+      ]
+    },
+    "http": {
+      "exit": 0,
+      "command": [
+        "node.exe",
+        "node_modules/tsx/dist/cli.mjs",
+        "--test",
+        "--test-reporter=tap",
+        "--test-randomize",
+        "--test-concurrency=1",
+        "tests/integration/write-isolation.integration.ts"
+      ]
+    }
+  }
+}

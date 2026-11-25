@@ -1,0 +1,41 @@
+{
+  "environment": "Windows, Node 26.10.0; working implementation based on 76914a2",
+  "commands": [
+    {
+      "command": "node scripts/check-test-independence.cjs",
+      "exit": 0
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc --noEmit",
+      "exit": 0
+    },
+    {
+      "command": "node scripts/run-node-tests.cjs --test-concurrency=2",
+      "exit": 0,
+      "tests": 533,
+      "pass": 533,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "command": "node node_modules/jest/bin/jest.js --runInBand --randomize --showSeed",
+      "exit": 0,
+      "suites": 4,
+      "tests": 18,
+      "pass": 18
+    },
+    {
+      "command": "node node_modules/tsx/dist/cli.mjs --test --test-randomize tests/integration/local-stack.test.ts",
+      "exit": 0
+    },
+    {
+      "command": "node scripts/run-local-db.cjs local",
+      "exit": 0,
+      "pgtap_assertions": 88,
+      "integration_tests": 41,
+      "integration_pass": 41,
+      "integration_fail": 0
+    }
+  ],
+  "limit": "Local fast-equivalent components run separately to bound Windows memory; required GitHub fast/database jobs are separate exact-head evidence."
+}
