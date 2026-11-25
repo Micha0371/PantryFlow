@@ -13,11 +13,15 @@ function fixture() {
     './native-auth-crypto': { assertSecurePkce() {} },
     './supabase': { supabase: { auth: {
       getSession: async () => ({ data: { session }, error: null }),
-      exchangeCodeForSession: code => { calls.exchange.push(code); return exchange.promise; },
+      // As in supabase-js, a successful exchange stores its session and replaces the current one.
+      exchangeCodeForSession: code => {
+        calls.exchange.push(code);
+        return exchange.promise.then(result => { if (result.data?.session) session = result.data.session; return result; });
+      },
       resend: request => { calls.resend.push(request); return sent.promise; },
     } } },
   });
-  return { service, calls, exchange, sent, signIn() { session = { user: { id: 'existing' } }; } };
+  return { service, calls, exchange, sent, signIn() { session = { user: { id: 'existing' } }; }, currentSession: () => session };
 }
 
 test('confirmation rejects missing, ambiguous, malformed and error links without exchanging credentials', async () => {
@@ -44,15 +48,24 @@ test('confirmation coalesces duplicate active callbacks and requires an actual a
   await assert.rejects(attempt, /no session/);
 });
 
-test('expired codes remain recoverable and a callback cannot replace an already signed-in account', async () => {
+test('expired codes remain recoverable', async () => {
   const f = fixture();
   const attempt = f.service.confirmEmail({ code: 'expired' });
   f.exchange.resolve({ data: { session: null }, error: new Error('expired') });
   await assert.rejects(attempt, /expired/);
-  const signedIn = fixture();
-  signedIn.signIn();
-  await assert.rejects(signedIn.service.confirmEmail({ code: 'attacker-code' }), /Already signed in/);
-  assert.deepEqual(signedIn.calls.exchange, []);
+});
+
+test('a callback cannot replace an already signed-in account', async () => {
+  const f = fixture();
+  f.signIn();
+  // Settled before the callback runs: without the existing-session guard the exchange completes at once and
+  // replaces the session, so the assertions below fail instead of waiting on a promise nobody settles.
+  f.exchange.resolve({ data: { session: { user: { id: 'attacker' } } }, error: null });
+  const [outcome] = await Promise.allSettled([f.service.confirmEmail({ code: 'attacker-code' })]);
+  assert.deepEqual(f.calls.exchange, [], 'no code may be exchanged while an account is signed in');
+  assert.deepEqual(f.currentSession(), { user: { id: 'existing' } }, 'the signed-in account must keep its session');
+  assert.equal(outcome.status, 'rejected', 'the callback must report that an account is already signed in');
+  assert.match(outcome.reason.message, /Already signed in/);
 });
 
 test('resend validates the address, prevents overlap, uses the app callback and unlocks after rejection', async () => {

@@ -1,0 +1,17 @@
+✔ confirmation rejects missing, ambiguous, malformed and error links without exchanging credentials (126.0305ms)
+✔ confirmation coalesces duplicate active callbacks and requires an actual authenticated session (44.2135ms)
+✖ tests\email-confirmation.test.cjs (179983.8477ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 180003.0706
+
+✖ failing tests:
+
+test at tests\email-confirmation.test.cjs:1:1
+✖ tests\email-confirmation.test.cjs (179983.8477ms)
+  'test failed'

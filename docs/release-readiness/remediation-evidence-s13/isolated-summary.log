@@ -1,0 +1,3 @@
+> pantry-flow@0.1.0 test:isolated
+> node scripts/run-tests-alone.cjs
+test:isolated ran 524 top-level tests alone across 62 files
