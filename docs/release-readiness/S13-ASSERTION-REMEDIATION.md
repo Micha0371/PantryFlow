@@ -21,7 +21,7 @@ Only [`pantry-flow/tests/email-confirmation.test.cjs`](../../pantry-flow/tests/e
 
 ## Evidence
 
-Base: `main` at `8fa694f684ed8f94de7dddd8d881e5eacf86e7b5`. Windows, Node 26.10.0. Mutants ran in a disposable clone of that commit; the intact runs ran on this branch.
+Base: `main` at `8fa694f684ed8f94de7dddd8d881e5eacf86e7b5`. Windows, Node 26.10.0. The mutants ran in a disposable clone of the base: production code from the base, plus this branch's test file from run 3 on (log 1 uses the old test). Production code is identical on base and branch (blob `72748a3`). The intact runs ran on this branch. The gate and isolated logs are filtered summaries of the console output, not full logs.
 
 | # | Code and test | Command | Result |
 |---|---|---|---|
@@ -44,6 +44,17 @@ Hashes: [SHA256SUMS](remediation-evidence-s13/SHA256SUMS).
 - **Still separately gated:** the PKCE setting itself (S12 still survives), hosted confirmation after the 2026-11-21 Auth change (SP-7), and session storage on the device (SP-9).
 - **Remaining hang risk:** a future unsettled mock can still hang the normal command, because Node tests have no per-test timeout (TI-4, KAN-107).
 
-## Review and CI
+## Independent review
+
+An independent AI reviewer (Claude Opus, in its own disposable clone, read-only) **approved with nits**; [report](remediation-evidence-s13/independent-review.md).
+
+- **Reproduced:** the hang before the change, the prompt assertion failure after it (also under the full runner), the restore, five randomized orders, the new test alone, the independence check, `test:isolated` (524), 534 Node and 18 component tests, and the evidence hashes.
+- **Own mutants:** 13 of 16 guard regressions fail an assertion within about 0.6 s. Three survive, all outside S13 and present before this change:
+  - a `getSession()` error being ignored;
+  - finished requests never leaving the coalescing map;
+  - coalescing returning another code's request.
+- **Nits handled:** wording about where the mutants ran; summaries labelled. **Not changed:** a non-Error rejection would end the test in a TypeError rather than an AssertionError, but it still fails; changing the test would have invalidated the recorded runs. **Not done:** follow-up tickets for the three survivors, which need the owner.
+
+## CI
 
 Recorded in the pull request.
