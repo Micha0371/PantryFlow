@@ -1,6 +1,6 @@
 # Interim password-reset and account-deletion support (beta lines B3, B4)
 
-**Status:** owner decided option A for B3 on 2026-11-21. The deletion rehearsal passed on 2026-11-21 on an account without pantry or shopping items; a rehearsal with data is pending ([correction 2026-11-26](#correction-2026-11-26)); the re-registration half of option A waits for a hosted-configured build (KAN-77). These are the interim support paths the [beta entry checklist](2026-11-21-beta-entry-checklist.md) allows until KAN-42 (password recovery) and KAN-43 (account deletion) are delivered. The decision record requires them to be **secure, documented and genuinely operational**; each needs one rehearsed request before the beta.
+**Status:** owner decided option A for B3 on 2026-11-21. The deletion rehearsal passed on 2026-11-21 on an account without pantry or shopping items; a rehearsal with data passed on 2026-11-26 ([record](2026-11-26-populated-deletion-rehearsal-record.md); [correction 2026-11-26](#correction-2026-11-26)); the re-registration half of option A waits for a hosted-configured build (KAN-77). These are the interim support paths the [beta entry checklist](2026-11-21-beta-entry-checklist.md) allows until KAN-42 (password recovery) and KAN-43 (account deletion) are delivered. The decision record requires them to be **secure, documented and genuinely operational**; each needs one rehearsed request before the beta.
 
 - **Support contact:** contact@mwsoftworks.com (owner, 2026-11-21).
 - **Response time:** within **3 days** (owner, 2026-11-21). Testers are told this in the tester instructions and the privacy notice.
@@ -39,13 +39,15 @@ Earlier wording, kept here so the history stays visible:
 - **Step 4 said:** "state that backups keep data until they expire under the plan's backup retention (exact period from the pending hosted read, FV-A1)". The hosted read then found **no backups** on the Free plan, so that statement was wrong.
 
 What does and does not remain after a deletion is listed in the [retention boundaries](2026-11-26-deletion-retention-boundaries.md):
-- **Removed:** the application rows and the Auth account records, as shown locally (FV-B3) and for an account without items on hosted (2026-11-21). For a household with data on hosted this is pending the [protocol](2026-11-26-populated-deletion-rehearsal-protocol.md).
+- **Removed:** the application rows and the Auth account records, as shown locally (FV-B3) and for an account without items on hosted (2026-11-21). For a household with data on hosted it was shown on 2026-11-26 ([record](2026-11-26-populated-deletion-rehearsal-record.md)). Sessions and flow states were not part of that rehearsal.
 - **Not removed by the deletion:** `auth.flow_state` rows, provider logs, email-provider records and the support thread. Some of their periods are unknown.
 
 **Without managed backups:**
 - deleted data cannot be restored, also not after a deletion by mistake;
 - a fault in the service can lose data with no recovery;
 - a support action therefore cannot be undone, which is why the member check and the requester check come first.
+
+**Support records (owner, 2026-11-26):** the support thread and the minimal log (date, UUID, outcome) are to be kept for 90 days after the case is closed, then deleted. This is subject to legal review and any documented legal hold, so it is not applied yet.
 
 ## B3 — password reset (interim): option A decided (owner, 2026-11-21)
 

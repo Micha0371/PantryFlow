@@ -1,6 +1,6 @@
 # What an account deletion removes, and what remains (beta line B4)
 
-**Status:** analysis, 2026-11-26. Nothing here was checked on the hosted project. No retention period is invented: a period appears only with its source, everything else is marked **unknown**. Not legal advice.
+**Status:** analysis, 2026-11-26. When written, nothing here was checked on the hosted project. **Update, same day:** the authorized rehearsal checked class 1 and part of class 2 on hosted ([record](2026-11-26-populated-deletion-rehearsal-record.md)); everything else is still unchecked there. No retention period is invented: a period appears only with its source, everything else is marked **unknown**. Not legal advice.
 
 **Sources:**
 - the migrations 00001–00004;
@@ -37,10 +37,19 @@ The support path deletes the Auth user in the Supabase dashboard ([runbook](2026
 
 ## What can be said to a tester today
 
-- **Supported:** the account, profile, household, pantry items and shopping list are deleted, pending the rehearsal with data on hosted. There are no backups from which they could be restored.
+- **Supported:** the account, profile, household, pantry items and shopping list are deleted (shown on hosted on 2026-11-26 for a single-member household, [record](2026-11-26-populated-deletion-rehearsal-record.md)). There are no backups from which they could be restored.
 - **Not supported:** "all data is deleted" or "deleted at once". Flow-state rows in the app's own database, provider logs, mail delivery records and our own support correspondence remain for periods that are partly unknown.
 
-## Owner decisions this leaves open
+## Owner decisions
+
+**Owner decisions 2026-11-26:**
+- **Rehearsal:** PASS accepted for its tested scope: a populated, single-member household created in the dashboard. It does not show the removal of sessions or flow states, which the test accounts did not have. No repeat is needed.
+- **OD-B7, Auth flow states:** no additional privileged deletion. Unknown, possibly indefinite retention is **not accepted** as the final disposition. It needs confirmation of the hosted cleanup behaviour, or a separately authorized observation with an account created in the app, as part of the planned hosted sign-up work (KAN-77).
+- **OD-B4, support correspondence:** recommended retention is **90 days after case closure** for the support thread and the minimal log (UUID, date, outcome), followed by deletion. This is **subject to legal review** and to any documented legal hold.
+- **Supabase provider logs:** the distinction from application records is accepted. The provider's retention terms are verified before the privacy notice is published.
+- **Resend delivery records:** retention and processing details are unverified. The applicable terms are obtained and reflected in B5.
+
+**Originally listed as open:**
 
 - **OD-B7, flow states:** accept until hosted cleanup is confirmed, or delete the user's `auth.flow_state` rows as a reviewed extra step (a hosted write, needing its own authorization).
 - **OD-B4 / R-8:** retention of support records.

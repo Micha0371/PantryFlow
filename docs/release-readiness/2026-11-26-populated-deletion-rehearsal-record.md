@@ -2,6 +2,15 @@
 
 **Result: PASS.** The hosted interim support path removed a household with data, and the records outside T read by the check were unchanged. The cleanup of the control account was checked as well. B4 stays open until the owner accepts the remaining [retention limits](2026-11-26-deletion-retention-boundaries.md) (see [checklist](2026-11-21-beta-entry-checklist.md)).
 
+## Owner acceptance (2026-11-26)
+
+**Owner decisions 2026-11-26:**
+- **Rehearsal:** PASS accepted for its tested scope: a populated, single-member household created in the dashboard. It does not show the removal of sessions or flow states, which the test accounts did not have. No repeat is needed.
+- **OD-B7, Auth flow states:** no additional privileged deletion. Unknown, possibly indefinite retention is **not accepted** as the final disposition. It needs confirmation of the hosted cleanup behaviour, or a separately authorized observation with an account created in the app, as part of the planned hosted sign-up work (KAN-77).
+- **OD-B4, support correspondence:** recommended retention is **90 days after case closure** for the support thread and the minimal log (UUID, date, outcome), followed by deletion. This is **subject to legal review** and to any documented legal hold.
+- **Supabase provider logs:** the distinction from application records is accepted. The provider's retention terms are verified before the privacy notice is published.
+- **Resend delivery records:** retention and processing details are unverified. The applicable terms are obtained and reflected in B5.
+
 ## Authorization and setup
 
 - **Approval:** the owner approved the [request](2026-11-26-hosted-deletion-rehearsal-request.md) on 2026-11-26 for that day, with the dashboard-and-SQL fixture path (actions 1b and 2b) and the agent running the read-backs.
