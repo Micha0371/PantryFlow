@@ -61,6 +61,9 @@ export function OptionChips({
 const styles = StyleSheet.create({
   row: { paddingVertical: spacing.xs, gap: spacing.sm },
   chip: {
+    // KAN-100 (L1): at least a 48 dp touch target.
+    minHeight: 48,
+    justifyContent: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radii.pill,

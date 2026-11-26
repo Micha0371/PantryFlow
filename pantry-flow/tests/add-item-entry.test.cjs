@@ -261,3 +261,11 @@ test('typing clears a stale error', async () => {
     assert.equal(h.input().props.error, null);
   } finally { h.cleanup(); }
 });
+
+test('the category and location chips are radio groups named after their section (KAN-100)', () => {
+  const h = setup();
+  try {
+    assert.equal(h.chips('add-item-category').props.accessibilityLabel, en.item_category);
+    assert.equal(h.chips('add-item-location').props.accessibilityLabel, en.item_location);
+  } finally { h.cleanup(); }
+});

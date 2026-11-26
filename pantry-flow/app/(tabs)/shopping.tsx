@@ -128,6 +128,7 @@ function HouseholdShoppingScreen() {
           // The tab stays mounted, so an add error must not outlive the text it was about.
           onChangeText={(text) => { fieldText.current = text; setName(text); setAddError(null); }}
           placeholder={t('shopping_add_placeholder')}
+          accessibilityLabel={t('shopping_add_label')}
           maxLength={SHOPPING_NAME_MAX}
           error={addError}
           announceKey={addFailures}

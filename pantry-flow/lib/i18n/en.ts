@@ -143,6 +143,7 @@ export const en = {
   shopping_section_open: 'To buy',
   shopping_section_completed: 'Completed',
   shopping_add_placeholder: 'Add an item',
+  shopping_add_label: 'New item for the shopping list',
   shopping_add_button: 'Add',
   shopping_edit_title: 'Edit item',
   shopping_remove: 'Remove',

@@ -171,6 +171,14 @@ test('chips expose radio semantics with the checked state', () => {
   act(() => view.unmount());
 });
 
+test('every chip is at least a 48 dp touch target (KAN-100, L1)', () => {
+  let view;
+  act(() => { view = create(React.createElement(OptionChips, { options: ['a', 'b'], value: 'b', onChange() {}, labelFor: k => k, testIDPrefix: 'x' })); });
+  const flat = style => Object.assign({}, ...[style].flat(Infinity).filter(Boolean));
+  for (const id of ['x-a', 'x-b']) assert.ok(flat(view.root.findByProps({ testID: id }).props.style).minHeight >= 48, id);
+  act(() => view.unmount());
+});
+
 test('a profile update that touches no row is a failure', async () => {
   const mod = load('lib/profile-language.ts', {
     './supabase': { supabase: { from: () => ({ update: () => ({ eq: () => ({ select: async () => ({ data: [], error: null }) }) }) }) } },
