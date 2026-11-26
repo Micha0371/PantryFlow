@@ -11,7 +11,7 @@ test('native background stops refresh and returning active restarts it', () => {
   try {
     load('lib/supabase.ts', {
       'react-native-url-polyfill/auto': {},
-      './native-auth-crypto': {},
+      './native-auth-crypto': {}, './auth-timeout': load('lib/auth-timeout.ts'),
       'react-native': { Platform: { OS: 'android' }, AppState: {
         currentState: 'active', addEventListener: (_, callback) => { change = callback; },
       } },
