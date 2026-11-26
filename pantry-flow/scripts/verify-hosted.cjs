@@ -22,11 +22,13 @@ const created = [];
 const sessions = [];
 const originalProfiles = [];
 
-async function request(route, { method = 'GET', token, body, prefer } = {}) {
+async function request(route, { method = 'GET', token, body, prefer, apiVersion } = {}) {
   const response = await fetch(url + route, {
     method, signal: AbortSignal.timeout(20000),
     headers: { apikey: key, ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...(prefer ? { Prefer: prefer } : {}) },
+      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...(prefer ? { Prefer: prefer } : {}),
+      // supabase-js sends this header; Auth then reports error codes as `code`.
+      ...(apiVersion ? { 'X-Supabase-Api-Version': apiVersion } : {}) },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
   const text = await response.text();
@@ -98,6 +100,14 @@ async function run() {
       successful(await request('/auth/v1/logout?scope=local', { method: 'POST', token: signup.access_token }));
     }
   }
+
+  // KAN-122: the sign-in screen shows the credential message only for this code.
+  await check('a wrong password is rejected with invalid_credentials, as the sign-in screen expects', async () => {
+    const wrong = await request('/auth/v1/token?grant_type=password', { method: 'POST', apiVersion: '2024-01-01',
+      body: { email: config.PANTRY_TEST_A_EMAIL, password: `${config.PANTRY_TEST_A_PASSWORD}-wrong` } });
+    assert.equal(wrong.status, 400);
+    assert.equal(wrong.data?.code, 'invalid_credentials');
+  });
 
   for (const letter of ['A', 'B']) {
     const email = config[`PANTRY_TEST_${letter}_EMAIL`];

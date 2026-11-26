@@ -20,6 +20,7 @@ function stubs(os, overlap) {
     '@/components/Button': { Button: 'Button' }, '@/components/Input': { Input: 'Input' },
     '@/hooks/useKeyboardOverlap': { useKeyboardOverlap: () => overlap },
     '@/hooks/useFormError': load('hooks/useFormError.ts'),
+    '@/lib/auth-error': load('lib/auth-error.ts'),
     '@/lib/email-confirmation': { confirmationCode: () => null, confirmEmail: async () => {}, resendConfirmation: async () => {} },
     '@/lib/auth': { useAuth: () => ({ signIn: async () => {}, signUp: async () => 'confirmation_required' }) },
   };

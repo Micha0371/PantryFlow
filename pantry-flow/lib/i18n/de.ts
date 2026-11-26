@@ -117,6 +117,10 @@ export const de: Record<TranslationKey, string> = {
   // Errors
   err_required_name: 'Bitte gib einen Namen ein.',
   err_login_failed: 'E-Mail oder Passwort ist falsch.',
+  err_auth_connection: 'Der Server ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.',
+  err_login_rate_limit: 'Zu viele Anmeldeversuche. Bitte warte kurz und versuche es dann erneut.',
+  err_auth_server: 'Der Server antwortet gerade nicht. Bitte versuche es später erneut.',
+  err_login_unconfirmed: 'Bestätige zuerst deine E-Mail-Adresse. Unten kannst du eine neue Bestätigungs-E-Mail anfordern.',
   err_register_failed: 'Konto konnte nicht erstellt werden.',
   err_load_items: 'Artikel konnten nicht geladen werden.',
   err_save_item: 'Artikel konnte nicht gespeichert werden.',

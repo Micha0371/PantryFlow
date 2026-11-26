@@ -88,3 +88,38 @@ test('a failure after the run exits 1 with a message instead of an unhandled rej
     assert.doesNotMatch(result.stderr, /Node\.js v\d+|at .*verify-hosted\.cjs/);
   } finally { fs.rmSync(folder, { recursive: true, force: true }); }
 });
+
+// KAN-122 review: the sign-in screen maps Auth's invalid_credentials code, which the local
+// integration test pins only against the local server. The hosted run checks it too, with the
+// API version header supabase-js sends. Fake responses only: no request leaves the machine.
+test('the hosted run checks that a wrong password is rejected with invalid_credentials', () => {
+  for (const [code, expected] of [['invalid_credentials', 'passed'], ['validation_failed', 'failed']]) {
+    const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'pf-hosted-wrong-password-'));
+    try {
+      fs.mkdirSync(path.join(folder, 'scripts'));
+      fs.copyFileSync(path.join(__dirname, '../scripts/verify-hosted.cjs'), path.join(folder, 'scripts/verify-hosted.cjs'));
+      const preload = path.join(folder, 'wrong-password.cjs');
+      fs.writeFileSync(preload, `global.fetch = async (url, init = {}) => {
+        if (url.endsWith('/auth/v1/settings')) return new Response(JSON.stringify({external:{email:true},mailer_autoconfirm:false,disable_signup:false}));
+        const body = JSON.parse(init.body ?? 'null');
+        if (url.endsWith('/auth/v1/token?grant_type=password') && body?.password !== 'fixture-password') {
+          if (init.headers?.['X-Supabase-Api-Version'] !== '2024-01-01') return new Response(JSON.stringify({error_code:'${code}'}), {status:400});
+          return new Response(JSON.stringify({code:'${code}',msg:'Invalid login credentials'}), {status:400});
+        }
+        throw Error('stop after the wrong-password check');
+      };`);
+      const result = spawnSync(process.execPath, ['--require', preload, 'scripts/verify-hosted.cjs', '--run'], {
+        cwd: folder, encoding: 'utf8', timeout: 30000,
+        env: childEnv({ EXPO_PUBLIC_SUPABASE_URL: 'https://oiqteedkfwmcertgxqga.supabase.co', EXPO_PUBLIC_SUPABASE_ANON_KEY: 'sb_publishable_fixture',
+          PANTRY_TEST_A_EMAIL: 'pf.verify.a@example.com', PANTRY_TEST_A_PASSWORD: 'fixture-password',
+          PANTRY_TEST_B_EMAIL: 'pf.verify.b@example.com', PANTRY_TEST_B_PASSWORD: 'fixture-password' }),
+      });
+      assert.equal(result.status, 1, 'the fake stops the run after the check');
+      assert.doesNotMatch(result.stdout + result.stderr, /fixture-password/);
+      const report = JSON.parse(fs.readFileSync(path.join(folder, '.verification/hosted-results.json'), 'utf8'));
+      const check = report.results.find(r => /wrong password/.test(r.name));
+      assert.ok(check, 'the wrong-password check ran');
+      assert.equal(check.status, expected, code);
+    } finally { fs.rmSync(folder, { recursive: true, force: true }); }
+  }
+});

@@ -13,6 +13,7 @@ import { Link, useRouter } from 'expo-router';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { useAuth } from '@/lib/auth';
+import { signUpErrorKey } from '@/lib/auth-error';
 import { useTranslation } from '@/lib/i18n';
 import { colors, spacing, typography } from '@/lib/theme';
 import { useFormError } from '@/hooks/useFormError';
@@ -45,8 +46,8 @@ export default function RegisterScreen() {
       const outcome = await signUp(name.trim(), email.trim(), password);
       if (outcome === 'signed_in') router.replace('/(tabs)');
       else setConfirmation(true);
-    } catch {
-      setError(t('err_register_failed'));
+    } catch (cause) {
+      setError(t(signUpErrorKey(cause)));
     } finally {
       submitLock.current = false;
       setSubmitting(false);
