@@ -539,6 +539,7 @@ case and separate reviewable fix; it must not silently alter this reference.
 | EMAIL-03 | Expired/replayed/invalid links cannot authenticate | Parser and screen regressions; actual local Auth expiry and replay | Physical expired-link recovery passed |
 | EMAIL-04 | Resend creates a usable replacement; overlap and rate limits recover | Resend screen tests; actual local Auth/Mailpit resend | Hosted resend receipt and Android completion passed |
 | EMAIL-05 | Confirmation session restores after restart and isolates household | Real local session restore; Maestro confirmation-complete and fixture verification | Native suite passed in full run 42599010616; physical hosted callback session survived cold restart |
+| EMAIL-06 | A confirmation link cannot replace an already signed-in account: no code is exchanged, the existing session is kept, and the callback rejects | `tests/email-confirmation.test.cjs` (a callback cannot replace an already signed-in account); removing the guard fails an assertion within a second ([S13 remediation](../release-readiness/S13-ASSERTION-REMEDIATION.md)) | Mocked Supabase client; the PKCE setting and hosted confirmation are separate (SP-4 partial) |
 
 Local email integration passed against Auth 2.197.0, matching hosted Auth.
 The pinned CLI 2.122.1 replaces the older local Auth that ignored resend PKCE

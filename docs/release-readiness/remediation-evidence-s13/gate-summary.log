@@ -1,0 +1,26 @@
+> pantry-flow@0.1.0 test:independence
+> node scripts/check-test-independence.cjs
+Checked 100 files in 474 ms: 0 finding(s).
+> pantry-flow@0.1.0 typecheck
+> tsc --noEmit
+> pantry-flow@0.1.0 test
+> node scripts/run-node-tests.cjs --test-concurrency=2
+ℹ Randomized test order seed: 4001347710
+ℹ tests 534
+ℹ pass 534
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+> pantry-flow@0.1.0 test:components
+> jest --runInBand --randomize --showSeed
+Seed:        -1705458319
+Test Suites: 4 passed, 4 total
+Tests:       18 passed, 18 total
+> pantry-flow@0.1.0 test:safety
+> tsx --test --test-randomize tests/integration/local-stack.test.ts
+ℹ Randomized test order seed: 1847675628
+ℹ tests 1
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0

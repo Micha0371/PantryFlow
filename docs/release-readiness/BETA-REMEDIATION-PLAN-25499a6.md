@@ -86,3 +86,5 @@ Also correct TI-4's timeout scope, distinguish policy deletion from permissive p
 ## Approval requested
 
 Approve or amend **this ordered scope and its acceptance evidence**, beginning with Priority 1 in a separate implementation/test PR. Hosted mutations, distribution, issue creation, release sign-off and status transitions require their own authorization where applicable. This documentation PR can be reviewed and merged independently of approving implementation. No beta approval follows from either action.
+
+**Update 2026-11-26 (appended; the text above is unchanged):** the S13 assertion gap is addressed in [S13-ASSERTION-REMEDIATION.md](S13-ASSERTION-REMEDIATION.md). SP-4 remains PARTIALLY VERIFIED.

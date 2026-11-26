@@ -1,0 +1,16 @@
+✔ confirmation rejects missing, ambiguous, malformed and error links without exchanging credentials (67.7687ms)
+✔ confirmation coalesces duplicate active callbacks and requires an actual authenticated session (22.611ms)
+✔ expired codes remain recoverable (10.9984ms)
+✔ a callback cannot replace an already signed-in account (9.0224ms)
+✔ resend validates the address, prevents overlap, uses the app callback and unlocks after rejection (7.1997ms)
+✔ native PKCE adapter delegates secure randomness and SHA-256 without replacing browser crypto (16.4129ms)
+✔ the email shape check accepts and rejects exactly the same addresses (7.2296ms)
+✔ the email shape check runs in linear time (11.1383ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 429.8

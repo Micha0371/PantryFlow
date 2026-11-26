@@ -1,0 +1,39 @@
+✔ confirmation rejects missing, ambiguous, malformed and error links without exchanging credentials (65.6249ms)
+✔ confirmation coalesces duplicate active callbacks and requires an actual authenticated session (32.2963ms)
+✔ expired codes remain recoverable (8.0825ms)
+✖ a callback cannot replace an already signed-in account (8.6731ms)
+✔ resend validates the address, prevents overlap, uses the app callback and unlocks after rejection (8.8111ms)
+✔ native PKCE adapter delegates secure randomness and SHA-256 without replacing browser crypto (19.5951ms)
+✔ the email shape check accepts and rejects exactly the same addresses (6.5646ms)
+✔ the email shape check runs in linear time (7.9385ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 7
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 438.0184
+
+✖ failing tests:
+
+test at tests\email-confirmation.test.cjs:58:1
+✖ a callback cannot replace an already signed-in account (8.6731ms)
+  AssertionError [ERR_ASSERTION]: no code may be exchanged while an account is signed in
+  + actual - expected
+  
+  + [
+  +   'attacker-code'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (<mutant-clone>\pantry-flow\tests\email-confirmation.test.cjs:65:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'attacker-code' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

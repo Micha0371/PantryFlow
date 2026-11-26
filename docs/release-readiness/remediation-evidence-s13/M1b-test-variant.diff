@@ -1,0 +1,12 @@
+diff --git a/pantry-flow/tests/email-confirmation.test.cjs b/pantry-flow/tests/email-confirmation.test.cjs
+index df8268c..cb942a7 100644
+--- a/pantry-flow/tests/email-confirmation.test.cjs
++++ b/pantry-flow/tests/email-confirmation.test.cjs
+@@ -62,7 +62,6 @@ test('a callback cannot replace an already signed-in account', async () => {
+   // replaces the session, so the assertions below fail instead of waiting on a promise nobody settles.
+   f.exchange.resolve({ data: { session: { user: { id: 'attacker' } } }, error: null });
+   const [outcome] = await Promise.allSettled([f.service.confirmEmail({ code: 'attacker-code' })]);
+-  assert.deepEqual(f.calls.exchange, [], 'no code may be exchanged while an account is signed in');
+   assert.deepEqual(f.currentSession(), { user: { id: 'existing' } }, 'the signed-in account must keep its session');
+   assert.equal(outcome.status, 'rejected', 'the callback must report that an account is already signed in');
+   assert.match(outcome.reason.message, /Already signed in/);
