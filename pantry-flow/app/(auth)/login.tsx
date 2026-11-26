@@ -13,7 +13,7 @@ import { Link, useRouter } from 'expo-router';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { useAuth } from '@/lib/auth';
-import { signInErrorKey } from '@/lib/sign-in-error';
+import { signInErrorKey } from '@/lib/auth-error';
 import { useTranslation } from '@/lib/i18n';
 import { colors, spacing, typography } from '@/lib/theme';
 import { useFormError } from '@/hooks/useFormError';
