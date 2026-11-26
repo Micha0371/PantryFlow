@@ -57,4 +57,6 @@ An independent AI reviewer (Claude Opus, in its own disposable clone, read-only)
 
 ## CI
 
-Recorded in the pull request.
+- **PR #75, exact head `d6f25be`:** `fast`, `database`, `isolated`, `windows-tooling`, SonarCloud and CodeQL passed. Android was skipped; the owner decided it is not required, because no e2e harness file changed.
+- **Merged** on 2026-11-26 as `3a4f955`, with the owner's approval. The push run on `3a4f955` passed the same jobs, with Android skipped.
+- **Follow-ups** for the reviewer's three surviving mutants, created with the owner's authorization: KAN-124, KAN-125, KAN-126.

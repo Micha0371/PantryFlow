@@ -536,6 +536,13 @@ No periods are invented. "Unverified" means it needs a plan or settings read (au
 
 **Restoration and the deletion ledger [Requirement approved, OD-B5, 2026-11-19; design below for review]:**
 
+**Update 2026-11-26 (appended; the table above is unchanged):** facts found since, recorded in the [retention boundaries](../release-readiness/2026-11-26-deletion-retention-boundaries.md):
+- **R-2:** the hosted project does not write Auth audit entries to the database (dashboard setting, FV-A1). Auth v2.198.0 writes a `user_deleted` entry with the email when the Admin API deletes a user, unless that storage is disabled.
+- **R-2b:** Auth v2.198.0 deletes flow states older than 24 hours only when `DB.CleanupEnabled` is set, and the default is off (`cleanup.go`, `configuration.go`). Whether hosted enables it is unknown.
+- **R-3:** on Free, API and database logs are kept 1 day and Auth audit logs 24 hours (pricing page, FV-A1).
+- **R-4:** the hosted project has **no backups and no PITR** (Free plan, FV-A1).
+- **R-5:** Resend is the custom SMTP sender ([2026-11-09 record](../release-readiness/2026-11-09.md), [sender check](../release-readiness/2026-11-10-email-authentication.md)). Its retention is still unverified.
+
 Requirement: a restored backup never silently brings deleted accounts back into an accessible system.
 
 | Ledger option | Survives a database restore? | New infrastructure | Verdict |

@@ -8,17 +8,18 @@
 **Facts behind this draft:**
 - the app's database schema (migrations 00001–00004);
 - its on-device storage;
-- the [FV-A1 hosted read](../testing/2026-11-21-hosted-auth-read-fv-a1.md): Frankfurt region, Free plan without backups, Auth audit entries not stored in the database, magic links off;
+- the [FV-A1 hosted read](../testing/2026-11-21-hosted-auth-read-fv-a1.md): Frankfurt region, Free plan without backups, Auth audit entries not stored in the database; magic links and email OTP turned off by the owner afterwards (follow-up in the same record);
 - the [interim support runbook](2026-11-21-interim-reset-deletion-runbook.md);
 - the owner's Free-plan decision.
 
 **Placeholders to fill:**
-- `[Email provider]`: the service that delivers the confirmation emails (custom SMTP is configured; the provider is not recorded in the repository).
+- `[Email provider]`: **filled 2026-11-26 with Resend.** The owner configured Resend as the custom SMTP sender ([2026-11-09 record](2026-11-09.md)); the [sender check of 2026-11-10](2026-11-10-email-authentication.md) shows its DKIM selector `resend`. **Owner to confirm** Resend is still the sender; **legal review** of where Resend processes data and how long it keeps delivery records.
 - `[Web address]`: once a page exists (KAN-71/72).
 
 **Correction 2026-11-26:** earlier wording, replaced in the text below:
 - "There are no backups during the beta, so deleted data is gone immediately." / "Während der Beta gibt es keine Sicherungen, gelöschte Daten sind also sofort weg."
 - "then delete your account and all its data" / "löschen dann dein Konto mit allen Daten"
+- "Confirmation emails are sent through [Email provider]" / "Bestätigungs-E-Mails werden über [Email provider] versendet" (placeholder filled)
 
 Reason: not every record is removed at once or at all. See the [retention boundaries](2026-11-26-deletion-retention-boundaries.md).
 
@@ -42,7 +43,7 @@ Please don't put sensitive personal information into item names.
 
 **Where your data is processed**
 - The app's database and sign-in run on **Supabase**, in the **EU region Frankfurt (Germany)**, as our processor. Supabase is a US company; some service and account metadata may be processed outside the EU under its data processing terms.
-- Confirmation emails are sent through **[Email provider]**.
+- Confirmation emails are sent through **Resend**.
 
 **Why we process it.** To provide the app you signed up for: your account, your household data and its synchronization. This is the performance of our agreement with you (Art. 6(1)(b) GDPR). The service provider keeps technical logs, such as sign-in events and IP addresses, to run and secure the service; this is our legitimate interest (Art. 6(1)(f) GDPR). On the current plan these logs are kept for about one day.
 
@@ -79,7 +80,7 @@ Bitte trage keine sensiblen persönlichen Informationen in Artikelnamen ein.
 
 **Wo deine Daten verarbeitet werden**
 - Datenbank und Anmeldung der App laufen bei **Supabase**, in der **EU-Region Frankfurt (Deutschland)**, als unser Auftragsverarbeiter. Supabase ist ein US-Unternehmen; einige Dienst- und Kontometadaten können nach dessen Auftragsverarbeitungsbedingungen außerhalb der EU verarbeitet werden.
-- Bestätigungs-E-Mails werden über **[Email provider]** versendet.
+- Bestätigungs-E-Mails werden über **Resend** versendet.
 
 **Warum wir sie verarbeiten.** Um dir die App bereitzustellen, für die du dich registriert hast: dein Konto, deine Haushaltsdaten und deren Synchronisierung. Das ist die Erfüllung unserer Vereinbarung mit dir (Art. 6 Abs. 1 lit. b DSGVO). Der Dienstleister führt technische Protokolle, etwa Anmeldeereignisse und IP-Adressen, um den Dienst zu betreiben und abzusichern; das ist unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO). Im aktuellen Tarif werden diese Protokolle etwa einen Tag aufbewahrt.
 
