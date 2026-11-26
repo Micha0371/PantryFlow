@@ -13,7 +13,7 @@
 - the owner's Free-plan decision.
 
 **Placeholders to fill:**
-- `[Email provider]`: **filled 2026-11-26 with Resend.** The owner configured Resend as the custom SMTP sender ([2026-11-09 record](2026-11-09.md)); the [sender check of 2026-11-10](2026-11-10-email-authentication.md) shows its DKIM selector `resend`. **Owner to confirm** Resend is still the sender; **legal review** of where Resend processes data and how long it keeps delivery records.
+- `[Email provider]`: **filled 2026-11-26 with Resend.** The owner configured Resend as the custom SMTP sender ([2026-11-09 record](2026-11-09.md)); the [sender check of 2026-11-10](2026-11-10-email-authentication.md) shows its DKIM selector `resend`. **The owner confirmed on 2026-11-26** that Resend is still the sender. Still open: **legal review** of where Resend processes data and how long it keeps delivery records.
 - `[Web address]`: once a page exists (KAN-71/72).
 
 **Correction 2026-11-26:** earlier wording, replaced in the text below:
