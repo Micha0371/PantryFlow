@@ -3,7 +3,7 @@
 **Status:** draft, 2026-11-21; deletion and retention wording corrected 2026-11-26. Not published. Before publication it needs:
 - **owner review** and a **legal check**: KAN-72 requires privacy content to match the app's actual collection and retention and to have review ownership. Nothing here is legal advice;
 - the **placeholders** marked `[…]` filled in;
-- review of the deletion and retention wording corrected on 2026-11-26 ("How long we keep it" and "Deleting your account"), against the [retention boundaries](2026-11-26-deletion-retention-boundaries.md). **Owner and legal review:** whether to name the remaining records and their periods (sign-in records, also in the app's own database; provider logs; email-provider records), the email provider's retention, and how long the support correspondence is kept (OD-B4, open).
+- review of the deletion and retention wording corrected on 2026-11-26 ("How long we keep it" and "Deleting your account"), against the [retention boundaries](2026-11-26-deletion-retention-boundaries.md). **Owner and legal review:** whether to name the remaining records and their periods (sign-in records, also in the app's own database; provider logs; email-provider records), the email provider's retention, how long the support correspondence is kept (OD-B4: the owner recommends 90 days after case closure, subject to legal review), the Supabase log retention terms, and Resend's terms (owner decisions, 2026-11-26).
 
 **Facts behind this draft:**
 - the app's database schema (migrations 00001–00004);

@@ -1,0 +1,239 @@
+{
+ "rows": [
+  {
+   "entity": "attributed_elsewhere",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "auth.audit_log_entries",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "auth.flow_state",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "auth.identities",
+   "scope": "other",
+   "value": "0"
+  },
+  {
+   "entity": "auth.identities",
+   "scope": "rest",
+   "value": "3"
+  },
+  {
+   "entity": "auth.identities",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "auth.mfa_factors",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "auth.one_time_tokens",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "auth.refresh_tokens",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "auth.sessions",
+   "scope": "other",
+   "value": "0"
+  },
+  {
+   "entity": "auth.sessions",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "auth.users",
+   "scope": "other",
+   "value": "0"
+  },
+  {
+   "entity": "auth.users",
+   "scope": "rest",
+   "value": "3"
+  },
+  {
+   "entity": "auth.users",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "fixture.completed_shopping",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "fixture.fixture_rows_anywhere",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "fixture.linked_shopping",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "fixture.manual_shopping",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "fixture.pantry_item",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "precondition.distinct_accounts",
+   "scope": "target",
+   "value": "1"
+  },
+  {
+   "entity": "precondition.target_household_members",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "precondition.target_memberships",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "public.pantry_household_members",
+   "scope": "other",
+   "value": "0"
+  },
+  {
+   "entity": "public.pantry_household_members",
+   "scope": "other.digest",
+   "value": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  {
+   "entity": "public.pantry_household_members",
+   "scope": "rest",
+   "value": "3"
+  },
+  {
+   "entity": "public.pantry_household_members",
+   "scope": "rest.digest",
+   "value": "097abcd985de6d5ba9027be7c45d2437"
+  },
+  {
+   "entity": "public.pantry_household_members",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "public.pantry_households",
+   "scope": "other",
+   "value": "0"
+  },
+  {
+   "entity": "public.pantry_households",
+   "scope": "other.digest",
+   "value": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  {
+   "entity": "public.pantry_households",
+   "scope": "rest",
+   "value": "3"
+  },
+  {
+   "entity": "public.pantry_households",
+   "scope": "rest.digest",
+   "value": "4f5035e986a3279e96b814bc30856f02"
+  },
+  {
+   "entity": "public.pantry_households",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "public.pantry_items",
+   "scope": "other",
+   "value": "0"
+  },
+  {
+   "entity": "public.pantry_items",
+   "scope": "other.digest",
+   "value": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  {
+   "entity": "public.pantry_items",
+   "scope": "rest",
+   "value": "1"
+  },
+  {
+   "entity": "public.pantry_items",
+   "scope": "rest.digest",
+   "value": "2a14e8458a98a765c1f94acb058835c4"
+  },
+  {
+   "entity": "public.pantry_items",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "public.pantry_shopping_items",
+   "scope": "other",
+   "value": "0"
+  },
+  {
+   "entity": "public.pantry_shopping_items",
+   "scope": "other.digest",
+   "value": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  {
+   "entity": "public.pantry_shopping_items",
+   "scope": "rest",
+   "value": "0"
+  },
+  {
+   "entity": "public.pantry_shopping_items",
+   "scope": "rest.digest",
+   "value": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  {
+   "entity": "public.pantry_shopping_items",
+   "scope": "target",
+   "value": "0"
+  },
+  {
+   "entity": "public.profiles",
+   "scope": "other",
+   "value": "0"
+  },
+  {
+   "entity": "public.profiles",
+   "scope": "other.digest",
+   "value": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  {
+   "entity": "public.profiles",
+   "scope": "rest",
+   "value": "3"
+  },
+  {
+   "entity": "public.profiles",
+   "scope": "rest.digest",
+   "value": "6fd3949e85063f1fae23929d5dfe68e0"
+  },
+  {
+   "entity": "public.profiles",
+   "scope": "target",
+   "value": "0"
+  }
+ ]
+}

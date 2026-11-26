@@ -244,6 +244,9 @@ Status after the 2026-11-19 experiments: **done** A2 (Auth behavior), A4, A5 (lo
 **Update 2026-11-26 (appended; the table above is unchanged):**
 - **OD-B7** stays open. Auth v2.198.0 cleans up flow states older than 24 hours only if `DB.CleanupEnabled` is set (default off), and the hosted setting is unknown. See the [retention boundaries](../release-readiness/2026-11-26-deletion-retention-boundaries.md).
 - **OD-B4** stays open. The corrected beta privacy draft says the support correspondence is kept, without a period.
+- **Owner decisions, 2026-11-26:**
+  - **OD-B7:** no additional privileged deletion. Unknown retention is not accepted as final; it needs the hosted cleanup behaviour confirmed, or an authorized observation with an app-created account (KAN-77).
+  - **OD-B4:** 90 days after case closure for the support thread and the minimal log, then deletion; subject to legal review and any legal hold.
 
 ## 5. Implementation sequence
 

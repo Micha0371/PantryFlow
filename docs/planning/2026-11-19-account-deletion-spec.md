@@ -541,6 +541,8 @@ No periods are invented. "Unverified" means it needs a plan or settings read (au
 - **R-2b:** Auth v2.198.0 deletes flow states older than 24 hours only when `DB.CleanupEnabled` is set, and the default is off (`cleanup.go`, `configuration.go`). Whether hosted enables it is unknown.
 - **R-3:** on Free, API and database logs are kept 1 day and Auth audit logs 24 hours (pricing page, FV-A1).
 - **R-4:** the hosted project has **no backups and no PITR** (Free plan, FV-A1).
+- **R-8 (owner, 2026-11-26):** 90 days after case closure for the support thread and the minimal log, then deletion; subject to legal review and any legal hold.
+- **R-2b (owner, 2026-11-26):** unknown retention is not accepted as final; no additional privileged deletion; confirm hosted cleanup or observe with an app-created account.
 - **R-5:** Resend is the custom SMTP sender ([2026-11-09 record](../release-readiness/2026-11-09.md), [sender check](../release-readiness/2026-11-10-email-authentication.md)). Its retention is still unverified.
 
 Requirement: a restored backup never silently brings deleted accounts back into an accessible system.
