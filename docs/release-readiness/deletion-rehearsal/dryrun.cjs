@@ -16,9 +16,9 @@ const migration = name => fs.readFileSync(path.join(root, 'pantry-flow/supabase/
 const READBACK = fs.readFileSync(path.join(__dirname, 'readback.sql'), 'utf8');
 const ID = {
   TARGET_USER: '00000000-0000-4000-8000-0000000000a1', OTHER_USER: '00000000-0000-4000-8000-0000000000b1',
-  THIRD_USER: '00000000-0000-4000-8000-0000000000c1', PANTRY_ITEM: '00000000-0000-4000-8000-0000000001a1',
-  LINKED_SHOPPING: '00000000-0000-4000-8000-0000000002a1', MANUAL_SHOPPING: '00000000-0000-4000-8000-0000000002a2',
-  COMPLETED_SHOPPING: '00000000-0000-4000-8000-0000000002a3',
+  THIRD_USER: '00000000-0000-4000-8000-0000000000c1', FOURTH_USER: '00000000-0000-4000-8000-0000000000d1',
+  PANTRY_ITEM: '00000000-0000-4000-8000-0000000001a1', LINKED_SHOPPING: '00000000-0000-4000-8000-0000000002a1',
+  MANUAL_SHOPPING: '00000000-0000-4000-8000-0000000002a2', COMPLETED_SHOPPING: '00000000-0000-4000-8000-0000000002a3',
 };
 
 // Stub of the Auth tables the read-back reads. Foreign keys as recorded in FV-B3; flow_state has none.
@@ -32,26 +32,36 @@ const AUTH_STUB = `
   CREATE TABLE auth.mfa_factors (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE);
   CREATE TABLE auth.one_time_tokens (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE);
   CREATE TABLE auth.flow_state (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid);
+  CREATE TABLE auth.audit_log_entries (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), payload json);
   CREATE FUNCTION public.uuid_generate_v4() RETURNS uuid LANGUAGE sql AS $$ SELECT gen_random_uuid() $$;`;
 
-async function build() {
+async function addAccount(db, user) {
+  await db.query('INSERT INTO auth.users (id) VALUES ($1)', [user]);
+  await db.query('INSERT INTO auth.identities (user_id) VALUES ($1)', [user]);
+  const session = (await db.query('INSERT INTO auth.sessions (user_id) VALUES ($1) RETURNING id', [user])).rows[0].id;
+  await db.query('INSERT INTO auth.refresh_tokens (user_id, session_id) VALUES ($1, $2)', [user, session]);
+  await db.query('INSERT INTO auth.one_time_tokens (user_id) VALUES ($1)', [user]);
+  await db.query('INSERT INTO auth.flow_state (user_id) VALUES ($1)', [user]);
+  return (await db.query('SELECT id FROM public.pantry_households WHERE owner_id = $1', [user])).rows[0].id;
+}
+
+async function build({ targetWithoutAuthRows = false } = {}) {
   const db = new PGlite();
   await db.exec(AUTH_STUB);
   await db.exec(migration('00001_first_slice.sql').replace('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";', ''));
   for (const name of ['00002_review_hardening.sql', '00003_strict_duplicate_prevention.sql', '00004_shopping_items.sql']) {
     await db.exec(migration(name));
   }
-  // Two accounts, created as sign-up would: the triggers add profile, household and membership.
-  await db.query('INSERT INTO auth.users (id) VALUES ($1), ($2)', [ID.TARGET_USER, ID.OTHER_USER]);
-  const home = async user => (await db.query('SELECT id FROM public.pantry_households WHERE owner_id = $1', [user])).rows[0].id;
-  const ids = { ...ID, TARGET_HOUSEHOLD: await home(ID.TARGET_USER), OTHER_HOUSEHOLD: await home(ID.OTHER_USER) };
-  for (const user of [ID.TARGET_USER, ID.OTHER_USER]) {
-    await db.query('INSERT INTO auth.identities (user_id) VALUES ($1)', [user]);
-    const session = (await db.query('INSERT INTO auth.sessions (user_id) VALUES ($1) RETURNING id', [user])).rows[0].id;
-    await db.query('INSERT INTO auth.refresh_tokens (user_id, session_id) VALUES ($1, $2)', [user, session]);
-    await db.query('INSERT INTO auth.one_time_tokens (user_id) VALUES ($1)', [user]);
-    await db.query('INSERT INTO auth.flow_state (user_id) VALUES ($1)', [user]);
+  // Accounts as sign-up creates them; the triggers add profile, household and membership.
+  let targetHousehold;
+  if (targetWithoutAuthRows) {
+    await db.query('INSERT INTO auth.users (id) VALUES ($1)', [ID.TARGET_USER]);
+    targetHousehold = (await db.query('SELECT id FROM public.pantry_households WHERE owner_id = $1', [ID.TARGET_USER])).rows[0].id;
+  } else {
+    targetHousehold = await addAccount(db, ID.TARGET_USER);
   }
+  const ids = { ...ID, TARGET_HOUSEHOLD: targetHousehold, OTHER_HOUSEHOLD: await addAccount(db, ID.OTHER_USER) };
+  ids.THIRD_HOUSEHOLD = await addAccount(db, ID.THIRD_USER);
   // Target fixtures: a pantry item, a linked, a manual and a completed shopping item.
   await db.query(`INSERT INTO public.pantry_items (id, household_id, name, status, created_by) VALUES ($1, $2, 'Fixture milk', 'low', $3)`,
     [ID.PANTRY_ITEM, ids.TARGET_HOUSEHOLD, ID.TARGET_USER]);
@@ -61,9 +71,11 @@ async function build() {
     [ID.MANUAL_SHOPPING, ids.TARGET_HOUSEHOLD, ID.TARGET_USER]);
   await db.query(`INSERT INTO public.pantry_shopping_items (id, household_id, name, is_checked, created_by) VALUES ($1, $2, 'Fixture rice', true, $3)`,
     [ID.COMPLETED_SHOPPING, ids.TARGET_HOUSEHOLD, ID.TARGET_USER]);
-  // Unrelated account: one pantry item and one shopping item.
-  await db.query(`INSERT INTO public.pantry_items (household_id, name, created_by) VALUES ($1, 'Other oats', $2)`, [ids.OTHER_HOUSEHOLD, ID.OTHER_USER]);
-  await db.query(`INSERT INTO public.pantry_shopping_items (household_id, name, created_by) VALUES ($1, 'Other tea', $2)`, [ids.OTHER_HOUSEHOLD, ID.OTHER_USER]);
+  // Control account and a third, unrelated account ("rest"), each with one pantry and one shopping item.
+  for (const [user, household] of [[ID.OTHER_USER, ids.OTHER_HOUSEHOLD], [ID.THIRD_USER, ids.THIRD_HOUSEHOLD]]) {
+    await db.query(`INSERT INTO public.pantry_items (household_id, name, created_by) VALUES ($1, 'Other oats', $2)`, [household, user]);
+    await db.query(`INSERT INTO public.pantry_shopping_items (household_id, name, created_by) VALUES ($1, 'Other tea', $2)`, [household, user]);
+  }
   return { db, ids };
 }
 
@@ -74,34 +86,49 @@ async function readback(db, ids) {
   return results.find(result => result.rows.length && 'entity' in result.rows[0]).rows;
 }
 
+const deleteTarget = (db, ids) => db.query('DELETE FROM auth.users WHERE id = $1', [ids.TARGET_USER]);
+
 const SCENARIOS = [
-  ['correct deletion: delete the Auth user', 'PASS', async (db, ids) => {
-    await db.query('DELETE FROM auth.users WHERE id = $1', [ids.TARGET_USER]);
-  }],
+  ['correct deletion: delete the Auth user', 'PASS', deleteTarget],
   ['nothing deleted', 'FAIL', async () => {}],
   ['partial deletion: application rows removed by hand, Auth user and shopping rows kept', 'FAIL', async (db, ids) => {
     await db.query('DELETE FROM public.pantry_items WHERE household_id = $1', [ids.TARGET_HOUSEHOLD]);
     await db.query('DELETE FROM public.profiles WHERE id = $1', [ids.TARGET_USER]);
   }],
-  ['correct deletion plus a change to the unrelated household', 'FAIL', async (db, ids) => {
-    await db.query('DELETE FROM auth.users WHERE id = $1', [ids.TARGET_USER]);
+  ['partial deletion: only the shopping rows removed', 'FAIL', async (db, ids) => {
+    await db.query('DELETE FROM public.pantry_shopping_items WHERE household_id = $1', [ids.TARGET_HOUSEHOLD]);
+  }],
+  ['correct deletion plus a change to the control household', 'FAIL', async (db, ids) => {
+    await deleteTarget(db, ids);
     await db.query(`UPDATE public.pantry_items SET status = 'out' WHERE household_id = $1`, [ids.OTHER_HOUSEHOLD]);
   }],
-  ['correct deletion plus a change outside both fixture accounts', 'FAIL', async (db, ids) => {
-    await db.query('DELETE FROM auth.users WHERE id = $1', [ids.TARGET_USER]);
-    await db.query('INSERT INTO auth.users (id) VALUES ($1)', [ids.THIRD_USER]);
+  ["correct deletion plus the control account's identity removed", 'FAIL', async (db, ids) => {
+    await deleteTarget(db, ids);
+    await db.query('DELETE FROM auth.identities WHERE user_id = $1', [ids.OTHER_USER]);
+  }],
+  ["correct deletion plus the control account's sessions removed", 'FAIL', async (db, ids) => {
+    await deleteTarget(db, ids);
+    await db.query('DELETE FROM auth.sessions WHERE user_id = $1', [ids.OTHER_USER]);
+  }],
+  ['correct deletion plus an item of a third household changed', 'FAIL', async (db, ids) => {
+    await deleteTarget(db, ids);
+    await db.query(`UPDATE public.pantry_items SET status = 'low' WHERE household_id = $1`, [ids.THIRD_HOUSEHOLD]);
+  }],
+  ["correct deletion plus a third user's profile removed", 'FAIL', async (db, ids) => {
+    await deleteTarget(db, ids);
+    await db.query('DELETE FROM public.profiles WHERE id = $1', [ids.THIRD_USER]);
+  }],
+  ['correct deletion plus a new account elsewhere', 'FAIL', async (db, ids) => {
+    await deleteTarget(db, ids);
+    await db.query('INSERT INTO auth.users (id) VALUES ($1)', [ids.FOURTH_USER]);
   }],
 ];
 
-async function preconditionScenario() {
-  // A second member in the target household: deleting the owner would cascade that member's household.
-  const { db, ids } = await build();
+async function before(options, prepare, override = {}) {
+  const { db, ids } = await build(options);
   try {
-    await db.query('INSERT INTO auth.users (id) VALUES ($1)', [ids.THIRD_USER]);
-    await db.query('DELETE FROM public.pantry_household_members WHERE user_id = $1', [ids.THIRD_USER]);
-    await db.query(`INSERT INTO public.pantry_household_members (household_id, user_id, role) VALUES ($1, $2, 'member')`,
-      [ids.TARGET_HOUSEHOLD, ids.THIRD_USER]);
-    return evaluate(await readback(db, ids), null).verdict;
+    await prepare(db, ids);
+    return evaluate(await readback(db, { ...ids, ...override }), null).verdict;
   } finally { await db.close(); }
 }
 
@@ -125,18 +152,22 @@ async function main() {
   for (const [name, expected, act] of SCENARIOS) {
     const { db, ids } = await build();
     try {
-      const before = await readback(db, ids);
+      const beforeRows = await readback(db, ids);
       await act(db, ids);
-      const result = evaluate(before, await readback(db, ids));
+      const result = evaluate(beforeRows, await readback(db, ids));
       check(name, expected, result.verdict);
       if (expected === 'PASS') for (const line of result.lines) console.log(`       ${line}`);
     } finally { await db.close(); }
   }
-  check('precondition: second member in the target household', 'STOP', await preconditionScenario());
-  {
-    const { db, ids } = await build();
-    try { check('precondition: intact fixtures are ready', 'READY', evaluate(await readback(db, ids), null).verdict); } finally { await db.close(); }
-  }
+  const none = async () => {};
+  check('precondition: intact fixtures are ready', 'READY', await before({}, none));
+  check('precondition: second member in the target household', 'STOP', await before({}, async (db, ids) => {
+    await db.query('DELETE FROM public.pantry_household_members WHERE user_id = $1', [ids.THIRD_USER]);
+    await db.query(`INSERT INTO public.pantry_household_members (household_id, user_id, role) VALUES ($1, $2, 'member')`,
+      [ids.TARGET_HOUSEHOLD, ids.THIRD_USER]);
+  }));
+  check('precondition: control account given as the target', 'STOP', await before({}, none, { OTHER_USER: ID.TARGET_USER }));
+  check('precondition: target without Auth identity rows', 'STOP', await before({ targetWithoutAuthRows: true }, none));
   check('a placeholder left in the query', 'STOP', await placeholderScenario());
   console.log(failures ? `DRY RUN FAILED: ${failures} scenario(s)` : 'DRY RUN OK: all scenarios gave the expected verdict');
   process.exitCode = failures ? 1 : 0;

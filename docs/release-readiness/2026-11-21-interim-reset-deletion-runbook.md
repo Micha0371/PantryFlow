@@ -18,10 +18,11 @@ A request from any other address gets the same confirmation mail to the register
 ## B4 — account deletion (interim)
 
 1. Verify the requester (above).
-1a. Check that the requester's household has no other member (a read-only count of `pantry_household_members` for the household). Deleting an owner deletes the whole household, including another member's data. If there is another member, stop and ask the owner. *(Added 2026-11-26.)*
+   - **Added 2026-11-26:** check that the requester's household has no other member (a read-only count of `pantry_household_members` for the household). Deleting an owner deletes the whole household, including another member's data. If there is another member, stop and ask the owner.
 2. In the Supabase dashboard of the hosted project: Authentication → Users → find the user by the registered email → **Delete user**.
 3. The database's foreign-key cascades remove the user's profile, household membership, owned household and its pantry and shopping items. Today's beta has no shared households, so no other user's data is affected.
-4. Confirm the deletion to the registered address. State that the account, profile, household, pantry items and shopping list were deleted. Say that they cannot be restored, because the beta has no backups. Also say that some technical records stay with the service providers for a time, such as sign-in logs and records of the emails sent. *(Corrected 2026-11-26: the earlier text promised backup retention, but the plan has no backups.)* **[Owner and legal review: the exact wording, and whether to name each record.]**
+   - **Added 2026-11-26:** before confirming, check with a read-only count by the user's UUID that the user, profile, household and membership are gone; if any remains, do not confirm and tell the owner.
+4. Confirm the deletion to the registered address. State that the account, profile, household, pantry items and shopping list were deleted. Say that they cannot be restored, because the beta has no backups. Also say that some technical records stay for a time, such as sign-in records and records of the emails sent, and that the support correspondence is kept. *(Corrected 2026-11-26: the earlier text promised backup retention, but the plan has no backups.)* **[Owner and legal review: the exact wording, and whether to name each record.]**
 5. Record the date and the user UUID only (no email, no names) in the owner's support log.
 
 **Rehearsal (required before the beta; authorized by the owner on 2026-11-21):** create a disposable test account on the hosted project with an address the owner can receive, run steps 1–5 against it, and check that its rows are gone (a read-only query by the test account's UUID), then re-register with the same address (option A). Record the date and UUID only.
@@ -36,13 +37,13 @@ Earlier wording, kept here so the history stays visible:
 - **Step 4 said:** "state that backups keep data until they expire under the plan's backup retention (exact period from the pending hosted read, FV-A1)". The hosted read then found **no backups** on the Free plan, so that statement was wrong.
 
 What does and does not remain after a deletion is listed in the [retention boundaries](2026-11-26-deletion-retention-boundaries.md):
-- **Removed:** the application rows and the Auth account records.
+- **Removed:** the application rows and the Auth account records, as shown locally (FV-B3) and for an account without items on hosted (2026-11-21). For a household with data on hosted this is pending the [protocol](2026-11-26-populated-deletion-rehearsal-protocol.md).
 - **Not removed by the deletion:** `auth.flow_state` rows, provider logs, email-provider records and the support thread. Some of their periods are unknown.
 
 **Without managed backups:**
 - deleted data cannot be restored, also not after a deletion by mistake;
 - a fault in the service can lose data with no recovery;
-- a support action therefore cannot be undone, which is why step 1a and the requester check come first.
+- a support action therefore cannot be undone, which is why the member check and the requester check come first.
 
 ## B3 — password reset (interim): option A decided (owner, 2026-11-21)
 

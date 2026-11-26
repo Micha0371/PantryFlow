@@ -2,7 +2,7 @@
 
 **Status:** protocol only, 2026-11-26. **Not executed.** Running it needs the owner's separate authorization ([request](2026-11-26-hosted-deletion-rehearsal-request.md)). It closes the gap in the 2026-11-21 rehearsal, whose account held no pantry or shopping items.
 
-**What it shows:** the [interim support path](2026-11-21-interim-reset-deletion-runbook.md) removes a household with data on the hosted project, removes nothing else, and is closed with the requester. What remains afterwards is in the [retention boundaries](2026-11-26-deletion-retention-boundaries.md).
+**What it shows:** whether the [interim support path](2026-11-21-interim-reset-deletion-runbook.md) removes a household with data on the hosted project, and whether the request is closed with the requester. It also shows that the records it reads outside the target stay unchanged: the control account's Auth user, identities, sessions and application rows, and the other accounts' users, identities, profiles, households, memberships, pantry and shopping rows (counts, and hashes of the application rows). Records it does not read are listed in section 4. What remains afterwards is in the [retention boundaries](2026-11-26-deletion-retention-boundaries.md).
 
 **Tools:** [`readback.sql`](deletion-rehearsal/readback.sql) (read-only, returns counts and hashes) and [`evaluate.cjs`](deletion-rehearsal/evaluate.cjs) (compares before and after: PASS, FAIL or STOP). Their mechanics were checked in memory with [`dryrun.cjs`](deletion-rehearsal/dryrun.cjs); that is not evidence about hosted.
 
@@ -10,7 +10,7 @@
 
 1. **Authorization:** the owner has approved the [request](2026-11-26-hosted-deletion-rehearsal-request.md), naming the date, the operator and the two test addresses.
 2. **Target:** hosted project `oiqteedkfwmcertgxqga` only, as in [hosted verification](../testing/hosted-verification.md). No other project is linked in the workdir.
-3. **No testers:** the beta has not started, so nobody else is changing data during the rehearsal.
+3. **No other activity:** the beta has not started, nobody else signs up or changes data during the rehearsal, and **O's app is closed or signed out between the two read-backs** (the app writes the profile language at start, which would change O's hash).
 4. **Two disposable accounts,** on addresses the owner controls and that belong to no real person:
    - **T (target),** to be deleted;
    - **O (other),** an unrelated account in its own household that must stay unchanged.
@@ -29,7 +29,8 @@
 
 - **Item names:** neutral test words only (for example "Test milk"), never real content.
 - **IDs:** the operator records the UUIDs of T, H_T, O, H_O, P, L, M and C, read from the database by the read-back, not typed from memory.
-- **Without the hosted-configured beta build (B10):** fixtures could be created by the owner with a reviewed SQL insert instead. Then no flow-state row or app session exists, and that part goes unobserved; the evidence must say so.
+- **Expected before the deletion (app sign-up path):** T has at least one identity, one session and one flow-state row. `evaluate.cjs` requires an identity; it prints the before value of every Auth count, so a zero shows in the evidence.
+- **Without the hosted-configured beta build (B10):** fixtures could be created by the owner with a reviewed SQL insert instead (a separate option in the request). Then no session or flow-state row exists, and that part goes unobserved; the evidence must say so.
 
 ## 3. Procedure
 
@@ -40,7 +41,7 @@
 | 3 | `node evaluate.cjs --before-only before.json` | Must print **READY**. Any **STOP** line ends the rehearsal before anything is deleted, for example a second member in H_T, a missing fixture, or an item of T outside H_T |
 | 4 | From T's address, email the support contact asking for deletion. The owner runs the requester check of the runbook: reply to the **registered** address, act only on the confirming reply | Record date and time of request, confirmation request and confirming reply (no addresses) |
 | 5 | Owner deletes T in the dashboard: Authentication → Users → **Delete user** (runbook step 2) | Record the UTC time and whether the dashboard reported an error |
-| 6 | Run the read-back again, saving `after.json`, then `node evaluate.cjs before.json after.json` | **PASS** needs every target count at 0, every O and "rest" value unchanged (counts and row hashes), and no row elsewhere attributed to T |
+| 6 | Run the read-back again, saving `after.json`, then `node evaluate.cjs before.json after.json` | **PASS** needs every counted target record at 0 and every O and "rest" value unchanged (counts and row hashes). A FAIL on an O or "rest" value is first checked against activity that could explain it (for example an unplanned sign-up) before it is reported as an incident |
 | 7 | Owner sends the closing confirmation to T's address, with the corrected wording of runbook step 4 | Record the time sent |
 | 8 | Owner records date and T's UUID in the support log (runbook step 5); the case is closed | — |
 | 9 | Optional, after authorization: one day later, re-run the read-back to see whether T's `auth.flow_state` rows were cleaned up | Recorded, not judged |
@@ -55,8 +56,10 @@
 ## 4. Expected results and failure handling
 
 - **Expected:**
-  - **Removed:** every class-1 and class-2 record of T ([retention boundaries](2026-11-26-deletion-retention-boundaries.md)). A soft delete in the dashboard would leave `auth.users` at 1 and fail the run.
-  - **Recorded only:** T's `auth.flow_state` rows. They are expected to remain.
+  - **Removed:** T's application rows and the Auth records the read-back counts: user, identities, sessions, refresh tokens, MFA factors and one-time tokens. A soft delete in the dashboard would leave `auth.users` at 1 and fail the run.
+  - **Not read:** other Auth tables that FV-B3 found cascading locally (for example MFA claims and WebAuthn records). PantryFlow creates none of them; their removal is not shown.
+  - **Not judged by the read-back:** whether a row elsewhere was attributed to T. Only the precondition (no such row before) means something, because the deletion clears the attribution.
+  - **Recorded only:** T's `auth.flow_state` rows (expected to remain) and audit entries naming T in `auth.audit_log_entries` (FV-A1 says hosted does not store them there; a count above 0 means it does, and the retention boundaries must be corrected).
   - **Unchanged:** O, and the rest of the project.
 - **FAIL:** do not retry the deletion and do not repair rows by hand.
   - Save both JSON files and note which rules failed.
@@ -73,6 +76,6 @@
 
 ## 6. Cleanup
 
-- **After a PASS:** delete O through the same support path, with its own read-back.
+- **After a PASS:** delete O through the same support path. `evaluate.cjs` cannot judge this, because O has no full fixture set and no control account remains: run `readback.sql` once more with the same placeholders, and check by hand that every "other" count is 0 and every "rest" value is unchanged.
 - **Remaining flow-state rows:** as decided under OD-B7.
 - **Local files:** delete the working copy of the SQL and the local password records of both test accounts.

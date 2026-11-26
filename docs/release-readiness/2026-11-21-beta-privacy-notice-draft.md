@@ -3,7 +3,7 @@
 **Status:** draft, 2026-11-21; deletion and retention wording corrected 2026-11-26. Not published. Before publication it needs:
 - **owner review** and a **legal check**: KAN-72 requires privacy content to match the app's actual collection and retention and to have review ownership. Nothing here is legal advice;
 - the **placeholders** marked `[…]` filled in;
-- review of the deletion and retention wording corrected on 2026-11-26 ("How long we keep it" and "Deleting your account"), against the [retention boundaries](2026-11-26-deletion-retention-boundaries.md). **Owner and legal review:** whether to name the remaining provider records and their periods, and the email provider's retention.
+- review of the deletion and retention wording corrected on 2026-11-26 ("How long we keep it" and "Deleting your account"), against the [retention boundaries](2026-11-26-deletion-retention-boundaries.md). **Owner and legal review:** whether to name the remaining records and their periods (sign-in records, also in the app's own database; provider logs; email-provider records), the email provider's retention, and how long the support correspondence is kept (OD-B4, open).
 
 **Facts behind this draft:**
 - the app's database schema (migrations 00001–00004);
@@ -15,6 +15,12 @@
 **Placeholders to fill:**
 - `[Email provider]`: the service that delivers the confirmation emails (custom SMTP is configured; the provider is not recorded in the repository).
 - `[Web address]`: once a page exists (KAN-71/72).
+
+**Correction 2026-11-26:** earlier wording, replaced in the text below:
+- "There are no backups during the beta, so deleted data is gone immediately." / "Während der Beta gibt es keine Sicherungen, gelöschte Daten sind also sofort weg."
+- "then delete your account and all its data" / "löschen dann dein Konto mit allen Daten"
+
+Reason: not every record is removed at once or at all. See the [retention boundaries](2026-11-26-deletion-retention-boundaries.md).
 
 ---
 
@@ -46,7 +52,7 @@ Please don't put sensitive personal information into item names.
 - The beta runs on a free hosting plan and **may pause** after about a week without activity.
 
 **Deleting your account, or if you can't sign in**
-- Email **contact@mwsoftworks.com** from your registered address. We confirm by writing to that address, then delete your account with your profile, household, pantry items and shopping list, and confirm when done. Some technical records stay with our service providers for a time after that, such as sign-in logs and records of the emails we sent.
+- Email **contact@mwsoftworks.com** from your registered address. We confirm by writing to that address, then delete your account with your profile, household, pantry items and shopping list, and confirm when done. Some technical records stay for a time after that, such as sign-in records and records of the emails we sent. We keep our correspondence about your request.
 - During the beta, a forgotten password is handled the same way: we delete the account, and you can register again with the same address. Your beta data is lost in that case.
 
 **Your rights.** You can ask for access to your data, its correction or deletion, restriction of processing, a copy in a portable format, and you can object to processing based on legitimate interest. Write to contact@mwsoftworks.com. You can also complain to a data protection supervisory authority.
@@ -83,7 +89,7 @@ Bitte trage keine sensiblen persönlichen Informationen in Artikelnamen ein.
 - Die Beta läuft auf einem kostenlosen Hosting-Tarif und **kann pausieren**, wenn sie etwa eine Woche nicht genutzt wird.
 
 **Konto löschen, oder wenn du dich nicht anmelden kannst**
-- Schreib an **contact@mwsoftworks.com** von deiner registrierten Adresse. Wir bestätigen per E-Mail an diese Adresse, löschen dann dein Konto mit deinem Profil, deinem Haushalt, deinen Vorräten und deiner Einkaufsliste und bestätigen, wenn es erledigt ist. Einige technische Aufzeichnungen bleiben danach noch eine Zeit lang bei unseren Dienstleistern, etwa Anmeldeprotokolle und Aufzeichnungen über die versendeten E-Mails.
+- Schreib an **contact@mwsoftworks.com** von deiner registrierten Adresse. Wir bestätigen per E-Mail an diese Adresse, löschen dann dein Konto mit deinem Profil, deinem Haushalt, deinen Vorräten und deiner Einkaufsliste und bestätigen, wenn es erledigt ist. Einige technische Aufzeichnungen bleiben danach noch eine Zeit lang bestehen, etwa Anmeldedaten und Aufzeichnungen über die versendeten E-Mails. Unseren Schriftverkehr zu deiner Anfrage bewahren wir auf.
 - Während der Beta wird ein vergessenes Passwort genauso behandelt: Wir löschen das Konto, und du kannst dich mit derselben Adresse neu registrieren. Deine Beta-Daten gehen dabei verloren.
 
 **Deine Rechte.** Du kannst Auskunft über deine Daten verlangen, ihre Berichtigung oder Löschung, die Einschränkung der Verarbeitung und eine Kopie in einem übertragbaren Format; der Verarbeitung aufgrund berechtigten Interesses kannst du widersprechen. Schreib an contact@mwsoftworks.com. Du kannst dich außerdem bei einer Datenschutz-Aufsichtsbehörde beschweren.

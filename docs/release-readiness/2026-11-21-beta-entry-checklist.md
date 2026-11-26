@@ -16,7 +16,7 @@
 
 ## Checklist
 
-Status as of 2026-11-21; B5, B6, B7, B10 and the Jira statuses of the open lines were updated on 2026-11-24. "Waivable" says whether an owner waiver may close the line.
+Status as of 2026-11-21; B5, B6, B7, B10 and the Jira statuses of the open lines were updated on 2026-11-24, and B4 on 2026-11-26. "Waivable" says whether an owner waiver may close the line.
 
 | # | Line | Source | Waivable | Evidence required | Status | Next step |
 |---|---|---|---|---|---|---|
