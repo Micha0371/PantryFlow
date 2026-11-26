@@ -1,6 +1,6 @@
 # Interim password-reset and account-deletion support (beta lines B3, B4)
 
-**Status:** owner decided option A for B3 on 2026-11-21. The deletion rehearsal passed on 2026-11-21; the re-registration half of option A waits for a hosted-configured build (KAN-77). These are the interim support paths the [beta entry checklist](2026-11-21-beta-entry-checklist.md) allows until KAN-42 (password recovery) and KAN-43 (account deletion) are delivered. The decision record requires them to be **secure, documented and genuinely operational**; each needs one rehearsed request before the beta.
+**Status:** owner decided option A for B3 on 2026-11-21. The deletion rehearsal passed on 2026-11-21 on an account without pantry or shopping items; a rehearsal with data is pending ([correction 2026-11-26](#correction-2026-11-26)); the re-registration half of option A waits for a hosted-configured build (KAN-77). These are the interim support paths the [beta entry checklist](2026-11-21-beta-entry-checklist.md) allows until KAN-42 (password recovery) and KAN-43 (account deletion) are delivered. The decision record requires them to be **secure, documented and genuinely operational**; each needs one rehearsed request before the beta.
 
 - **Support contact:** contact@mwsoftworks.com (owner, 2026-11-21).
 - **Response time:** within **3 days** (owner, 2026-11-21). Testers are told this in the tester instructions and the privacy notice.
@@ -18,14 +18,31 @@ A request from any other address gets the same confirmation mail to the register
 ## B4 — account deletion (interim)
 
 1. Verify the requester (above).
+1a. Check that the requester's household has no other member (a read-only count of `pantry_household_members` for the household). Deleting an owner deletes the whole household, including another member's data. If there is another member, stop and ask the owner. *(Added 2026-11-26.)*
 2. In the Supabase dashboard of the hosted project: Authentication → Users → find the user by the registered email → **Delete user**.
 3. The database's foreign-key cascades remove the user's profile, household membership, owned household and its pantry and shopping items. Today's beta has no shared households, so no other user's data is affected.
-4. Confirm the deletion to the registered address, and state that backups keep data until they expire under the plan's backup retention (exact period from the pending hosted read, FV-A1).
+4. Confirm the deletion to the registered address. State that the account, profile, household, pantry items and shopping list were deleted. Say that they cannot be restored, because the beta has no backups. Also say that some technical records stay with the service providers for a time, such as sign-in logs and records of the emails sent. *(Corrected 2026-11-26: the earlier text promised backup retention, but the plan has no backups.)* **[Owner and legal review: the exact wording, and whether to name each record.]**
 5. Record the date and the user UUID only (no email, no names) in the owner's support log.
 
 **Rehearsal (required before the beta; authorized by the owner on 2026-11-21):** create a disposable test account on the hosted project with an address the owner can receive, run steps 1–5 against it, and check that its rows are gone (a read-only query by the test account's UUID), then re-register with the same address (option A). Record the date and UUID only.
 
 **Rehearsal record (2026-11-21):** test account `94d0dc13-b3a2-498b-9916-02eb36fd4366`, created by the owner in the dashboard (auto-confirmed). The owner ran the requester-verification mail exchange (request to the support contact from the test address, confirmation mail to the registered address, confirming reply) before deleting. A read-only count before the deletion showed auth user 1, profile 1, owned household 1, membership 1, pantry items 0, shopping items 0. The owner deleted the user in the dashboard. The same read-only count afterwards (01:05 UTC) showed 0 in every column. The cascades work on the hosted project. Both counts ran in `BEGIN READ ONLY` and returned counts only.
+
+**Limitation (added 2026-11-26):** the rehearsed account held 0 pantry and 0 shopping items. The record shows that the account, profile, household and membership are removed, not that a household with data is. The closing confirmation (step 4) is not recorded. The rehearsal with data is the [populated-account protocol](2026-11-26-populated-deletion-rehearsal-protocol.md), and needs its own authorization.
+
+## Correction 2026-11-26
+
+Earlier wording, kept here so the history stays visible:
+- **Step 4 said:** "state that backups keep data until they expire under the plan's backup retention (exact period from the pending hosted read, FV-A1)". The hosted read then found **no backups** on the Free plan, so that statement was wrong.
+
+What does and does not remain after a deletion is listed in the [retention boundaries](2026-11-26-deletion-retention-boundaries.md):
+- **Removed:** the application rows and the Auth account records.
+- **Not removed by the deletion:** `auth.flow_state` rows, provider logs, email-provider records and the support thread. Some of their periods are unknown.
+
+**Without managed backups:**
+- deleted data cannot be restored, also not after a deletion by mistake;
+- a fault in the service can lose data with no recovery;
+- a support action therefore cannot be undone, which is why step 1a and the requester check come first.
 
 ## B3 — password reset (interim): option A decided (owner, 2026-11-21)
 

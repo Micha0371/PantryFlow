@@ -1,0 +1,47 @@
+# What an account deletion removes, and what remains (beta line B4)
+
+**Status:** analysis, 2026-11-26. Nothing here was checked on the hosted project. No retention period is invented: a period appears only with its source, everything else is marked **unknown**. Not legal advice.
+
+**Sources:**
+- the migrations 00001–00004;
+- the local feasibility rounds FV-B3 and FV-B9e ([round 1](../testing/2026-11-19-account-lifecycle-feasibility.md), [round 2](../testing/2026-11-19-account-lifecycle-feasibility-round2.md)), local Auth v2.198.0, 2026-11-19;
+- the [hosted Auth read FV-A1](../testing/2026-11-21-hosted-auth-read-fv-a1.md), 2026-11-21, owner-performed: hosted Auth v2.198.0, Free plan, no backups;
+- the Supabase Auth source at tag [v2.198.0](https://github.com/supabase/auth/tree/v2.198.0): `internal/models/cleanup.go`, `internal/models/flow_state.go`, `internal/api/middleware.go`, `internal/api/admin.go`, `internal/conf/configuration.go`, read 2026-11-26.
+
+## How a deletion reaches each record
+
+The support path deletes the Auth user in the Supabase dashboard ([runbook](2026-11-21-interim-reset-deletion-runbook.md), B4 step 2). The migrations then remove the application rows:
+
+| Record | Foreign key (migration) | Effect of deleting the Auth user |
+|---|---|---|
+| `public.profiles` | `id → auth.users`, `ON DELETE CASCADE` (00001) | Deleted |
+| `public.pantry_households` owned by the user | `owner_id → auth.users`, `CASCADE` (00001) | Deleted, **including any other member's data in it** |
+| `public.pantry_household_members` | `user_id → auth.users`, `CASCADE`; `household_id → pantry_households`, `CASCADE` (00001) | Deleted |
+| `public.pantry_items` of that household | `household_id → pantry_households`, `CASCADE` (00001) | Deleted |
+| `public.pantry_shopping_items` of that household | `household_id → pantry_households`, `CASCADE`; link to a pantry item `ON DELETE SET NULL (pantry_item_id)` (00004) | Deleted |
+| Rows in **other** households with `created_by` = the user | `created_by → auth.users`, `ON DELETE SET NULL` (00002, 00004) | Kept; attribution cleared |
+
+**A shared household would lose its data:** a household is deleted with its owner, even if other members exist. Today's beta has no invitations, and the [protocol](2026-11-26-populated-deletion-rehearsal-protocol.md) and the corrected runbook check that the household has one member before deleting.
+
+## Data classes
+
+| Class | What it holds | Removed by the deletion? | Established | Unknown, and how to settle it |
+|---|---|---|---|---|
+| **1. PantryFlow application tables** | Profile, household, membership, pantry and shopping rows | Yes, by the cascades above | Migrations; pgTAP author and household deletion (`shopping.test.sql`); local FV-B9e with 2 items and 1 shopping row; hosted rehearsal 2026-11-21 **without items** (account, profile, household, membership removed) | Hosted removal of a **populated** household: the [protocol](2026-11-26-populated-deletion-rehearsal-protocol.md), after authorization |
+| **2. Auth account and session records** | `auth.users`, identities, sessions, refresh tokens, MFA factors and claims, one-time tokens | Yes, by Auth's foreign keys | Local FV-B3 and FV-B9e (v2.198.0): all cascade; the Admin API deletes the user row (`tx.Destroy(user)`) unless a soft delete is requested | Whether the hosted Auth schema has the same keys (FV-B3 hosted parity is open; SEC-02 compared the application schema only). Whether the dashboard's **Delete user** is a hard delete. The protocol's read-back detects both |
+| **3. Auth flow states** (`auth.flow_state`) | One row per PKCE flow, for example sign-up confirmation: user id, sign-in method, PKCE code challenge, auth code, timestamps; provider token columns are for OAuth sign-in, which PantryFlow does not use | **No**: no foreign key, no deletion in Auth's user-delete code. Locally the row survived (FV-B3, FV-B9e) | Auth v2.198.0 has a cleanup that deletes flow states older than **24 hours**, at most 100 at a time; each successful write request runs one of its cleanup statements in turn, and only if `DB.CleanupEnabled` is set (**default false**) (`cleanup.go`, `middleware.go`, `configuration.go`) | Whether hosted Supabase enables that cleanup: not stated in the source or in documentation found. **The hosted retention of these rows is therefore unknown.** Settle by asking Supabase support, or by an authorized hosted read of the target's rows a day after the rehearsal |
+| **4. Provider logs** | Auth and API request logs: account events, IP addresses | No; they expire | FV-A1: hosted Auth audit entries are not written to the database. Supabase's pricing page (fetched 2026-11-21): on Free, API and database logs are kept 1 day and Auth audit logs 24 hours | Whether other provider-side records exist (for example billing or abuse records): unknown, part of Supabase's data processing terms; legal review |
+| **5. Email-provider records** | Recipient address, subject, delivery events of confirmation mails | No | Custom SMTP is configured (FV-A1) | Which provider and how long it keeps records: not recorded in the repository (`[Email provider]` in the privacy draft); owner |
+| **6. Support communications** | The request thread at the support mailbox; the support log (date and user UUID) | No; kept by the owner as proof of the request | Runbook steps 1, 5 | How long they are kept: owner decision OD-B4 / R-8 in the [deletion spec](../planning/2026-11-19-account-deletion-spec.md), open |
+| **7. Backups and other copies** | Managed database backups; copies on testers' phones | Managed backups: **none exist** (FV-A1: Free plan, "No backups", no point-in-time recovery) | No backup can bring deleted data back, and none can restore data after a fault | Phones keep their own session and settings until sign-out or uninstall; whether Android device backups include them is unverified (SP-9). No other export or copy is known; none was searched for on hosted |
+
+## What can be said to a tester today
+
+- **Supported:** the account, profile, household, pantry items and shopping list are deleted, pending the rehearsal with data on hosted. There are no backups from which they could be restored.
+- **Not supported:** "all data is deleted" or "deleted at once". Flow-state rows, provider logs, mail delivery records and the support thread remain for periods that are partly unknown.
+
+## Owner decisions this leaves open
+
+- **OD-B7, flow states:** accept until hosted cleanup is confirmed, or delete the user's `auth.flow_state` rows as a reviewed extra step (a hosted write, needing its own authorization).
+- **OD-B4 / R-8:** retention of support records.
+- **Email provider:** name it, and record its retention.

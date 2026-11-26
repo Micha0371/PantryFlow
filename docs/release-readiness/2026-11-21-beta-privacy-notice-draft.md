@@ -1,8 +1,9 @@
 # PantryFlow supervised beta — privacy notice (draft, beta line B5)
 
-**Status:** draft, 2026-11-21. Not published. Before publication it needs:
+**Status:** draft, 2026-11-21; deletion and retention wording corrected 2026-11-26. Not published. Before publication it needs:
 - **owner review** and a **legal check**: KAN-72 requires privacy content to match the app's actual collection and retention and to have review ownership. Nothing here is legal advice;
-- the **placeholders** marked `[…]` filled in.
+- the **placeholders** marked `[…]` filled in;
+- review of the deletion and retention wording corrected on 2026-11-26 ("How long we keep it" and "Deleting your account"), against the [retention boundaries](2026-11-26-deletion-retention-boundaries.md). **Owner and legal review:** whether to name the remaining provider records and their periods, and the email provider's retention.
 
 **Facts behind this draft:**
 - the app's database schema (migrations 00001–00004);
@@ -41,11 +42,11 @@ Please don't put sensitive personal information into item names.
 
 **How long we keep it**
 - Your data stays until you delete your account or the beta ends without the app being launched; we then delete the tester accounts.
-- **There are no backups during the beta**, so deleted data is gone immediately. This also means that **data can be lost** if the service has a fault.
+- **There are no backups during the beta.** Deleted data cannot be restored, and **data can be lost** if the service has a fault.
 - The beta runs on a free hosting plan and **may pause** after about a week without activity.
 
 **Deleting your account, or if you can't sign in**
-- Email **contact@mwsoftworks.com** from your registered address. We confirm by writing to that address, then delete your account and all its data, and confirm when done.
+- Email **contact@mwsoftworks.com** from your registered address. We confirm by writing to that address, then delete your account with your profile, household, pantry items and shopping list, and confirm when done. Some technical records stay with our service providers for a time after that, such as sign-in logs and records of the emails we sent.
 - During the beta, a forgotten password is handled the same way: we delete the account, and you can register again with the same address. Your beta data is lost in that case.
 
 **Your rights.** You can ask for access to your data, its correction or deletion, restriction of processing, a copy in a portable format, and you can object to processing based on legitimate interest. Write to contact@mwsoftworks.com. You can also complain to a data protection supervisory authority.
@@ -78,11 +79,11 @@ Bitte trage keine sensiblen persönlichen Informationen in Artikelnamen ein.
 
 **Wie lange wir sie aufbewahren**
 - Deine Daten bleiben, bis du dein Konto löschst oder die Beta endet, ohne dass die App veröffentlicht wird; dann löschen wir die Testerkonten.
-- **Während der Beta gibt es keine Sicherungen**, gelöschte Daten sind also sofort weg. Das heißt auch: **Daten können verloren gehen**, wenn der Dienst einen Fehler hat.
+- **Während der Beta gibt es keine Sicherungen.** Gelöschte Daten lassen sich nicht wiederherstellen, und **Daten können verloren gehen**, wenn der Dienst einen Fehler hat.
 - Die Beta läuft auf einem kostenlosen Hosting-Tarif und **kann pausieren**, wenn sie etwa eine Woche nicht genutzt wird.
 
 **Konto löschen, oder wenn du dich nicht anmelden kannst**
-- Schreib an **contact@mwsoftworks.com** von deiner registrierten Adresse. Wir bestätigen per E-Mail an diese Adresse, löschen dann dein Konto mit allen Daten und bestätigen, wenn es erledigt ist.
+- Schreib an **contact@mwsoftworks.com** von deiner registrierten Adresse. Wir bestätigen per E-Mail an diese Adresse, löschen dann dein Konto mit deinem Profil, deinem Haushalt, deinen Vorräten und deiner Einkaufsliste und bestätigen, wenn es erledigt ist. Einige technische Aufzeichnungen bleiben danach noch eine Zeit lang bei unseren Dienstleistern, etwa Anmeldeprotokolle und Aufzeichnungen über die versendeten E-Mails.
 - Während der Beta wird ein vergessenes Passwort genauso behandelt: Wir löschen das Konto, und du kannst dich mit derselben Adresse neu registrieren. Deine Beta-Daten gehen dabei verloren.
 
 **Deine Rechte.** Du kannst Auskunft über deine Daten verlangen, ihre Berichtigung oder Löschung, die Einschränkung der Verarbeitung und eine Kopie in einem übertragbaren Format; der Verarbeitung aufgrund berechtigten Interesses kannst du widersprechen. Schreib an contact@mwsoftworks.com. Du kannst dich außerdem bei einer Datenschutz-Aufsichtsbehörde beschweren.
