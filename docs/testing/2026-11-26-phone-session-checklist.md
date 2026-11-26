@@ -55,7 +55,9 @@ Each probe replaces the proxy on port 54329 with a stub. Stop the proxy first, s
 | 2.3 | Stub answering 503 with an HTML body: `node -e "require('http').createServer((q,r)=>{r.writeHead(503,{'Content-Type':'text/html'});r.end('<html>down</html>')}).listen(54329,'127.0.0.1')"` | Sign in, correct password | "Sign-in is not available right now. Please try again later." | |
 | 2.4 | Stub answering 429: `node -e "require('http').createServer((q,r)=>{r.writeHead(429,{'Content-Type':'application/json','x-supabase-api-version':'2024-01-01'});r.end('{\"code\":\"over_request_rate_limit\",\"msg\":\"rate\"}')}).listen(54329,'127.0.0.1')"` | Sign in | "Too many sign-in attempts. Please wait a moment and try again." | |
 | 2.5 | Proxy running. Register `pf.test.signup@example.com` in the app and don't confirm it | Sign in with that address and its password | "Confirm your email address first. You can request a new confirmation email below." | |
-| 2.6 | **Survivorship probe.** Stub that accepts the connection and never answers: `node -e "require('net').createServer(()=>{}).listen(54329,'127.0.0.1')"` | Sign in, then wait up to 2 minutes | Expected **with no fix:** the spinner stays and no message appears, because the Android HTTP client has no timeouts. Record what is seen and how long. This documents the known gap; it is not a KAN-122 failure | |
+| 2.6 | **Survivorship probe.** Stub that accepts the connection and never answers: `node -e "require('net').createServer(()=>{}).listen(54329,'127.0.0.1')"` | Sign in, then wait up to 1 minute with a stopwatch | After about **15 s** the spinner stops and the connection message appears (the Auth form timeout; the Android HTTP client has none of its own). Record the time. FAIL if the spinner is still there after 30 s | |
+| 2.6b | Same stub | Register a new `pf.test.signup@example.com` account | After about 15 s: the connection message, not "Could not create account." | |
+| 2.6c | Nothing listening (as 2.2) | Register | The connection message | |
 | 2.7 | Repeat 2.1 and 2.2 with the app in **Deutsch** (Settings → language, then sign out) | as above | "E-Mail oder Passwort ist falsch." / "Der Server ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut." | |
 | 2.8 | With TalkBack on (from section 3), repeat 2.2 | Submit | TalkBack speaks the connection message without moving focus (KAN-84 behaviour unchanged) | |
 
@@ -113,5 +115,5 @@ Take one screenshot per screen per pass.
 - **Fixes:** each FAIL becomes its own small PR, tested first, then rechecked on the phone. Candidates the session may confirm:
   - `Button` with a fixed 48 dp height clipping at large font sizes (change it to a minimum height)
   - the Shopping field label (revert it if 3.5 fails)
-- **Follow-up for the owner (2.6):** a sign-in request timeout. The no-timeout behaviour affects every request, not only sign-in. Creating a ticket needs the owner's approval.
+- **Known remaining gap:** data requests (pantry and shopping lists, saves) still have no timeout. Sign-in, sign-up and resend got one in KAN-122. If 4.x shows a list that never stops loading on a bad connection, that is this gap.
 - **Jira:** KAN-122, KAN-100 and KAN-62 move to Done only with the owner's approval for each ticket, after their rows are PASS on the recorded commit.
