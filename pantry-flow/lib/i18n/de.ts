@@ -143,6 +143,7 @@ export const de: Record<TranslationKey, string> = {
   shopping_section_open: 'Zu kaufen',
   shopping_section_completed: 'Erledigt',
   shopping_add_placeholder: 'Artikel hinzufügen',
+  shopping_add_label: 'Neuer Artikel für die Einkaufsliste',
   shopping_add_button: 'Hinzufügen',
   shopping_edit_title: 'Eintrag bearbeiten',
   shopping_remove: 'Entfernen',

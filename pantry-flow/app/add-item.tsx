@@ -145,6 +145,7 @@ function AddItemModalContent() {
             onChange={setCategory}
             labelFor={(k) => t(`cat_${k}`)}
             testIDPrefix="add-item-category"
+            accessibilityLabel={t('item_category')}
           />
 
           <View style={{ height: spacing.md }} />
@@ -156,6 +157,7 @@ function AddItemModalContent() {
             onChange={setLocation}
             labelFor={(k) => t(`loc_${k}`)}
             testIDPrefix="add-item-location"
+            accessibilityLabel={t('item_location')}
           />
 
         </ScrollView>

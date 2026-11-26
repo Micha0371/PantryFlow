@@ -142,6 +142,8 @@ test('adding submits the typed name once, clears the field and keeps focus', asy
   try {
     assert.equal(input().props.testID, 'shopping-add-input');
     assert.equal(input().props.placeholder, 'shopping_add_placeholder');
+    // KAN-100 (L2): the field keeps a name for screen readers once text replaces the placeholder.
+    assert.equal(input().props.accessibilityLabel, 'shopping_add_label');
     assert.equal(input().props.submitBehavior, 'submit');
     assert.equal(submit().props.label, 'shopping_add_button');
     act(() => input().props.onChangeText(' Milk '));

@@ -159,7 +159,7 @@ function EditItemModalContent() {
           />
 
           <Text style={styles.sectionLabel}>{t('item_status')}</Text>
-          <View style={styles.statusRow}>
+          <View style={styles.statusRow} accessibilityRole="radiogroup" accessibilityLabel={t('item_status')}>
             {STATUSES.map((s) => {
               const selected = s === status;
               const color = colors.status[s];
@@ -170,6 +170,8 @@ function EditItemModalContent() {
                   key={s}
                   onPress={() => setStatus(s)}
                   testID={`edit-item-status-${s}`}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: selected }}
                   style={[
                     styles.statusPill,
                     { backgroundColor: bg, borderColor: color },
@@ -190,6 +192,7 @@ function EditItemModalContent() {
             onChange={setCategory}
             labelFor={(k) => t(`cat_${k}`)}
             testIDPrefix="edit-item-category"
+            accessibilityLabel={t('item_category')}
           />
 
           <View style={{ height: spacing.md }} />
@@ -201,6 +204,7 @@ function EditItemModalContent() {
             onChange={setLocation}
             labelFor={(k) => t(`loc_${k}`)}
             testIDPrefix="edit-item-location"
+            accessibilityLabel={t('item_location')}
           />
 
           <Button
@@ -258,6 +262,9 @@ const styles = StyleSheet.create({
   statusRow: { flexDirection: 'row', gap: spacing.sm },
   statusPill: {
     flex: 1,
+    // KAN-100 (M7): at least a 48 dp touch target.
+    minHeight: 48,
+    justifyContent: 'center',
     paddingVertical: spacing.md,
     borderRadius: radii.md,
     borderWidth: 1,

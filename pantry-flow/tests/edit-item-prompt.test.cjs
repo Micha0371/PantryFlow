@@ -353,3 +353,33 @@ test('a failure notice answered late, after Cancel, does nothing more (KAN-85)',
     assert.equal(log.updates, 1);
   } finally { act(() => renderer.unmount()); }
 });
+
+test('the status pills are a radio group named Status with the checked state and 48 dp targets (KAN-100, M7)', () => {
+  const { renderer, by } = render({ current: 'low' });
+  try {
+    const flat = style => Object.assign({}, ...[style].flat(Infinity).filter(Boolean));
+    const groups = renderer.root.findAll(n => n.type === 'View' && n.props.accessibilityRole === 'radiogroup');
+    assert.equal(groups.length, 1);
+    assert.equal(groups[0].props.accessibilityLabel, 'item_status');
+    const checked = () => constants.STATUSES.filter(s => by(`edit-item-status-${s}`).props.accessibilityState?.checked);
+    for (const s of constants.STATUSES) {
+      const pill = by(`edit-item-status-${s}`);
+      assert.equal(pill.props.accessibilityRole, 'radio', s);
+      assert.equal(typeof pill.props.accessibilityState?.checked, 'boolean', s);
+      assert.ok(flat(pill.props.style).minHeight >= 48, s);
+      assert.ok(groups[0].findAll(n => n === pill).length === 1, `${s} is inside the group`);
+    }
+    assert.deepEqual(checked(), ['low']);
+    setStatus(by, 'out');
+    assert.deepEqual(checked(), ['out']);
+  } finally { act(() => renderer.unmount()); }
+});
+
+test('the category and location chips on Edit Item are named after their section (KAN-100)', () => {
+  const { renderer } = render();
+  try {
+    const chips = prefix => renderer.root.findAll(n => n.type === 'OptionChips' && n.props.testIDPrefix === prefix)[0];
+    assert.equal(chips('edit-item-category').props.accessibilityLabel, 'item_category');
+    assert.equal(chips('edit-item-location').props.accessibilityLabel, 'item_location');
+  } finally { act(() => renderer.unmount()); }
+});
