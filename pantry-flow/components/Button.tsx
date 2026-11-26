@@ -73,12 +73,14 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    height: 48,
+    // A minimum, not a fixed height: at large font sizes a label wraps (phone session 2026-11-26).
+    minHeight: 48,
+    paddingVertical: spacing.sm,
     borderRadius: radii.md,
     borderWidth: 1,
     paddingHorizontal: spacing.lg,
     justifyContent: 'center',
   },
   inner: { alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
-  label: { ...typography.heading },
+  label: { ...typography.heading, textAlign: 'center' },
 });

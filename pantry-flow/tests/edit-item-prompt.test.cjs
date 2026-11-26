@@ -361,6 +361,8 @@ test('the status pills are a radio group named Status with the checked state and
     const groups = renderer.root.findAll(n => n.type === 'View' && n.props.accessibilityRole === 'radiogroup');
     assert.equal(groups.length, 1);
     assert.equal(groups[0].props.accessibilityLabel, 'item_status');
+    // Phone session 2026-11-26 (F3): without this, Android flattens the View away and the group name is lost.
+    assert.equal(groups[0].props.collapsable, false);
     const checked = () => constants.STATUSES.filter(s => by(`edit-item-status-${s}`).props.accessibilityState?.checked);
     for (const s of constants.STATUSES) {
       const pill = by(`edit-item-status-${s}`);
