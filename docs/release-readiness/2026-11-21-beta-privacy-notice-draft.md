@@ -89,7 +89,7 @@ Bitte trage keine sensiblen persönlichen Informationen in Artikelnamen ein.
 - Die Beta läuft auf einem kostenlosen Hosting-Tarif und **kann pausieren**, wenn sie etwa eine Woche nicht genutzt wird.
 
 **Konto löschen, oder wenn du dich nicht anmelden kannst**
-- Schreib an **contact@mwsoftworks.com** von deiner registrierten Adresse. Wir bestätigen per E-Mail an diese Adresse, löschen dann dein Konto mit deinem Profil, deinem Haushalt, deinen Vorräten und deiner Einkaufsliste und bestätigen, wenn es erledigt ist. Einige technische Aufzeichnungen bleiben danach noch eine Zeit lang bestehen, etwa Anmeldedaten und Aufzeichnungen über die versendeten E-Mails. Unseren Schriftverkehr zu deiner Anfrage bewahren wir auf.
+- Schreib an **contact@mwsoftworks.com** von deiner registrierten Adresse. Wir bestätigen per E-Mail an diese Adresse, löschen dann dein Konto mit deinem Profil, deinem Haushalt, deinen Vorräten und deiner Einkaufsliste und bestätigen, wenn es erledigt ist. Einige technische Aufzeichnungen bleiben danach noch eine Zeit lang bestehen, etwa Aufzeichnungen über Anmeldungen und über die versendeten E-Mails. Unseren Schriftverkehr zu deiner Anfrage bewahren wir auf.
 - Während der Beta wird ein vergessenes Passwort genauso behandelt: Wir löschen das Konto, und du kannst dich mit derselben Adresse neu registrieren. Deine Beta-Daten gehen dabei verloren.
 
 **Deine Rechte.** Du kannst Auskunft über deine Daten verlangen, ihre Berichtigung oder Löschung, die Einschränkung der Verarbeitung und eine Kopie in einem übertragbaren Format; der Verarbeitung aufgrund berechtigten Interesses kannst du widersprechen. Schreib an contact@mwsoftworks.com. Du kannst dich außerdem bei einer Datenschutz-Aufsichtsbehörde beschweren.

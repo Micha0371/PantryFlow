@@ -14,7 +14,7 @@ Hosted project `PantryFlow_Emergent` (`oiqteedkfwmcertgxqga`), as in [hosted ver
 |---|---|---|---|
 | 1 | Create two disposable accounts (T, O) on owner-controlled addresses, preferably by sign-up in the hosted-configured beta build (B10) | Hosted write: two accounts | Owner |
 | 2 | Add the fixtures: in T, one pantry item, one linked, one manual and one completed shopping item; in O, one pantry and one shopping item | Hosted write: test rows only | Owner, in the app |
-| 1b, 2b | **Alternative, only if chosen instead of 1 and 2:** owner creates T and O in the dashboard and inserts the fixture rows with a reviewed SQL script | Hosted write: two accounts and test rows | Owner |
+| 1b, 2b | **Alternative, only if chosen instead of 1 and 2:** owner creates T and O in the dashboard and inserts the fixture rows with a reviewed SQL script | Hosted write: two accounts and test rows | Owner. Unverified: whether dashboard-created users get an `auth.identities` row; without one the protocol STOPs before deleting |
 | 3 | Run `readback.sql` read-only before and after, through the pinned CLI and the existing local login, as in SEC-02 | Hosted read: counts and hashes only | Agent or owner |
 | 4 | Run the requester check by email, delete T in the dashboard, send the closing confirmation | Hosted write: one account deletion | Owner |
 | 5 | Delete O the same way, with its own read-back | Hosted write: one account deletion | Owner |

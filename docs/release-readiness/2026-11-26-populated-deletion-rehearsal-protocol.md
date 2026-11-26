@@ -10,7 +10,7 @@
 
 1. **Authorization:** the owner has approved the [request](2026-11-26-hosted-deletion-rehearsal-request.md), naming the date, the operator and the two test addresses.
 2. **Target:** hosted project `oiqteedkfwmcertgxqga` only, as in [hosted verification](../testing/hosted-verification.md). No other project is linked in the workdir.
-3. **No other activity:** the beta has not started, nobody else signs up or changes data during the rehearsal, and **O's app is closed or signed out between the two read-backs** (the app writes the profile language at start, which would change O's hash).
+3. **No other activity:** the beta has not started, nobody else signs up or changes data during the rehearsal, and **O is signed out before the first read-back, or its app stays closed, and nobody signs O in or out until after the second** (a sign-in or sign-out changes O's session count; the app writes the profile language at start, which changes O's hash).
 4. **Two disposable accounts,** on addresses the owner controls and that belong to no real person:
    - **T (target),** to be deleted;
    - **O (other),** an unrelated account in its own household that must stay unchanged.
@@ -50,14 +50,16 @@
 - **T's Auth records:** user, identities, sessions, refresh tokens, MFA factors, one-time tokens.
 - **T's flow states:** recorded only.
 - **T's application records:** profile, household, membership, pantry and shopping rows, plus the four fixture rows by ID with their relationships (L linked to P, M unlinked, C completed). It also checks that no row outside H_T is attributed to T.
-- **O's records:** account, household and rows, as counts and MD5 hashes of the rows.
-- **Everything else:** totals of users, households, pantry and shopping rows outside T and O.
+- **T's audit entries:** entries in `auth.audit_log_entries` naming T, recorded only.
+- **O's records:** Auth user, identities and sessions; profile, household, memberships, pantry and shopping rows, as counts and MD5 hashes of the application rows.
+- **Everything else:** users, identities, profiles, households, memberships, pantry and shopping rows outside T and O, as counts and MD5 hashes of the application rows. Sessions and refresh tokens outside T are not counted.
+- **Preconditions:** T and O are different accounts, H_T has one member, T has one membership, and no row outside H_T is attributed to T.
 
 ## 4. Expected results and failure handling
 
 - **Expected:**
   - **Removed:** T's application rows and the Auth records the read-back counts: user, identities, sessions, refresh tokens, MFA factors and one-time tokens. A soft delete in the dashboard would leave `auth.users` at 1 and fail the run.
-  - **Not read:** other Auth tables that FV-B3 found cascading locally (for example MFA claims and WebAuthn records). PantryFlow creates none of them; their removal is not shown.
+  - **Not read:** other Auth tables that FV-B3 found cascading locally. Session MFA claims (`mfa_amr_claims`, one per session) cascade from the sessions, which are counted. WebAuthn and recovery-code records are not used by PantryFlow. Their removal is not shown directly.
   - **Not judged by the read-back:** whether a row elsewhere was attributed to T. Only the precondition (no such row before) means something, because the deletion clears the attribution.
   - **Recorded only:** T's `auth.flow_state` rows (expected to remain) and audit entries naming T in `auth.audit_log_entries` (FV-A1 says hosted does not store them there; a count above 0 means it does, and the retention boundaries must be corrected).
   - **Unchanged:** O, and the rest of the project.

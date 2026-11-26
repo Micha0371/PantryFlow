@@ -44,3 +44,18 @@
 - whether the dashboard's **Delete user** is a hard delete;
 - hosted audit storage and hosted Auth foreign-key parity;
 - the real Supabase Auth schema on PostgreSQL 17. Only PGlite with the stub was tested.
+
+## Delta re-review of ec48990
+
+**Verdict: approve with nits.** Every finding above is fixed and works; none of the reviewer's 28 round-two scenarios gives a wrong PASS, READY or STOP, and nothing outside `docs/` changed. The four remaining wording points were fixed in the next commit:
+1. **Protocol:** session MFA claims are created and cascade from the counted sessions. The earlier text wrongly said PantryFlow creates none.
+2. **Retention class 4:** the audit-storage condition is stated the right way round (`DisablePostgres`).
+3. **Protocol:** O is signed out before the first read-back or kept closed, and nobody signs it in or out in between; a sign-out between the read-backs would change O's session count.
+4. **Protocol:** the coverage list now matches the read-back. **German privacy text:** "Aufzeichnungen über Anmeldungen" instead of "Anmeldedaten", which reads as login credentials.
+
+**Accepted gaps:**
+- the control account's refresh tokens are not counted, and the protocol does not claim they are;
+- filling O's placeholders with another valid account cannot be detected;
+- whether dashboard-created users get an identity row (request rows 1b and 2b) is unverified.
+
+Also unverified: whether the CLI runs the whole read-back on one connection and returns its rows; and the hosted role's access to every Auth table, including `audit_log_entries`.
