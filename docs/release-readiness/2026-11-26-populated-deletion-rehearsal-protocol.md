@@ -1,6 +1,6 @@
 # Protocol: deleting a populated test account on hosted (beta line B4)
 
-**Status:** protocol only, 2026-11-26. **Not executed.** Running it needs the owner's separate authorization ([request](2026-11-26-hosted-deletion-rehearsal-request.md)). It closes the gap in the 2026-11-21 rehearsal, whose account held no pantry or shopping items.
+**Status:** protocol, 2026-11-26. **Executed once on 2026-11-26** with the owner's authorization, by the dashboard-and-SQL fixture path ([`fixtures.sql`](deletion-rehearsal/fixtures.sql)): **PASS** ([record](2026-11-26-populated-deletion-rehearsal-record.md)). Any further run needs a new authorization ([request](2026-11-26-hosted-deletion-rehearsal-request.md)). It closes the gap in the 2026-11-21 rehearsal, whose account held no pantry or shopping items.
 
 **What it shows:** whether the [interim support path](2026-11-21-interim-reset-deletion-runbook.md) removes a household with data on the hosted project, and whether the request is closed with the requester. It also shows that the records it reads outside the target stay unchanged: the control account's Auth user, identities, sessions and application rows, and the other accounts' users, identities, profiles, households, memberships, pantry and shopping rows (counts, and hashes of the application rows). Records it does not read are listed in section 4. What remains afterwards is in the [retention boundaries](2026-11-26-deletion-retention-boundaries.md).
 

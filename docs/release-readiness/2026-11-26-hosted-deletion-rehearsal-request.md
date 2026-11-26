@@ -1,6 +1,6 @@
 # Authorization request: populated-account deletion rehearsal on hosted (beta line B4)
 
-**Status:** requested 2026-11-26, **not approved**. Nothing here has been run. Approval would cover exactly the actions below, once.
+**Status:** requested 2026-11-26; **approved by the owner on 2026-11-26** for that day, with actions 1b and 2b (dashboard and SQL fixtures) instead of 1 and 2, and the agent running the read-backs. Executed the same day: **PASS** ([record](2026-11-26-populated-deletion-rehearsal-record.md)). The approval is used up.
 
 **Purpose:** run the [populated-account deletion protocol](2026-11-26-populated-deletion-rehearsal-protocol.md), so that B4 can be judged on a household with data. The [retention boundaries](2026-11-26-deletion-retention-boundaries.md) list what it does not settle.
 

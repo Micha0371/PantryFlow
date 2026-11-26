@@ -31,6 +31,8 @@ A request from any other address gets the same confirmation mail to the register
 
 **Limitation (added 2026-11-26):** the rehearsed account held 0 pantry and 0 shopping items. The record shows that the account, profile, household and membership are removed, not that a household with data is. The closing confirmation (step 4) is not recorded. The rehearsal with data is the [populated-account protocol](2026-11-26-populated-deletion-rehearsal-protocol.md), and needs its own authorization.
 
+**Rehearsal with data (2026-11-26):** an authorized rehearsal on hosted deleted a test account whose household held a pantry item and linked, manual and completed shopping items. All its counted records were removed, the records outside it read by the check were unchanged, and the closing confirmation was sent with the corrected step 4 wording: **PASS** ([record](2026-11-26-populated-deletion-rehearsal-record.md)).
+
 ## Correction 2026-11-26
 
 Earlier wording, kept here so the history stays visible:
