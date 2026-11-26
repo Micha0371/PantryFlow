@@ -1,0 +1,82 @@
+ok   correct deletion: delete the Auth user: expected PASS, got PASS
+       ok   before: target auth.users = 1 (is 1)
+       ok   before: target public.profiles = 1 (is 1)
+       ok   before: target public.pantry_households = 1 (is 1)
+       ok   before: target public.pantry_household_members = 1 (is 1)
+       ok   before: target precondition.distinct_accounts = 1 (is 1)
+       ok   before: target precondition.target_household_members = 1 (is 1)
+       ok   before: target precondition.target_memberships = 1 (is 1)
+       ok   before: target fixture.pantry_item = 1 (is 1)
+       ok   before: target fixture.linked_shopping = 1 (is 1)
+       ok   before: target fixture.manual_shopping = 1 (is 1)
+       ok   before: target fixture.completed_shopping = 1 (is 1)
+       ok   before: target fixture.fixture_rows_anywhere = 4 (is 4)
+       ok   before: target attributed_elsewhere = 0 (is 0)
+       ok   before: target auth.identities >= 1 (is 1)
+       ok   before: target public.pantry_items >= 1 (is 1)
+       ok   before: target public.pantry_shopping_items >= 3 (is 3)
+       ok   before: other auth.users = 1 (is 1)
+       ok   before: other public.profiles = 1 (is 1)
+       ok   before: other public.pantry_households = 1 (is 1)
+       ok   before: other public.pantry_household_members = 1 (is 1)
+       ok   before: other auth.identities >= 1 (is 1)
+       ok   before: other public.pantry_items >= 1 (is 1)
+       ok   before: other public.pantry_shopping_items >= 1 (is 1)
+       ok   after: target auth.users = 0 (is 0; was 1)
+       ok   after: target auth.identities = 0 (is 0; was 1)
+       ok   after: target auth.sessions = 0 (is 0; was 1)
+       ok   after: target auth.refresh_tokens = 0 (is 0; was 1)
+       ok   after: target auth.mfa_factors = 0 (is 0; was 0)
+       ok   after: target auth.one_time_tokens = 0 (is 0; was 1)
+       ok   after: target public.profiles = 0 (is 0; was 1)
+       ok   after: target public.pantry_households = 0 (is 0; was 1)
+       ok   after: target public.pantry_household_members = 0 (is 0; was 1)
+       ok   after: target public.pantry_items = 0 (is 0; was 1)
+       ok   after: target public.pantry_shopping_items = 0 (is 0; was 3)
+       ok   after: target fixture.pantry_item = 0 (is 0; was 1)
+       ok   after: target fixture.linked_shopping = 0 (is 0; was 1)
+       ok   after: target fixture.manual_shopping = 0 (is 0; was 1)
+       ok   after: target fixture.completed_shopping = 0 (is 0; was 1)
+       ok   after: target fixture.fixture_rows_anywhere = 0 (is 0; was 4)
+       ok   after: other auth.identities unchanged (1 -> 1)
+       ok   after: rest auth.identities unchanged (1 -> 1)
+       ok   after: other auth.sessions unchanged (1 -> 1)
+       ok   after: other auth.users unchanged (1 -> 1)
+       ok   after: rest auth.users unchanged (1 -> 1)
+       ok   after: other public.pantry_household_members unchanged (1 -> 1)
+       ok   after: other.digest public.pantry_household_members unchanged (hash)
+       ok   after: rest public.pantry_household_members unchanged (1 -> 1)
+       ok   after: rest.digest public.pantry_household_members unchanged (hash)
+       ok   after: other public.pantry_households unchanged (1 -> 1)
+       ok   after: other.digest public.pantry_households unchanged (hash)
+       ok   after: rest public.pantry_households unchanged (1 -> 1)
+       ok   after: rest.digest public.pantry_households unchanged (hash)
+       ok   after: other public.pantry_items unchanged (1 -> 1)
+       ok   after: other.digest public.pantry_items unchanged (hash)
+       ok   after: rest public.pantry_items unchanged (1 -> 1)
+       ok   after: rest.digest public.pantry_items unchanged (hash)
+       ok   after: other public.pantry_shopping_items unchanged (1 -> 1)
+       ok   after: other.digest public.pantry_shopping_items unchanged (hash)
+       ok   after: rest public.pantry_shopping_items unchanged (1 -> 1)
+       ok   after: rest.digest public.pantry_shopping_items unchanged (hash)
+       ok   after: other public.profiles unchanged (1 -> 1)
+       ok   after: other.digest public.profiles unchanged (hash)
+       ok   after: rest public.profiles unchanged (1 -> 1)
+       ok   after: rest.digest public.profiles unchanged (hash)
+       info target auth.flow_state: 1 before, 1 after
+       info target auth.audit_log_entries: 0 before, 0 after
+ok   nothing deleted: expected FAIL, got FAIL
+ok   partial deletion: application rows removed by hand, Auth user and shopping rows kept: expected FAIL, got FAIL
+ok   partial deletion: only the shopping rows removed: expected FAIL, got FAIL
+ok   correct deletion plus a change to the control household: expected FAIL, got FAIL
+ok   correct deletion plus the control account's identity removed: expected FAIL, got FAIL
+ok   correct deletion plus the control account's sessions removed: expected FAIL, got FAIL
+ok   correct deletion plus an item of a third household changed: expected FAIL, got FAIL
+ok   correct deletion plus a third user's profile removed: expected FAIL, got FAIL
+ok   correct deletion plus a new account elsewhere: expected FAIL, got FAIL
+ok   precondition: intact fixtures are ready: expected READY, got READY
+ok   precondition: second member in the target household: expected STOP, got STOP
+ok   precondition: control account given as the target: expected STOP, got STOP
+ok   precondition: target without Auth identity rows: expected STOP, got STOP
+ok   a placeholder left in the query: expected STOP, got query failed (22P02): STOP
+DRY RUN OK: all scenarios gave the expected verdict

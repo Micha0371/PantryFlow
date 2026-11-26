@@ -241,6 +241,10 @@ Status after the 2026-11-19 experiments: **done** A2 (Auth behavior), A4, A5 (lo
 | OD-B7 | Orphaned `auth.flow_state` rows after deletion (FV-B3) | Accept until provider expiry is verified; otherwise delete them in the function after a confirmed deletion | Open |
 | OD-B6 | Maintenance pause for self-service deletion | Pause plus drain through the admission barrier (deletion §4.3) | **Accepted 2026-11-19** (the requirement; the mechanism is part of v0.6 review) |
 
+**Update 2026-11-26 (appended; the table above is unchanged):**
+- **OD-B7** stays open. Auth v2.198.0 cleans up flow states older than 24 hours only if `DB.CleanupEnabled` is set (default off), and the hosted setting is unknown. See the [retention boundaries](../release-readiness/2026-11-26-deletion-retention-boundaries.md).
+- **OD-B4** stays open. The corrected beta privacy draft says the support correspondence is kept, without a period.
+
 ## 5. Implementation sequence
 
 No step starts without owner approval of this package, the Codex follow-up review, and the authorization each step names.

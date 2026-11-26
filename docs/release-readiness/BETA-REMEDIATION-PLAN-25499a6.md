@@ -88,3 +88,16 @@ Also correct TI-4's timeout scope, distinguish policy deletion from permissive p
 Approve or amend **this ordered scope and its acceptance evidence**, beginning with Priority 1 in a separate implementation/test PR. Hosted mutations, distribution, issue creation, release sign-off and status transitions require their own authorization where applicable. This documentation PR can be reviewed and merged independently of approving implementation. No beta approval follows from either action.
 
 **Update 2026-11-26 (appended; the text above is unchanged):** the S13 assertion gap is addressed in [S13-ASSERTION-REMEDIATION.md](S13-ASSERTION-REMEDIATION.md). SP-4 remains PARTIALLY VERIFIED.
+
+## Status 2026-11-26 (appended; the text above is unchanged)
+
+| Item | State | Record |
+|---|---|---|
+| Priority 1, five masked write restrictions (and both INSERT household restrictions) | **Delivered** in PR #73, merged as `f815b49` (2026-11-25): bare-write assertions on a local Supabase stack, each of the seven policy mutants failing its assertion | [Write-isolation evidence](../testing/rls-write-isolation/README.md); [post-#73 regression baseline](../testing/regression-baselines/2026-11-25-post-73-f815b49.md) |
+| Priority 4, S13 assertion effectiveness | **Delivered** in PR #75, merged as `3a4f955` (2026-11-26). SP-4 stays PARTIALLY VERIFIED | [S13 record](S13-ASSERTION-REMEDIATION.md) |
+| Follow-ups from the S13 review | **Created** (owner-authorized): KAN-124 AUTH-TEST-01 (p1), KAN-125 AUTH-TEST-02 (p2), KAN-126 AUTH-TEST-03 (p2), under KAN-88 | Jira |
+| Priority 2, deletion and retention | **Prepared** in PR #76: protocol, read-back tooling, retention boundaries, corrected runbook and privacy draft. B4 reopened (owner, 2026-11-26). The hosted rehearsal is **requested, not approved** | [Protocol](2026-11-26-populated-deletion-rehearsal-protocol.md), [retention boundaries](2026-11-26-deletion-retention-boundaries.md), [request](2026-11-26-hosted-deletion-rehearsal-request.md) |
+| Priority 3, hosted sign-up and recovery on a signed build | **Open**; waits for KAN-77 (Play account and upload key) | — |
+| Priority 4, remaining rows | **Open**, except the exact-commit harness row: Android passed on `25499a6` and `f815b49` | [Android record](ANDROID-RESULT-25499a6.md) |
+
+Development remains GO; the supervised beta and the public release remain NO-GO.
