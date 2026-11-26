@@ -1,6 +1,6 @@
 # Phone session checklist: KAN-122, KAN-100, KAN-62
 
-**Status:** prepared 2026-11-26, not run. Owner decision 2026-11-26: one combined phone session for the three device checks.
+**Status:** run 2026-11-26 on `main` at `a9099e1`; results in the [coverage matrix](coverage-matrix.md) (AUTH-ERR-PHONE-01, A11Y-PHONE-01, KAN-62 section). Three defects found and fixed in `46f801b`, rechecked on the phone. Owner decision 2026-11-26: one combined phone session for the three device checks.
 
 **Tickets:**
 - KAN-122 (UX-09: Distinguish a connection failure from wrong credentials at sign-in)
