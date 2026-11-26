@@ -136,10 +136,11 @@ test('real confirmation-required signup, rejection, confirmation, refresh and lo
     const signup = await client.auth.signUp({ email, password, options: { data: { name: 'Signup' } } });
     createdId = signup.data.user?.id;
     assert.equal(signup.error, null); assert.equal(signup.data.session, null); assert.ok(signup.data.user);
-    assert.ok((await client.auth.signInWithPassword({ email, password })).error);
+    // KAN-122: the sign-in screen maps these Auth codes, so pin them against the real server.
+    assert.equal((await client.auth.signInWithPassword({ email, password })).error?.code, 'email_not_confirmed');
     const confirmed = await stack.admin.auth.admin.updateUserById(signup.data.user!.id, { email_confirm: true });
     assert.equal(confirmed.error, null); // Real email delivery remains a separate release task.
-    assert.ok((await client.auth.signInWithPassword({ email, password: 'wrong-password' })).error);
+    assert.equal((await client.auth.signInWithPassword({ email, password: 'wrong-password' })).error?.code, 'invalid_credentials');
     const login = await client.auth.signInWithPassword({ email, password });
     assert.equal(login.error, null); assert.ok(login.data.session);
     const restored = stack.client();

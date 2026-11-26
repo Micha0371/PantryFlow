@@ -20,6 +20,7 @@ const shared = { 'react-native': native, '@/lib/theme': theme,
   '@/lib/i18n': { useTranslation: () => ({ t }) }, '@/components/Button': { Button: 'Button' },
   '@/hooks/useErrorAnnouncement': announcement, '@/components/InlineError': inlineError,
   '@/hooks/useFormError': load('hooks/useFormError.ts'),
+  '@/lib/sign-in-error': load('lib/sign-in-error.ts'),
   // KAN-61: the Settings language row is inert in the sign-out tests.
   '@/components/OptionChips': { OptionChips: 'OptionChips' }, '@/lib/language': load('lib/language.ts'), '@/lib/profile-language': {},
   // UX-01B list wiring: modules the pantry list imports, inert in these tests.
@@ -408,6 +409,30 @@ for (const [file, fill, failing] of [
     } finally { act(() => renderer.unmount()); }
   });
 }
+
+test('sign-in shows the connection message for an unreachable server and the credential message only for a rejection (KAN-122)', async () => {
+  const { AuthApiError, AuthRetryableFetchError } = require('@supabase/supabase-js');
+  let failure;
+  const { default: Screen } = load('app/(auth)/login.tsx', { ...shared(),
+    'expo-router': { Link: 'Link', useRouter: () => ({ replace: () => {} }) },
+    'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView' },
+    '@/components/Input': { Input: 'Input' },
+    '@/lib/auth': { useAuth: () => ({ signIn: async () => { throw failure; } }) },
+  });
+  let renderer;
+  act(() => { renderer = create(React.createElement(Screen)); });
+  try {
+    const inputs = renderer.root.findAllByType('Input');
+    act(() => { inputs[0].props.onChangeText('a@example.com'); inputs[1].props.onChangeText('correct-password'); });
+    const shown = async error => {
+      failure = error;
+      await act(async () => renderer.root.findByType('Button').props.onPress());
+      return renderer.root.findAllByType('Input').find(i => 'error' in i.props).props.error;
+    };
+    assert.equal(await shown(new AuthRetryableFetchError('Network request failed', 0)), 'err_login_connection');
+    assert.equal(await shown(new AuthApiError('Invalid login credentials', 400, 'invalid_credentials')), 'err_login_failed');
+  } finally { act(() => renderer.unmount()); }
+});
 
 test('the Edit Item screen announces a missing item or failed load as an alert (final review I1)', () => {
   const announced = [];

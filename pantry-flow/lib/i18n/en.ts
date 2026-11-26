@@ -113,6 +113,10 @@ export const en = {
   // Errors
   err_required_name: 'Name is required.',
   err_login_failed: 'Invalid email or password.',
+  err_login_connection: 'Could not reach the server. Check your connection and try again.',
+  err_login_rate_limit: 'Too many sign-in attempts. Please wait a moment and try again.',
+  err_login_server: 'Sign-in is not available right now. Please try again later.',
+  err_login_unconfirmed: 'Confirm your email address first. You can request a new confirmation email below.',
   err_register_failed: 'Could not create account.',
   err_load_items: 'Could not load items.',
   err_save_item: 'Could not save item.',
