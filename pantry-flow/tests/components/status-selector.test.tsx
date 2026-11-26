@@ -93,3 +93,14 @@ test('the unplaced menu is hidden from accessibility until it is laid out', asyn
   expect(group().props.importantForAccessibility).not.toBe('no-hide-descendants');
   expect(group().props.accessibilityElementsHidden).toBeFalsy();
 });
+
+// Phone session 2026-11-26 (KAN-62, F2): at the largest font size "Vorrätig" broke as "Vorräti|g",
+// because `flex: 1` gave each label a zero basis and the menu stayed at its minimum width.
+test('option labels size the menu to their text instead of a zero flex basis', async () => {
+  await setup();
+  const label = StyleSheet.flatten(screen.getByText('In Stock').props.style);
+  expect(label.flex).toBeUndefined();
+  expect(label.flexBasis).toBeUndefined();
+  expect(label.flexGrow).toBe(1);
+  expect(label.flexShrink).toBe(1);
+});

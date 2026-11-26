@@ -159,7 +159,7 @@ function EditItemModalContent() {
           />
 
           <Text style={styles.sectionLabel}>{t('item_status')}</Text>
-          <View style={styles.statusRow} accessibilityRole="radiogroup" accessibilityLabel={t('item_status')}>
+          <View style={styles.statusRow} accessibilityRole="radiogroup" accessibilityLabel={t('item_status')} collapsable={false}>
             {STATUSES.map((s) => {
               const selected = s === status;
               const color = colors.status[s];

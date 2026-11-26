@@ -126,5 +126,7 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.75 },
   dot: { width: 8, height: 8, borderRadius: 4, marginRight: spacing.md },
-  label: { ...typography.body, color: colors.text, flex: 1, marginRight: spacing.md },
+  // Grow and shrink from the text's own width (not `flex: 1`, whose zero basis kept the menu at its
+  // minimum width and broke words at large font sizes; phone session 2026-11-26).
+  label: { ...typography.body, color: colors.text, flexGrow: 1, flexShrink: 1, marginRight: spacing.md },
 });
