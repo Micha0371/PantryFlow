@@ -256,3 +256,14 @@ Design: [KAN-61 language selection](2026-11-22-kan-61-language-selection-design.
 - **Android beta distribution (KAN-77):** a Play Store account and an upload key are needed. The account type is **personal**. It can be changed to an organization account later, but not back. For personal accounts Google requires a closed test with 12 testers for 14 days in a row before production; this does not block internal testing (Play Console Help, read 2026-11-24). The release track is not chosen yet.
 
 This amendment authorizes no account purchase, key creation, upload, distribution or tester invitation.
+
+## Amendment 4 — 2026-11-27 (beta line B13)
+
+**Decided by the owner on 2026-11-27:** three items become prerequisites of the supervised Android beta, recorded as [beta line B13](../release-readiness/2026-11-21-beta-entry-checklist.md):
+- **KAN-80 (stronger password rules), beta scope:** the approved policy enforced by hosted Auth and the sign-up screen, with the bypass check. Before this decision KAN-80 was a public-release gate only. The reset and update screens follow with KAN-42; until then the interim delete-and-re-register path (B3) applies, and a re-registration meets the same policy.
+- **KAN-127 (UX-10, hung data requests):** a request that never gets an answer ends with a message instead of a spinner, so testers on weak mobile connections are not stuck. A timeout alone does not prevent duplicates: the server may have saved a write whose answer never arrived. So a write with an unknown outcome is not shown as failed or lost, the app re-reads instead of assuming failure, and no retry may add a duplicate silently.
+- **KAN-124 (AUTH-TEST-01):** the confirmation callback's fail-closed check on getSession() errors is pinned by a test.
+
+Order: KAN-80 comes before the hosted smoke test of the signed build (KAN-77) and the B3 re-registration rehearsal, so they run under the final policy.
+
+This amendment authorizes no hosted Auth change, password-policy choice, upload, distribution or tester invitation; the policy itself is decided in KAN-81 and hosted changes need their own approval.
