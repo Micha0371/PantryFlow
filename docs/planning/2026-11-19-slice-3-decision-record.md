@@ -261,7 +261,7 @@ This amendment authorizes no account purchase, key creation, upload, distributio
 
 **Decided by the owner on 2026-11-27:** three items become prerequisites of the supervised Android beta, recorded as [beta line B13](../release-readiness/2026-11-21-beta-entry-checklist.md):
 - **KAN-80 (stronger password rules), beta scope:** the approved policy enforced by hosted Auth and the sign-up screen, with the bypass check. Before this decision KAN-80 was a public-release gate only. The reset and update screens follow with KAN-42; until then the interim delete-and-re-register path (B3) applies, and a re-registration meets the same policy.
-- **KAN-127 (UX-10, hung data requests):** a request that never gets an answer ends with a message instead of a spinner, so testers on weak mobile connections are not stuck and do not create duplicates.
+- **KAN-127 (UX-10, hung data requests):** a request that never gets an answer ends with a message instead of a spinner, so testers on weak mobile connections are not stuck. A timeout alone does not prevent duplicates: the server may have saved a write whose answer never arrived. So a write with an unknown outcome is not shown as failed or lost, the app re-reads instead of assuming failure, and no retry may add a duplicate silently.
 - **KAN-124 (AUTH-TEST-01):** the confirmation callback's fail-closed check on getSession() errors is pinned by a test.
 
 Order: KAN-80 comes before the hosted smoke test of the signed build (KAN-77) and the B3 re-registration rehearsal, so they run under the final policy.
