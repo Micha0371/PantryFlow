@@ -12,13 +12,21 @@
     },
     "android": {
       "package": "com.pantryflow.app",
+      "versionCode": 1,
+      "allowBackup": false,
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#F6F5F1"
       }
     },
     "plugins": [
       "expo-router",
-      "expo-localization"
+      "expo-localization",
+      "./plugins/with-backup-exclusion.cjs"
     ]
   }
 }

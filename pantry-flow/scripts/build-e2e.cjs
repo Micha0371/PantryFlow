@@ -14,7 +14,7 @@ if (!['http://10.0.2.2:54329', 'http://127.0.0.1:54329'].includes(publicEnv.EXPO
 const architectures = process.env.PANTRY_TEST_ARCHITECTURES || 'x86_64';
 if (!['x86_64', 'arm64-v8a', 'x86_64,arm64-v8a'].includes(architectures)) throw new Error('Unsupported test APK architectures');
 fs.mkdirSync(work, { recursive: true });
-for (const name of ['app', 'components', 'hooks', 'lib']) {
+for (const name of ['app', 'components', 'hooks', 'lib', 'plugins']) {
   const target = path.resolve(work, name);
   if (!target.startsWith(path.resolve(root, '.verification') + path.sep)) throw new Error('Unsafe generated-source target');
   fs.rmSync(target, { recursive: true, force: true });
