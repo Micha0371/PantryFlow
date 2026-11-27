@@ -1,0 +1,12 @@
+diff --git "a/C:\\pf3\\pantry-flow\\tests\\email-confirmation.test.cjs" "b/C:\\pf3\\pantry-flow\\tests\\kan124-variant-email-confirmation.test.cjs"
+index 201a094..cd59d8b 100644
+--- "a/C:\\pf3\\pantry-flow\\tests\\email-confirmation.test.cjs"
++++ "b/C:\\pf3\\pantry-flow\\tests\\kan124-variant-email-confirmation.test.cjs"
+@@ -85,7 +85,6 @@ test('a getSession() error stops the callback before any code exchange', async (
+   // stores its session, so the assertions below fail instead of waiting on a promise nobody settles.
+   f.exchange.resolve({ data: { session: { user: { id: 'from-link' } } }, error: null });
+   const [outcome] = await Promise.allSettled([f.service.confirmEmail({ code: 'link-code' })]);
+-  assert.deepEqual(f.calls.exchange, [], 'no code may be exchanged after a getSession() error');
+   assert.equal(f.currentSession(), null, 'the authentication state must not be replaced after a getSession() error');
+   assert.equal(outcome.status, 'rejected', 'the callback must reject after a getSession() error');
+   assert.equal(outcome.reason, failure, 'the callback must reject with the getSession() error itself');

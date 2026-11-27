@@ -1,0 +1,21 @@
+# Intact production code, new test
+$ node --test --test-reporter=spec tests/email-confirmation.test.cjs
+(exit 0)
+
+✔ confirmation rejects missing, ambiguous, malformed and error links without exchanging credentials (68.95ms)
+✔ confirmation coalesces duplicate active callbacks and requires an actual authenticated session (35.7734ms)
+✔ expired codes remain recoverable (11.132ms)
+✔ a callback cannot replace an already signed-in account (6.9258ms)
+✔ a getSession() error stops the callback before any code exchange (7.1947ms)
+✔ resend validates the address, prevents overlap, uses the app callback and unlocks after rejection (7.6132ms)
+✔ native PKCE adapter delegates secure randomness and SHA-256 without replacing browser crypto (19.3275ms)
+✔ the email shape check accepts and rejects exactly the same addresses (10.4878ms)
+✔ the email shape check runs in linear time (12.0649ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 510.5581
