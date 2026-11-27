@@ -62,6 +62,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      # CI-PORT-01: Linux gives outgoing connections ports 32768-60999, which include the fixed
+      # local Supabase ports (supabase/config.toml, 54320-54329). Reserve them before anything
+      # (checkout, npm, image pulls) opens a connection, so Docker can always bind them.
+      - name: Reserve the local Supabase ports
+        working-directory: .
+        run: |
+          sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54329
+          test "$(sysctl -n net.ipv4.ip_local_reserved_ports)" = "54320-54329"
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -73,6 +81,9 @@ jobs:
           set -o pipefail
           npm run db:start 2>&1 | tee db-start.log
         id: stack
+      - name: Show which process holds a local Supabase port
+        if: always() && steps.stack.outcome == 'failure'
+        run: sudo ss -tanp | grep -E ':5432[0-9][^0-9]' || echo 'no process holds a local Supabase port now'
       - name: Redact startup diagnostics
         if: always() && steps.stack.outcome == 'failure'
         run: node scripts/redact-startup-log.cjs
@@ -103,6 +114,14 @@ jobs:
     timeout-minutes: 60
     needs: [fast, database]
     steps:
+      # CI-PORT-01: Linux gives outgoing connections ports 32768-60999, which include the fixed
+      # local Supabase ports (supabase/config.toml, 54320-54329). Reserve them before anything
+      # (checkout, npm, image pulls) opens a connection, so Docker can always bind them.
+      - name: Reserve the local Supabase ports
+        working-directory: .
+        run: |
+          sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54329
+          test "$(sysctl -n net.ipv4.ip_local_reserved_ports)" = "54320-54329"
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -122,6 +141,9 @@ jobs:
           set -o pipefail
           npm run db:start 2>&1 | tee db-start.log
         id: stack
+      - name: Show which process holds a local Supabase port
+        if: always() && steps.stack.outcome == 'failure'
+        run: sudo ss -tanp | grep -E ':5432[0-9][^0-9]' || echo 'no process holds a local Supabase port now'
       - name: Redact startup diagnostics
         if: always() && steps.stack.outcome == 'failure'
         run: node scripts/redact-startup-log.cjs
