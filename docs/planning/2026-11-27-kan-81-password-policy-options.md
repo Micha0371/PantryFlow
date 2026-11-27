@@ -1,6 +1,6 @@
 # KAN-81: password policy options and recommendation
 
-**Status:** proposal for the owner's decision, 2026-11-27. Analysis only: no policy is chosen, and no app, local or hosted Auth setting changes until the owner decides. Hosted changes then need their own approval. KAN-80 is part of beta line B13 ([Amendment 4](2026-11-19-slice-3-decision-record.md#amendment-4--2026-11-27-beta-line-b13)); the beta scope is the policy, sign-up, and a check that bypassing the app cannot set a weaker password. Reset and update screens follow with KAN-42.
+**Status:** policy approved by the owner on 2026-11-27 (see [Owner decisions](#owner-decisions-2026-11-27)). This record does not authorize any change: the app, local and hosted Auth stay unchanged until KAN-82, and the hosted change needs its own owner approval. KAN-80 is part of beta line B13 ([Amendment 4](2026-11-19-slice-3-decision-record.md#amendment-4--2026-11-27-beta-line-b13)); the beta scope is the policy, sign-up, and a check that bypassing the app cannot set a weaker password. Reset and update screens follow with KAN-42.
 
 ## Today
 
@@ -43,7 +43,7 @@ Sources: [NIST SP 800-63B Rev. 4, 3.1.1](https://pages.nist.gov/800-63-4/sp800-6
 
 **Blocklist, separately:**
 - **B1. Upgrade the hosted project to Pro and turn on the leaked-password check** (meets NIST's "SHALL"; a recurring cost; HIBP outages either block sign-ups or let them through, depending on a fail-closed setting).
-- **B2. Stay on Free and record the missing blocklist as a dated deviation** for the supervised beta, mitigated by the 15-character minimum and Supabase's sign-in rate limits; decide B1 before the public release (KAN-80 is also a public-release gate).
+- **B2. Stay on Free and record the missing blocklist as a dated deviation** for the supervised beta; decide B1 before the public release (KAN-80 is also a public-release gate). The 15-character minimum and Supabase's sign-in rate limits reduce the risk but are not equivalent protection: a long password can still be a known breached one.
 
 ## Recommendation
 
@@ -56,13 +56,21 @@ Sources: [NIST SP 800-63B Rev. 4, 3.1.1](https://pages.nist.gov/800-63-4/sp800-6
 - **Blocklist:** B2 now, with the deviation recorded; B1 decided before the public release.
 - **Existing accounts:** no forced reset and no session revocation. Only test fixtures and the owner's accounts exist; set the policy on hosted **before** any tester registers, and re-create disposable test accounts with compliant passwords. Requirement for KAN-82: an existing user whose password no longer meets the policy can still sign in. How supabase-js reports `weak_password` at sign-in (as an error, or alongside a session) is not verified; if it arrives as an error, today's sign-in screen would show it as a failure, so KAN-82 must check this before the hosted policy changes.
 
-## What the owner decides
+## Owner decisions (2026-11-27)
 
-1. Minimum length: **15** (recommended), or another value.
-2. Character-type rules: **none** (recommended), or which.
-3. Blocklist: **B2 now, B1 before the public release** (recommended), or B1 now (Pro plan).
-4. Existing accounts: **no forced reset** (recommended).
-5. Wording of the requirement and the rejection messages (drafted in KAN-82, in English and German).
+| Decision | Approved policy |
+|---|---|
+| 1. Minimum length | **15 Unicode code points** |
+| 2. Character requirements | **None**: spaces, any Unicode characters and passphrases are allowed |
+| 3. Blocklist of compromised passwords | **B2 for the supervised beta**: stay on Free with this documented deviation; decide the Pro upgrade (B1) before the public release |
+| 4. Existing accounts | **No forced reset**, and no session revocation only because the policy changes |
+| 5. Messages | Clear English and German guidance for the 15-character minimum and the 72-byte server limit; a length rejection reads differently from a failed sign-in |
+
+- **Passwords stay exactly as typed:** the app never trims, truncates or silently normalizes them. Paste and password-manager autofill are allowed.
+- **Recorded deviation: no blocklist.** Missing the breached-password check deviates from NIST's "SHALL". The longer minimum does not replace it (see B2). Supabase offers the check on Pro and above.
+- **Recorded provider limit: 72 bytes.** The server's 72-byte maximum can reject some passwords of 64 characters or fewer when they contain umlauts or emoji. PantryFlow therefore does not claim full conformance with NIST's "accept at least 64 characters".
+- **Before the hosted change, KAN-82 resolves the two open points:** whether the Auth server normalizes Unicode, and whether `AuthWeakPasswordError` blocks sign-in for an existing account whose password no longer meets the policy.
+- **Not authorized by this record:** the hosted Auth configuration change (separate owner approval) and any release step.
 
 ## After the decision (KAN-82, KAN-83)
 
