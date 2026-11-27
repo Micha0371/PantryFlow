@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { load } = require('./helpers.cjs');
 const constants = load('lib/constants.ts');
-const { validateItem, parseItem, fetchAllItems, PAGE_SIZE, assertUniqueItemName, itemSaveErrorKey, isMissingPantryItem, PANTRY_MISSING } = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
+const { validateItem, parseItem, fetchAllItems, PAGE_SIZE, assertUniqueItemName, itemSaveErrorKey, isMissingPantryItem, PANTRY_MISSING, unconfirmedWrite } = load('lib/pantry-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './constants': constants, './pagination': load('lib/pagination.ts') });
 const row = (id = '1') => ({ id, household_id: 'h', name: 'Milk', status: 'in_stock',
   category: 'dairy', location: 'fridge', created_by: 'u', created_at: '2026-01-01', updated_at: '2026-01-01' });
 
@@ -43,6 +43,13 @@ test('only a zero-row write counts as a missing pantry item', () => {
   assert.equal(itemSaveErrorKey({ code: 'PGRST116' }), 'err_item_missing');
   assert.equal(itemSaveErrorKey({ code: PANTRY_MISSING }), 'err_item_missing');
   assert.equal(itemSaveErrorKey({ code: '42501' }), 'err_save_item');
+});
+
+// KAN-127: a write the server may have committed is never reported as failed.
+test('a write with an unknown outcome maps to the could-not-be-confirmed message', () => {
+  assert.equal(itemSaveErrorKey(unconfirmedWrite({ message: 'AbortError', code: '' })), 'err_change_unconfirmed');
+  // An uncoded error that was never wrapped (a check before the write) keeps the save message.
+  assert.equal(itemSaveErrorKey(new Error('Item change is already pending')), 'err_save_item');
 });
 
 test('fetches every page beyond the default 1000-row server cap', async () => {

@@ -2,6 +2,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { CATEGORIES, LOCATIONS, STATUSES } from './constants';
 import { fetchAllPages, PAGE_SIZE } from './pagination';
 import type { StatusKey } from './theme';
+import { isUnconfirmedWrite } from './write-outcome';
+
+export { WRITE_UNCONFIRMED, isUncodedFailure, isUnconfirmedWrite, unconfirmedWrite } from './write-outcome';
 
 export interface PantryItem {
   id: string;
@@ -104,6 +107,7 @@ export async function writeItemStatus(
 }
 
 export function itemSaveErrorKey(error: unknown) {
+  if (isUnconfirmedWrite(error)) return 'err_change_unconfirmed';
   if (isMissingPantryItem(error)) return 'err_item_missing';
   return error !== null && typeof error === 'object' && 'code' in error && error.code === '23505'
     ? 'err_duplicate_item' : 'err_save_item';

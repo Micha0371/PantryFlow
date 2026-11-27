@@ -4,7 +4,7 @@ const React = require('react');
 const { create, act } = require('react-test-renderer');
 const { load, deferred } = require('./helpers.cjs');
 const constants = load('lib/constants.ts');
-const data = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
+const data = load('lib/pantry-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './constants': constants, './pagination': load('lib/pagination.ts') });
 const row = (over = {}) => ({ id: '1', household_id: 'h', name: 'Milk', status: 'in_stock',
   category: 'dairy', location: 'fridge', created_by: 'u', created_at: '2026-01-01', updated_at: '2026-01-01', ...over });
 

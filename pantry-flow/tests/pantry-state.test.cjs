@@ -5,7 +5,7 @@ const { create, act } = require('react-test-renderer');
 const { load, deferred } = require('./helpers.cjs');
 const { readContract } = require('./list-provider-contract.cjs');
 const constants = load('lib/constants.ts');
-const data = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
+const data = load('lib/pantry-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './constants': constants, './pagination': load('lib/pagination.ts') });
 const row = (id = '1', household_id = 'h') => ({ id, household_id, name: 'Milk', status: 'in_stock',
   category: 'dairy', location: 'fridge', created_by: 'u', created_at: '2026-01-01', updated_at: '2026-01-01' });
 
@@ -109,11 +109,12 @@ test('a pending mutation cannot repopulate the next signed-in user cache', async
 test('failed writes preserve existing inventory and allow a subsequent retry', async () => {
   const f = fixture();
   await act(async () => f.reads[0].resolve([row()]));
-  f.mutation({ error: new Error('offline') });
+  // A confirmed (coded) rejection; a write without a database answer is the KAN-127 test below.
+  f.mutation({ error: Object.assign(new Error('server rejected the write'), { code: 'XX000' }) });
   await act(async () => {
-    await assert.rejects(f.first.updateItem('1', { ...row(), status: 'out' }), /offline/);
-    await assert.rejects(f.first.deleteItem('1'), /offline/);
-    await assert.rejects(f.first.addItem({ ...row(), name: 'Eggs' }), /offline/);
+    await assert.rejects(f.first.updateItem('1', { ...row(), status: 'out' }), /rejected/);
+    await assert.rejects(f.first.deleteItem('1'), /rejected/);
+    await assert.rejects(f.first.addItem({ ...row(), name: 'Eggs' }), /rejected/);
   });
   assert.equal(f.first.items[0].status, 'in_stock');
   assert.equal(f.first.items.length, 1);
@@ -156,7 +157,9 @@ test('a failed pantry write after a failed load keeps the load error and retry r
   const f = fixture();
   await act(async () => f.reads[0].reject(new Error('offline')));
   f.mutation({ error: new Error('offline') });
-  await act(async () => { await assert.rejects(f.first.addItem(named('new', 'New')), /offline/); });
+  await act(async () => {
+    await assert.rejects(f.first.addItem(named('new', 'New')), e => e.code === data.WRITE_UNCONFIRMED && /offline/.test(e.cause.message));
+  });
   await act(async () => f.reads[f.reads.length - 1].reject(new Error('offline')));
   assert.equal(f.first.loading, false);
   assert.equal(f.first.error, 'err_load_items');
@@ -273,20 +276,57 @@ test('a failed recovery read keeps the missing row out and shows the load error 
   f.dispose();
 });
 
-test('transport and permission failures keep cached rows and issue no re-read (CR-01)', async () => {
+test('a permission failure keeps cached rows and issues no re-read (CR-01)', async () => {
   const f = fixture();
   await act(async () => f.reads[0].resolve([named('1', 'Milk')]));
-  for (const error of [new Error('offline'), Object.assign(new Error('denied'), { code: '42501' })]) {
-    f.mutation({ data: null, error });
-    await act(async () => {
-      await assert.rejects(f.first.updateItem('1', { ...named('1', 'Milk'), status: 'low' }), e => e === error);
-      await assert.rejects(f.first.deleteItem('1'), e => e === error);
-    });
-  }
+  const error = Object.assign(new Error('denied'), { code: '42501' });
+  f.mutation({ data: null, error });
+  await act(async () => {
+    await assert.rejects(f.first.updateItem('1', { ...named('1', 'Milk'), status: 'low' }), e => e === error);
+    await assert.rejects(f.first.deleteItem('1'), e => e === error);
+  });
   assert.equal(f.reads.length, 1);
   assert.deepEqual(f.first.items.map(i => [i.id, i.status]), [['1', 'in_stock']]);
   assert.equal(f.first.error, null);
   assert.equal(f.first.loading, false);
+  f.dispose();
+});
+
+// KAN-127: a write that ends without a database answer (a timeout, a lost connection) may have
+// been committed. It keeps the cached rows, re-reads, and reports an unknown outcome, never a failure.
+test('a write without a database answer keeps cached rows, re-reads and reports an unknown outcome (KAN-127)', async () => {
+  const f = fixture();
+  await act(async () => f.reads[0].resolve([named('1', 'Milk')]));
+  const writes = [
+    () => f.first.addItem({ name: 'Eggs', category: 'dairy', location: 'fridge' }),
+    () => f.first.updateItem('1', { ...named('1', 'Milk'), status: 'low' }),
+    () => f.first.deleteItem('1'),
+  ];
+  for (const [index, write] of writes.entries()) {
+    for (const error of [{ message: 'AbortError: The operation was aborted.', code: '' }, new TypeError('Network request failed')]) {
+      const readsBefore = f.reads.length;
+      f.mutation({ data: null, error });
+      await act(async () => {
+        await assert.rejects(write(), e => e.code === data.WRITE_UNCONFIRMED && e.cause === error, `write ${index}`);
+      });
+      assert.equal(f.reads.length, readsBefore + 1, `write ${index} re-reads the list`);
+      assert.deepEqual(f.first.items.map(i => [i.id, i.status]), [['1', 'in_stock']], `write ${index} keeps the cached rows`);
+      await act(async () => f.reads.at(-1).resolve([named('1', 'Milk')]));
+    }
+  }
+  f.dispose();
+});
+
+test('the re-read after an unknown add shows the item the server did commit (KAN-127)', async () => {
+  const f = fixture();
+  await act(async () => f.reads[0].resolve([named('1', 'Milk')]));
+  f.mutation({ data: null, error: { message: 'AbortError', code: '' } });
+  await act(async () => {
+    await assert.rejects(f.first.addItem({ name: 'Eggs', category: 'dairy', location: 'fridge' }), e => e.code === data.WRITE_UNCONFIRMED);
+  });
+  await act(async () => f.reads.at(-1).resolve([named('2', 'Eggs'), named('1', 'Milk')]));
+  assert.deepEqual(f.first.items.map(i => i.name), ['Eggs', 'Milk']);
+  assert.deepEqual(f.second.items.map(i => i.name), ['Eggs', 'Milk']);
   f.dispose();
 });
 

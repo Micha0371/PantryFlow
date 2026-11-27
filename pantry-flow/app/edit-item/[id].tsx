@@ -20,7 +20,7 @@ import { OptionChips } from '@/components/OptionChips';
 import { AuthGate } from '@/components/AuthGate';
 import { useItemMutation } from '@/hooks/useItemMutation';
 import { useShoppingPrompt } from '@/hooks/useShoppingPrompt';
-import { ITEM_NAME_MAX, itemSaveErrorKey } from '@/lib/pantry-data';
+import { ITEM_NAME_MAX, isUnconfirmedWrite, itemSaveErrorKey } from '@/lib/pantry-data';
 import { usePantryItems } from '@/hooks/usePantryItems';
 import { useTranslation } from '@/lib/i18n';
 import { CATEGORIES, LOCATIONS, STATUSES } from '@/lib/constants';
@@ -127,7 +127,7 @@ function EditItemModalContent() {
           onPress: () => { void run(
             () => { removing.current = true; return deleteItem(item.id); },
             () => router.back(),
-            () => { removing.current = false; setError(t('err_delete_item')); },
+            (failure) => { removing.current = false; setError(t(isUnconfirmedWrite(failure) ? 'err_change_unconfirmed' : 'err_delete_item')); },
           ); },
         },
       ]
