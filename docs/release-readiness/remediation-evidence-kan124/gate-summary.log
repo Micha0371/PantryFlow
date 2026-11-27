@@ -1,0 +1,17 @@
+# Gate on the KAN-124 branch: base 30a3e4c plus the new test (test file blob 201a094baf62558b43163d1f439f2f6987ce84b2); node v26.10.0
+# Commands: npm run test:independence; npm run typecheck; npm run test:legacy -- --test-concurrency=2; npm run test:components; npm run test:safety
+# Filtered summary of the console output (exit code and counts), not the full log
+gate exit: 0
+Checked 104 files in 453 ms: 0 finding(s).
+ℹ tests 582
+ℹ pass 582
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+Test Suites: 4 passed, 4 total
+Tests:       19 passed, 19 total
+ℹ tests 1
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0

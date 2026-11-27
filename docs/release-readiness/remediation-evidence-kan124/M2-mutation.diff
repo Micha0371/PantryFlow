@@ -1,0 +1,13 @@
+diff --git a/pantry-flow/lib/email-confirmation.ts b/pantry-flow/lib/email-confirmation.ts
+index 72748a3..6b8fd67 100644
+--- a/pantry-flow/lib/email-confirmation.ts
++++ b/pantry-flow/lib/email-confirmation.ts
+@@ -18,7 +18,7 @@ export function confirmEmail(params: Readonly<Record<string, unknown>>): Promise
+   if (active) return active;
+   const request = (async () => {
+     const current = await supabase.auth.getSession();
+-    if (current.error) throw current.error;
++    if (current.error) return;
+     if (current.data.session) throw new Error('Already signed in');
+     // The persisted PKCE verifier binds the email link to this app installation.
+     const result = await supabase.auth.exchangeCodeForSession(code);
