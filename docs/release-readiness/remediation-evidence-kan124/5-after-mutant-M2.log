@@ -1,0 +1,42 @@
+# M2 (getSession() error swallowed: callback resolves), new test
+$ node --test --test-reporter=spec tests/email-confirmation.test.cjs
+(exit 1)
+
+✔ confirmation rejects missing, ambiguous, malformed and error links without exchanging credentials (94.8052ms)
+✔ confirmation coalesces duplicate active callbacks and requires an actual authenticated session (28.8103ms)
+✔ expired codes remain recoverable (13.3161ms)
+✔ a callback cannot replace an already signed-in account (14.2914ms)
+✖ a getSession() error stops the callback before any code exchange (12.0776ms)
+✔ resend validates the address, prevents overlap, uses the app callback and unlocks after rejection (10.1587ms)
+✔ native PKCE adapter delegates secure randomness and SHA-256 without replacing browser crypto (25.2327ms)
+✔ the email shape check accepts and rejects exactly the same addresses (11.0835ms)
+✔ the email shape check runs in linear time (12.0472ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 8
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 528.1351
+
+✖ failing tests:
+
+test at tests\email-confirmation.test.cjs:80:1
+✖ a getSession() error stops the callback before any code exchange (12.0776ms)
+  AssertionError [ERR_ASSERTION]: the callback must reject after a getSession() error
+  + actual - expected
+  
+  + 'fulfilled'
+  - 'rejected'
+  
+      at TestContext.<anonymous> (C:\pf3\pantry-flow\tests\email-confirmation.test.cjs:90:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'fulfilled',
+    expected: 'rejected',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
