@@ -23,7 +23,7 @@ return { ...routerStubs(route => pushes.push(route)), 'react-native': native,
   '@/hooks/useFormError': load('hooks/useFormError.ts'), '@/lib/theme': theme, '@expo/vector-icons': { Ionicons: 'Icon' },
   '@/lib/i18n': { useTranslation: () => ({ t }) }, '@/components/Button': { Button: 'Button' }, '@/components/Input': { Input: 'Input' },
   '@/components/EmptyState': { EmptyState: 'EmptyState' }, '@/components/ShoppingItem': { ShoppingItem: 'Row' },
-  '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }) };
+  '@/lib/shopping-data': load('lib/shopping-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './pagination': load('lib/pagination.ts') }) };
 };
 
 const row = (id, over = {}) => ({ id, household_id: 'h', pantry_item_id: null, name: id, is_checked: false,

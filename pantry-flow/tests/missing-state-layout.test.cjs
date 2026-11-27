@@ -8,8 +8,8 @@ const { load } = require('./helpers.cjs');
 const theme = load('lib/theme.ts');
 const constants = load('lib/constants.ts');
 const pagination = load('lib/pagination.ts');
-const pantryData = load('lib/pantry-data.ts', { './constants': constants, './pagination': pagination });
-const shoppingData = load('lib/shopping-data.ts', { './pagination': pagination });
+const pantryData = load('lib/pantry-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './constants': constants, './pagination': pagination });
+const shoppingData = load('lib/shopping-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './pagination': pagination });
 const t = key => key;
 
 const SCREENS = { edit: 'app/edit-item/[id].tsx', shopping: 'app/shopping-item/[id].tsx' };

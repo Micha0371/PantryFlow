@@ -16,8 +16,8 @@ afterEach(() => {
 const theme = load('lib/theme.ts');
 const constants = load('lib/constants.ts');
 const pagination = load('lib/pagination.ts');
-const pantryData = load('lib/pantry-data.ts', { './constants': constants, './pagination': pagination });
-const shoppingData = load('lib/shopping-data.ts', { './pagination': pagination });
+const pantryData = load('lib/pantry-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './constants': constants, './pagination': pagination });
+const shoppingData = load('lib/shopping-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './pagination': pagination });
 const t = key => key;
 const item = { id: '1', household_id: 'h', name: 'Milk', category: 'dairy', location: 'fridge', status: 'in_stock' };
 const shoppingItem = { id: '1', household_id: 'h', pantry_item_id: null, name: 'Milk', is_checked: false,
