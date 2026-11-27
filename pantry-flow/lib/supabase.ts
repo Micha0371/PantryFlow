@@ -3,7 +3,7 @@ import './native-auth-crypto';
 import { AppState, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
-import { withAuthTimeout } from './auth-timeout';
+import { withRequestTimeouts } from './auth-timeout';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -17,7 +17,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   // Read fetch at call time, so the platform's fetch (and any polyfill) is the one used.
-  global: { fetch: withAuthTimeout((input, init) => fetch(input, init)) },
+  global: { fetch: withRequestTimeouts((input, init) => fetch(input, init)) },
   auth: {
     storage: AsyncStorage,
     autoRefreshToken: true,

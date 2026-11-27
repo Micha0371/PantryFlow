@@ -121,6 +121,7 @@ export const en = {
   err_load_items: 'Could not load items.',
   err_save_item: 'Could not save item.',
   err_status_unconfirmed: 'Check your connection. The list shows the saved status once it reloads.',
+  err_change_unconfirmed: 'The change could not be confirmed. Check the list once it loads before trying again.',
   err_status_conflict: 'This item was just changed on another device. Its current status is shown.',
   err_delete_item: 'Could not delete item.',
   err_no_household: 'No household found. Please sign out and back in.',

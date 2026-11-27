@@ -125,6 +125,7 @@ export const de: Record<TranslationKey, string> = {
   err_load_items: 'Artikel konnten nicht geladen werden.',
   err_save_item: 'Artikel konnte nicht gespeichert werden.',
   err_status_unconfirmed: 'Prüfe deine Verbindung. Die Liste zeigt den gespeicherten Status, sobald sie neu geladen ist.',
+  err_change_unconfirmed: 'Die Änderung konnte nicht bestätigt werden. Prüfe die Liste, sobald sie geladen ist, bevor du es erneut versuchst.',
   err_status_conflict: 'Dieser Artikel wurde gerade auf einem anderen Gerät geändert. Sein aktueller Status wird angezeigt.',
   err_delete_item: 'Artikel konnte nicht gelöscht werden.',
   err_no_household: 'Kein Haushalt gefunden. Bitte melde dich ab und wieder an.',
