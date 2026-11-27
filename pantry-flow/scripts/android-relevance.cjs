@@ -4,7 +4,17 @@
 // pantry-flow/ counts unless it is a doc, a unit test or a component test, which never reach the APK.
 //   git diff --name-only <range> | node scripts/android-relevance.cjs        -> android=true|false
 //   node scripts/android-relevance.cjs --since <green-sha> [--head H] [--base origin/main]
+const fs = require('node:fs');
 const { execFileSync } = require('node:child_process');
+
+// git runs from a fixed absolute path, never a PATH lookup (Sonar S4036): the GitHub runners'
+// /usr/bin/git, common Unix locations, and Git for Windows.
+const GIT_CANDIDATES = ['/usr/bin/git', '/usr/local/bin/git', '/opt/homebrew/bin/git', String.raw`C:\Program Files\Git\cmd\git.exe`];
+function gitExecutable(candidates = GIT_CANDIDATES) {
+  const found = candidates.find(candidate => fs.existsSync(candidate));
+  if (!found) throw new Error(`No git found at a fixed path (${candidates.join(', ')})`);
+  return found;
+}
 
 const WORKFLOW = '.github/workflows/pantryflow-tests.yml';
 const NOT_IN_APK = [
@@ -31,7 +41,8 @@ function androidRelevant(files) {
 // at either commit, limited to relevant ones, whose content differs between the two. Files that only
 // main changed are left out: main's own Android run checks them. A file both changed counts.
 function rerunNeeded({ green, head = 'HEAD', base = 'origin/main', cwd = process.cwd() }) {
-  const git = (...args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  const gitPath = gitExecutable();
+  const git = (...args) => execFileSync(gitPath, args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
   const own = commit => git('diff', '--name-only', git('merge-base', commit, base), commit).split('\n').filter(Boolean);
   const blob = (commit, file) => { try { return git('rev-parse', `${commit}:${file}`); } catch { return null; } };
   const candidates = [...new Set([...own(green), ...own(head)])].filter(isRelevant).sort((a, b) => a.localeCompare(b));
@@ -39,7 +50,7 @@ function rerunNeeded({ green, head = 'HEAD', base = 'origin/main', cwd = process
   return { needed: files.length > 0, files };
 }
 
-module.exports = { androidRelevant, rerunNeeded, isRelevant };
+module.exports = { androidRelevant, rerunNeeded, isRelevant, gitExecutable, GIT_CANDIDATES };
 
 if (require.main === module) {
   const args = process.argv.slice(2);

@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
-const { androidRelevant, rerunNeeded } = require('../scripts/android-relevance.cjs');
+const { androidRelevant, rerunNeeded, gitExecutable, GIT_CANDIDATES } = require('../scripts/android-relevance.cjs');
 
 // What starts the Android e2e job on its own, and when a new head needs it again. A miss here
 // skips a run that was needed, so the default for anything unknown under pantry-flow/ is "relevant".
@@ -115,4 +115,13 @@ test('when main changed a file the branch also changed, the merged result needs 
     }
     assert.deepEqual(rerunNeeded({ green, head: 'HEAD', base: 'main', cwd: r.dir }), { needed: true, files: ['pantry-flow/lib/a.ts'] });
   } finally { r.cleanup(); }
+});
+
+// Sonar S4036: git runs from a fixed absolute path, never a PATH lookup.
+test('git runs from a fixed absolute path that exists, never from a PATH lookup', () => {
+  assert.ok(GIT_CANDIDATES.length > 0 && GIT_CANDIDATES.every(candidate => path.isAbsolute(candidate) || path.win32.isAbsolute(candidate)), 'only absolute candidates');
+  const git = gitExecutable();
+  assert.ok(GIT_CANDIDATES.includes(git), git);
+  assert.ok(fs.existsSync(git), git);
+  assert.throws(() => gitExecutable(['/nonexistent/git']), /No git found at a fixed path/);
 });
