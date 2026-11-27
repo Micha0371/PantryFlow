@@ -8,8 +8,10 @@ const path = require('node:path');
 
 const {
   releaseEnvProblems, patchReleaseSigning, bundleProblems, sourceMapProblems, signerProblems, artifactName,
-  HOSTED_REF, UPLOAD_CERT_SHA256,
+  protoXmlToString, HOSTED_REF, UPLOAD_CERT_SHA256, LIBRARY_ALLOWED,
 } = require('../scripts/build-release.cjs');
+const { manifestProblems, rulesProblems, releaseExpectations } = require('../scripts/release-config.cjs');
+const { DATA_EXTRACTION_RULES, DOMAINS } = require('../plugins/with-backup-exclusion.cjs');
 const { applyWindowsNativePaths } = require('../scripts/windows-native-paths.cjs');
 
 const url = `https://${HOSTED_REF}.supabase.co`;
@@ -121,15 +123,35 @@ const sourceMap = modules => ({
 });
 const NM = 'C:/repo/pantry-flow/node_modules/';
 
-test('the reviewed library literals pass the source-map check', () => {
+const installed = file => fs.readFileSync(path.join(__dirname, '..', 'node_modules', file), 'utf8');
+const REVIEWED_FILES = Object.keys(LIBRARY_ALLOWED);
+
+test('the installed supabase files contain exactly the reviewed literals and pass the source-map check', () => {
   const map = sourceMap([
-    [`${NM}@supabase/supabase-js/dist/index.cjs`, 'key.startsWith("sb_secret_"); targets.push("localhost", "127.0.0.1", "[::1]");'],
-    [`${NM}@supabase/functions-js/dist/main/FunctionsClient.js`, '/* `sb_secret_…` is not sent as a Bearer token */'],
-    [`${NM}@supabase/auth-js/dist/main/GoTrueAdminApi.js`, '// requires the service_role key'],
-    [`${NM}@supabase/storage-js/dist/index.cjs`, '// service_role'],
+    ...REVIEWED_FILES.map(file => [`${NM}${file}`, installed(file)]),
     ['C:/repo/pantry-flow/lib/supabase.ts', 'createClient(url, key)'],
   ]);
   assert.deepEqual(sourceMapProblems(map), []);
+});
+
+test('an extra occurrence outside the reviewed expressions in an allowlisted file is reported', () => {
+  const cases = [
+    ['@supabase/supabase-js/dist/index.cjs', 'const k = "sb_secret_abc";', /supabase-js.*sb_secret_|supabase-js.*secret key prefix/],
+    ['@supabase/supabase-js/dist/index.cjs', 'fetch("http://127.0.0.1:9999");', /supabase-js.*127\.0\.0\.1/],
+    ['@supabase/auth-js/dist/main/GoTrueAdminApi.js', 'role: "service_role"', /auth-js.*service_role/],
+    ['@supabase/storage-js/dist/index.cjs', 'Never expose your `service_role` key in the browser.', /storage-js.*service_role/],
+  ];
+  for (const [file, extra, expected] of cases) {
+    const problems = sourceMapProblems(sourceMap([[`${NM}${file}`, `${installed(file)}\n${extra}`]]));
+    assert.ok(problems.some(p => expected.test(p)), `${expected} not reported: ${JSON.stringify(problems)}`);
+  }
+});
+
+test('a reviewed expression that changed count is reported for review', () => {
+  const file = '@supabase/auth-js/dist/main/GoTrueAdminApi.js';
+  const once = installed(file).replace('Never expose your `service_role` key in the browser.', '');
+  const problems = sourceMapProblems(sourceMap([[`${NM}${file}`, once]]));
+  assert.ok(problems.some(p => /auth-js.*reviewed.*occurs 15 times, reviewed 16/.test(p)), JSON.stringify(problems));
 });
 
 test('a forbidden string in app source or in an unreviewed library is reported with its file', () => {
@@ -144,7 +166,7 @@ test('a forbidden string in app source or in an unreviewed library is reported w
     ['C:/repo/pantry-flow/lib/a.ts', '"http://host:54329"', /54329/],
     ['C:/repo/pantry-flow/lib/a.ts', '"pantryflowtest://callback"', /test scheme/],
     // The allowlist covers installed libraries only, not a file outside node_modules with the same path.
-    ['@supabase/supabase-js/dist/index.cjs', 'key.startsWith("sb_secret_")', /supabase-js.*secret/],
+    ['@supabase/supabase-js/dist/index.cjs', 'key.startsWith("sb_secret_")', /supabase-js.*contains Supabase secret key prefix/],
     [`${NM}some-lib/index.js`, '"sb_secret_"', /some-lib\/index\.js.*secret/],
     [`${NM}@supabase/supabase-js/dist/index.cjs`, '"service_role"', /supabase-js.*service_role/],
   ];
@@ -187,6 +209,78 @@ test('the artifact name carries version, version code and source commit', () => 
 
 test('a single-ABI trial artifact is named as a trial so it is never mistaken for the upload', () => {
   assert.equal(artifactName('0.1.0', 1, '30a3e4c0123456789', 'arm64-v8a'), 'pantryflow-0.1.0-1-30a3e4c-trial-arm64-v8a.aab');
+});
+
+// aapt2's protobuf XML (Resources.proto): XmlNode { element = 1; text = 2; source = 3 },
+// XmlElement { namespace_declaration = 1; namespace_uri = 2; name = 3; attribute = 4; child = 5 },
+// XmlAttribute { namespace_uri = 1; name = 2; value = 3; source = 4; resource_id = 5; compiled_item = 6 }.
+const ANDROID_NS = 'http://schemas.android.com/apk/res/android';
+const varint = n => {
+  const out = [];
+  do { let byte = n % 128; n = Math.floor(n / 128); if (n) byte += 128; out.push(byte); } while (n);
+  return Buffer.from(out);
+};
+const bytesField = (no, payload) => Buffer.concat([varint(no * 8 + 2), varint(payload.length), payload]);
+const stringField = (no, text) => bytesField(no, Buffer.from(text, 'utf8'));
+const varintField = (no, n) => Buffer.concat([varint(no * 8), varint(n)]);
+// An attribute carries its resource id and a source position, which the decoder must skip.
+const protoAttr = (name, value, android = true) => bytesField(4, Buffer.concat([
+  android ? stringField(1, ANDROID_NS) : Buffer.alloc(0), stringField(2, name), stringField(3, value),
+  bytesField(4, varintField(1, 7)), varintField(5, 0x0101021c),
+]));
+const protoNode = (name, attrs = {}, children = [], plain = {}) => bytesField(1, Buffer.concat([
+  ...(name === 'manifest' ? [bytesField(1, Buffer.concat([stringField(1, 'android'), stringField(2, ANDROID_NS)]))] : []),
+  stringField(3, name),
+  ...Object.entries(plain).map(([key, value]) => protoAttr(key, value, false)),
+  ...Object.entries(attrs).map(([key, value]) => protoAttr(key, value)),
+  ...children.map(child => bytesField(5, child)),
+]));
+const protoManifest = (application = {}) => protoNode('manifest', { versionCode: '1', versionName: '0.1.0' }, [
+  protoNode('uses-sdk', { minSdkVersion: '24', targetSdkVersion: '36' }),
+  protoNode('uses-permission', { name: 'android.permission.INTERNET' }),
+  protoNode('application', { allowBackup: 'false', dataExtractionRules: '@xml/data_extraction_rules', ...application }, [
+    protoNode('activity', { name: 'com.pantryflow.app.MainActivity', exported: 'true' }, [
+      protoNode('intent-filter', {}, [protoNode('data', { scheme: 'pantryflow' })]),
+    ]),
+  ]),
+], { package: 'com.pantryflow.app' });
+const appExpectations = () => releaseExpectations(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'app.json'), 'utf8')));
+
+test('the artifact manifest decoded from aapt2 protobuf passes the release-manifest checks', async () => {
+  const xml = protoXmlToString(protoManifest());
+  assert.match(xml, /<manifest xmlns:android="http:\/\/schemas\.android\.com\/apk\/res\/android" package="com\.pantryflow\.app" android:versionCode="1"/);
+  assert.deepEqual(await manifestProblems(xml, appExpectations()), []);
+});
+
+test('an unsafe setting inside the artifact manifest is reported from the decoded artifact', async () => {
+  const cases = [
+    [{ allowBackup: 'true' }, /allowBackup/],
+    [{ usesCleartextTraffic: 'true' }, /usesCleartextTraffic/],
+    [{ dataExtractionRules: '@xml/other' }, /dataExtractionRules/],
+  ];
+  for (const [application, expected] of cases) {
+    const problems = await manifestProblems(protoXmlToString(protoManifest(application)), appExpectations());
+    assert.ok(problems.some(p => expected.test(p)), `${expected} not reported: ${JSON.stringify(problems)}`);
+  }
+});
+
+const protoRules = domains => protoNode('data-extraction-rules', {}, ['cloud-backup', 'device-transfer'].map(section =>
+  protoNode(section, {}, domains.map(domain => protoNode('exclude', {}, [], { domain, path: '.' })))));
+
+test('the backup rules decoded from the artifact pass, and a missing domain is reported', () => {
+  assert.deepEqual(rulesProblems(protoXmlToString(protoRules(DOMAINS))), []);
+  assert.ok(rulesProblems(protoXmlToString(protoRules(DOMAINS.filter(d => d !== 'database')))).some(p => /database/.test(p)));
+  assert.ok(DATA_EXTRACTION_RULES.includes('<exclude domain="database" path="." />'), 'the plugin writes the rules the decoder reproduces');
+});
+
+test('decoded attribute values are escaped and a truncated buffer is refused', () => {
+  const xml = protoXmlToString(protoNode('x', {}, [], { label: 'a&b<"c">' }));
+  assert.match(xml, /label="a&amp;b&lt;&quot;c&quot;&gt;"/);
+  const whole = protoManifest();
+  assert.throws(() => protoXmlToString(whole.subarray(0, whole.length - 5)), /truncated/);
+  // A field key, then a length whose varint is cut off after its continuation byte.
+  assert.throws(() => protoXmlToString(Buffer.from([0x0a, 0x80])), /truncated/);
+  assert.throws(() => protoXmlToString(Buffer.from([0x08, ...Array(11).fill(0xff), 0x01])), /malformed varint/);
 });
 
 test('Windows native paths: the shared patch writes what the e2e builder wrote inline before', () => {

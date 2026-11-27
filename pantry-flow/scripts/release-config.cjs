@@ -70,7 +70,11 @@ function rulesProblems(xml) {
   for (const section of ['cloud-backup', 'device-transfer']) {
     const body = xml.match(new RegExp(`<${section}\\b[^>]*>([\\s\\S]*?)</${section}>`));
     if (!body) { problems.push(`backup rules have no <${section}> section`); continue; }
-    const excluded = new Set([...body[1].matchAll(/<exclude\s+domain="([^"]+)"\s+path="\."\s*\/>/g)].map(m => m[1]));
+    // Attribute order differs: the plugin writes domain first, aapt2 (inside the AAB) sorts by name.
+    const excluded = new Set([...body[1].matchAll(/<exclude\b([^>]*?)\/?>/g)]
+      .map(m => Object.fromEntries([...m[1].matchAll(/([\w:-]+)="([^"]*)"/g)].map(a => [a[1], a[2]])))
+      .filter(attributes => attributes.path === '.')
+      .map(attributes => attributes.domain));
     for (const domain of DOMAINS) {
       if (!excluded.has(domain)) problems.push(`<${section}> does not exclude all of domain ${domain}`);
     }

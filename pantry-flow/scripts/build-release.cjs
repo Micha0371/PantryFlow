@@ -67,19 +67,44 @@ const SOURCE_FORBIDDEN = [
   ['com.pantryflow.test', 'test package com.pantryflow.test'],
   ['pantryflowtest', 'test scheme pantryflowtest'],
 ];
-// Library literals reviewed on 2026-11-27 (supabase-js 2.119.0), by path below node_modules.
+// Library expressions reviewed on 2026-11-27 (supabase-js 2.119.0), by path below node_modules:
+// [exact text, number of occurrences]. Only these occurrences are exempt; the forbidden strings
+// must not occur anywhere else in the file, and a changed count fails until it is reviewed again.
 const LIBRARY_ALLOWED = {
-  // isNewApiKey: key.startsWith("sb_secret_"); getDefaultPropagationTargets: "127.0.0.1".
-  '@supabase/supabase-js/dist/index.cjs': ['sb_secret_', '127.0.0.1'],
-  // A doc comment naming the key formats.
-  '@supabase/functions-js/dist/main/FunctionsClient.js': ['sb_secret_'],
-  // Admin API documentation text; the app never calls it with an admin key.
-  '@supabase/auth-js/dist/main/GoTrueAdminApi.js': ['service_role'],
-  '@supabase/storage-js/dist/index.cjs': ['service_role'],
+  '@supabase/supabase-js/dist/index.cjs': [
+    ['key.startsWith("sb_secret_")', 1], // isNewApiKey: recognises the key format, holds no key
+    ['`sb_secret_…`', 1], // doc comment naming the key formats
+    ['targets.push("localhost", "127.0.0.1", "[::1]")', 1], // default trace-propagation targets
+  ],
+  '@supabase/functions-js/dist/main/FunctionsClient.js': [
+    ['`sb_secret_…`', 1], // doc comment naming the key formats
+  ],
+  // Admin API documentation; the app never calls it and bundles no admin key.
+  '@supabase/auth-js/dist/main/GoTrueAdminApi.js': [
+    ['Never expose your `service_role` key in the browser.', 16],
+    ['Requires a `service_role` key.', 1],
+  ],
+  '@supabase/storage-js/dist/index.cjs': [
+    ['**Requires the `service_role` key.**', 2],
+    ['`service_role` JWT', 2],
+  ],
 };
 
+// Removes the reviewed expressions of a library file; reports any whose count changed.
+function withoutReviewed(library, content, problems) {
+  let rest = content;
+  for (const [expression, count] of LIBRARY_ALLOWED[library] || []) {
+    const parts = rest.split(expression);
+    if (parts.length - 1 !== count) {
+      problems.push(`${library}: reviewed expression ${JSON.stringify(expression)} occurs ${parts.length - 1} times, reviewed ${count}; review the library change`);
+    }
+    rest = parts.join('');
+  }
+  return rest;
+}
+
 // Problems in Metro's source map: every bundled source file with its content. String boundaries
-// exist here, unlike in Hermes bytecode. App source is never allowed a forbidden string.
+// exist here, unlike in Hermes bytecode. App source is never exempt.
 function sourceMapProblems(map) {
   const modules = (map.sections || [{ map }]).flatMap(section => {
     const { sources = [], sourcesContent = [] } = section.map || {};
@@ -92,12 +117,82 @@ function sourceMapProblems(map) {
   for (const [source, content] of modules) {
     const normalized = source.replaceAll('\\', '/');
     const library = normalized.includes('/node_modules/') ? normalized.split('/node_modules/').pop() : null;
-    const allowed = (library && LIBRARY_ALLOWED[library]) || [];
+    const checked = library && LIBRARY_ALLOWED[library] ? withoutReviewed(library, content, problems) : content;
     for (const [needle, label] of SOURCE_FORBIDDEN) {
-      if (content.includes(needle) && !allowed.includes(needle)) problems.push(`${library || normalized} contains ${label}`);
+      if (checked.includes(needle)) problems.push(`${library || normalized} contains ${label}`);
     }
   }
   return problems;
+}
+
+// Decodes aapt2's protobuf XML (an AAB's manifest and XML resources) into XML text, so the
+// artifact's own files go through the same checks as the generated project's.
+const PROTO_ANDROID_NS = 'http://schemas.android.com/apk/res/android';
+
+function protoFields(buffer, start, end) {
+  const fields = [];
+  let at = start;
+  const varint = () => {
+    let value = 0;
+    let scale = 1;
+    for (let length = 0; length < 10; length += 1) {
+      if (at >= end) throw new Error('aapt2 XML is truncated');
+      const byte = buffer[at++];
+      value += (byte % 128) * scale;
+      if (byte < 128) return value;
+      scale *= 128;
+    }
+    throw new Error('aapt2 XML has a malformed varint');
+  };
+  while (at < end) {
+    const key = varint();
+    const field = Math.floor(key / 8);
+    const wire = key % 8;
+    if (wire === 0) fields.push({ field, value: varint() });
+    else if (wire === 2) {
+      const length = varint();
+      fields.push({ field, start: at, end: at + length });
+      at += length;
+    } else if (wire === 5) at += 4;
+    else if (wire === 1) at += 8;
+    else throw new Error(`aapt2 XML has an unsupported wire type ${wire}`);
+    if (at > end) throw new Error('aapt2 XML is truncated');
+  }
+  return fields;
+}
+
+const escapeXml = text => text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+
+function protoElementToString(buffer, start, end) {
+  const text = field => buffer.toString('utf8', field.start, field.end);
+  let name = '';
+  const attributes = [];
+  const children = [];
+  for (const field of protoFields(buffer, start, end)) {
+    if (field.field === 1 && field.start !== undefined) {
+      const declaration = Object.fromEntries(protoFields(buffer, field.start, field.end).filter(f => f.start !== undefined).map(f => [f.field, text(f)]));
+      attributes.push(`xmlns:${declaration[1]}="${escapeXml(declaration[2] || '')}"`);
+    } else if (field.field === 3) name = text(field);
+    else if (field.field === 4) {
+      const attribute = Object.fromEntries(protoFields(buffer, field.start, field.end).filter(f => f.start !== undefined && f.field <= 3).map(f => [f.field, text(f)]));
+      const prefix = attribute[1] === PROTO_ANDROID_NS ? 'android:' : '';
+      attributes.push(`${prefix}${attribute[2]}="${escapeXml(attribute[3] || '')}"`);
+    } else if (field.field === 5) children.push(protoNodeToString(buffer, field.start, field.end));
+  }
+  return `<${[name, ...attributes].join(' ')}>${children.join('')}</${name}>`;
+}
+
+function protoNodeToString(buffer, start, end) {
+  let xml = '';
+  for (const field of protoFields(buffer, start, end)) {
+    if (field.field === 1) xml += protoElementToString(buffer, field.start, field.end);
+    else if (field.field === 2) xml += escapeXml(buffer.toString('utf8', field.start, field.end));
+  }
+  return xml;
+}
+
+function protoXmlToString(buffer) {
+  return protoNodeToString(buffer, 0, buffer.length);
 }
 
 // Checked in the Hermes bytecode itself: none of these occurs in any library.
@@ -233,32 +328,42 @@ function buildBundle(root, repo, { publicEnv, trialArchitecture }) {
   return { android, built: path.join(android, 'app/build/outputs/bundle/release/app-release.aab') };
 }
 
-// Inspects the exact artifact: signer, manifest, backup rules, entries and the JS bundle.
-async function inspectArtifact(android, artifact, config) {
+const ARTIFACT_ENTRIES = {
+  manifest: 'base/manifest/AndroidManifest.xml',
+  rules: 'base/res/xml/data_extraction_rules.xml',
+  bundle: 'base/assets/index.android.bundle',
+};
+
+// Inspects only the AAB file itself: its signer, and its own manifest, backup rules and JS bundle,
+// decoded from the artifact (nothing from the build folder). Usable on any AAB, read-only.
+async function inspectArtifactFile(artifact, config) {
   const { manifestProblems, rulesProblems, releaseExpectations } = require('./release-config.cjs');
   const keytool = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, 'bin', 'keytool') : 'keytool';
   const problems = [...signerProblems(run(keytool, ['-printcert', '-jarfile', artifact], { encoding: 'utf8' }))];
-  const bundleManifests = path.join(android, 'app/build/intermediates/bundle_manifest/release');
-  const manifests = fs.readdirSync(bundleManifests, { recursive: true }).filter(file => path.basename(file) === 'AndroidManifest.xml');
-  if (manifests.length !== 1) throw new Error(`Expected one bundle manifest, found ${manifests.length}`);
-  const manifestXml = fs.readFileSync(path.join(bundleManifests, manifests[0]), 'utf8');
-  problems.push(
-    ...await manifestProblems(manifestXml, releaseExpectations(config)),
-    ...rulesProblems(fs.readFileSync(path.join(android, 'app/src/main/res/xml/data_extraction_rules.xml'), 'utf8')),
-  );
   const tar = process.platform === 'win32' ? path.join(process.env.SystemRoot || String.raw`C:\Windows`, 'System32', 'tar.exe') : 'bsdtar';
   const entries = new Set(run(tar, ['-tf', artifact], { encoding: 'utf8' }).split(/\r?\n/));
-  for (const entry of ['base/res/xml/data_extraction_rules.xml', 'base/assets/index.android.bundle', 'base/manifest/AndroidManifest.xml']) {
-    if (!entries.has(entry)) problems.push(`artifact has no ${entry}`);
-  }
-  const extract = fs.mkdtempSync(path.join(os.tmpdir(), 'pf-release-bundle-'));
+  const missing = Object.values(ARTIFACT_ENTRIES).filter(entry => !entries.has(entry));
+  if (missing.length) return { problems: [...problems, ...missing.map(entry => `artifact has no ${entry}`)], manifestXml: null };
+  const extract = fs.mkdtempSync(path.join(os.tmpdir(), 'pf-release-artifact-'));
   try {
-    run(tar, ['-xf', artifact, '-C', extract, 'base/assets/index.android.bundle']);
-    problems.push(...bundleProblems(fs.readFileSync(path.join(extract, 'base/assets/index.android.bundle'))));
+    run(tar, ['-xf', artifact, '-C', extract, ...Object.values(ARTIFACT_ENTRIES)]);
+    const read = entry => fs.readFileSync(path.join(extract, entry));
+    const manifestXml = protoXmlToString(read(ARTIFACT_ENTRIES.manifest));
+    problems.push(
+      ...await manifestProblems(manifestXml, releaseExpectations(config)),
+      ...rulesProblems(protoXmlToString(read(ARTIFACT_ENTRIES.rules))),
+      ...bundleProblems(read(ARTIFACT_ENTRIES.bundle)),
+    );
+    return { problems, manifestXml };
   } finally {
     fs.rmSync(extract, { recursive: true, force: true });
   }
-  // Metro's map of the same Gradle run: every module that went into the bundle, with its source.
+}
+
+// The artifact checks plus the bundled sources. The AAB carries no source map, so the sources
+// come from Metro's map of the same Gradle run that produced the artifact's bundle.
+async function inspectArtifact(android, artifact, config) {
+  const { problems, manifestXml } = await inspectArtifactFile(artifact, config);
   const packagerMap = path.join(android, 'app/build/intermediates/sourcemaps/react/release/index.android.bundle.packager.map');
   problems.push(...sourceMapProblems(JSON.parse(fs.readFileSync(packagerMap, 'utf8'))));
   return { problems, manifestXml };
@@ -278,7 +383,8 @@ async function build() {
   fs.copyFileSync(built, artifact);
   const { problems, manifestXml } = await inspectArtifact(android, artifact, config);
 
-  const { manifest } = await XML.parseXMLAsync(manifestXml);
+  // With entries missing there is no manifest; the record still lists the problems.
+  const { manifest } = manifestXml ? await XML.parseXMLAsync(manifestXml) : { manifest: { $: {} } };
   const sdk = (manifest['uses-sdk'] || [])[0]?.$ || {};
   const bytes = fs.readFileSync(artifact);
   const record = {
@@ -304,16 +410,29 @@ async function build() {
   if (problems.length) process.exitCode = 1;
 }
 
+// `inspect <file.aab>`: read-only artifact checks of an existing AAB; builds and signs nothing.
+async function inspectOnly(artifact) {
+  const root = path.resolve(__dirname, '..');
+  const config = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'));
+  const { problems } = await inspectArtifactFile(path.resolve(artifact), config);
+  const sha256 = createHash('sha256').update(fs.readFileSync(artifact)).digest('hex');
+  console.log(JSON.stringify({ artifact: path.basename(artifact), sha256, problems }, null, 2));
+  if (problems.length) process.exitCode = 1;
+}
+
 if (require.main === module) {
-  if (process.argv.length !== 2) {
-    console.error('Usage: node scripts/build-release.cjs');
-    process.exitCode = 2;
-  } else {
+  const [command, file] = process.argv.slice(2);
+  if (process.argv.length === 2) {
     build().catch(error => { console.error(error.message); process.exitCode = 1; });
+  } else if (command === 'inspect' && file && process.argv.length === 4) {
+    inspectOnly(file).catch(error => { console.error(error.message); process.exitCode = 1; });
+  } else {
+    console.error('Usage: node scripts/build-release.cjs [inspect <file.aab>]');
+    process.exitCode = 2;
   }
 }
 
 module.exports = {
   releaseEnvProblems, patchReleaseSigning, bundleProblems, sourceMapProblems, signerProblems, artifactName,
-  HOSTED_REF, UPLOAD_CERT_SHA256, UPLOAD_CREDENTIAL, UPLOAD_KEYSTORE,
+  protoXmlToString, LIBRARY_ALLOWED, HOSTED_REF, UPLOAD_CERT_SHA256, UPLOAD_CREDENTIAL, UPLOAD_KEYSTORE,
 };

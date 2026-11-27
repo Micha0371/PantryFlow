@@ -43,6 +43,14 @@ test('the backup rules exclude every storage domain from cloud backup and device
   assert.deepEqual(rulesProblems(withBackupExclusion.DATA_EXTRACTION_RULES), []);
 });
 
+// aapt2 stores attributes sorted by name, so the rules inside an AAB read path before domain.
+test('the backup rules pass in any attribute order, as aapt2 stores them in the artifact', () => {
+  const reordered = withBackupExclusion.DATA_EXTRACTION_RULES.replace(/<exclude domain="([^"]+)" path="\." \/>/g, '<exclude path="." domain="$1"/>');
+  assert.notEqual(reordered, withBackupExclusion.DATA_EXTRACTION_RULES);
+  assert.deepEqual(rulesProblems(reordered), []);
+  assert.ok(rulesProblems(reordered.replace('<exclude path="." domain="root"/>', '<exclude path="cache" domain="root"/>')).some(p => /root/.test(p)));
+});
+
 test('weakened backup rules are reported', () => {
   const rules = withBackupExclusion.DATA_EXTRACTION_RULES;
   const cases = [
