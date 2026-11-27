@@ -9,7 +9,7 @@ const path = require('node:path');
 const { XML } = require('@expo/config-plugins');
 const { DOMAINS, RULES_RESOURCE } = require('../plugins/with-backup-exclusion.cjs');
 
-const PRODUCTION = { package: 'com.pantryflow.app', scheme: 'pantryflow' };
+const PRODUCTION = { package: 'com.householdkit.pantryflow', scheme: 'pantryflow' }; // the Play Console app (owner, 2026-11-27)
 const BACKUP_PLUGIN = './plugins/with-backup-exclusion.cjs';
 // Expo's template asks for these; the app uses none of them.
 const BLOCKED_PERMISSIONS = [

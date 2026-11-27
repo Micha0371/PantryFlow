@@ -239,16 +239,16 @@ const protoManifest = (application = {}) => protoNode('manifest', { versionCode:
   protoNode('uses-sdk', { minSdkVersion: '24', targetSdkVersion: '36' }),
   protoNode('uses-permission', { name: 'android.permission.INTERNET' }),
   protoNode('application', { allowBackup: 'false', dataExtractionRules: '@xml/data_extraction_rules', ...application }, [
-    protoNode('activity', { name: 'com.pantryflow.app.MainActivity', exported: 'true' }, [
+    protoNode('activity', { name: 'com.householdkit.pantryflow.MainActivity', exported: 'true' }, [
       protoNode('intent-filter', {}, [protoNode('data', { scheme: 'pantryflow' })]),
     ]),
   ]),
-], { package: 'com.pantryflow.app' });
+], { package: 'com.householdkit.pantryflow' });
 const appExpectations = () => releaseExpectations(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'app.json'), 'utf8')));
 
 test('the artifact manifest decoded from aapt2 protobuf passes the release-manifest checks', async () => {
   const xml = protoXmlToString(protoManifest());
-  assert.match(xml, /<manifest xmlns:android="http:\/\/schemas\.android\.com\/apk\/res\/android" package="com\.pantryflow\.app" android:versionCode="1"/);
+  assert.match(xml, /<manifest xmlns:android="http:\/\/schemas\.android\.com\/apk\/res\/android" package="com\.householdkit\.pantryflow" android:versionCode="1"/);
   assert.deepEqual(await manifestProblems(xml, appExpectations()), []);
 });
 
