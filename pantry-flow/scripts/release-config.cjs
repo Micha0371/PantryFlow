@@ -161,9 +161,9 @@ function sourceProblems(root) {
   return problems;
 }
 
-// Generates the production Android project (unchanged app.json) in .verification/release-app and
-// returns the merged release manifest and the generated backup rules.
-function mergeReleaseManifest(root) {
+// Generates the production Android project (unchanged app.json) in .verification/release-app.
+// Returns the workspace and the environment used (no Supabase values).
+function prepareReleaseProject(root) {
   const { execFileSync } = require('node:child_process');
   const work = path.join(root, '.verification/release-app');
   if (!work.startsWith(path.resolve(root, '.verification') + path.sep)) throw new Error('Unsafe release workspace');
@@ -178,6 +178,13 @@ function mergeReleaseManifest(root) {
   const env = Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith('EXPO_PUBLIC_')));
   Object.assign(env, { EXPO_NO_DOTENV: '1', CI: '1' });
   execFileSync(process.execPath, [path.join(root, 'node_modules/expo/bin/cli'), 'prebuild', '--platform', 'android', '--no-install'], { cwd: work, env, stdio: 'inherit' });
+  return { work, env };
+}
+
+// Returns the merged release manifest and the generated backup rules of that project.
+function mergeReleaseManifest(root) {
+  const { execFileSync } = require('node:child_process');
+  const { work, env } = prepareReleaseProject(root);
   const gradle = process.platform === 'win32' ? path.join(work, 'android/gradlew.bat') : './gradlew';
   execFileSync(gradle, [':app:processReleaseMainManifest', '--max-workers=2', '--no-daemon'], {
     cwd: path.join(work, 'android'), env, stdio: 'inherit', shell: process.platform === 'win32',
@@ -225,6 +232,6 @@ if (require.main === module) {
 }
 
 module.exports = {
-  appConfigProblems, rulesProblems, manifestProblems, sourceProblems, releaseExpectations,
+  appConfigProblems, rulesProblems, manifestProblems, sourceProblems, releaseExpectations, prepareReleaseProject,
   BLOCKED_PERMISSIONS, ALLOWED_PERMISSIONS, SIGNATURE_PERMISSIONS, ALLOWED_EXPORTED, MIN_TARGET_SDK,
 };

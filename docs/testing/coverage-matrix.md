@@ -759,3 +759,18 @@ Contract: the production config (`pantry-flow/app.json`) builds `com.pantryflow.
 | REL-CONFIG-05 | Real merged release manifest, 2026-11-27 | **PASS** on the step 1 branch: package `com.pantryflow.app`, versionCode 1, versionName 0.1.0, minSdk 24, targetSdk 36, `allowBackup="false"`, `dataExtractionRules="@xml/data_extraction_rules"`; permissions INTERNET, VIBRATE and the app's own AndroidX `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` (declared at signature level); exported MainActivity and AndroidX `ProfileInstallReceiver` (protected by `android.permission.DUMP`). The first run flagged those two AndroidX entries; they are accepted only while their protection holds | Manifest of an unsigned, unbuilt project; the signed artifact is inspected again in step 3 |
 
 Checks written test first. Removing any single check of `scripts/release-config.cjs` or the plugin (37 mutants, including the target API level and each source pattern) fails a test (checked 2026-11-27).
+
+### KAN-77 step 3 — signed release build
+
+The builder and its checks are described in the [release build runbook](../release-readiness/2026-11-27-android-release-build.md).
+
+| ID | Observable outcome | Automated coverage | Limit |
+| --- | --- | --- | --- |
+| REL-BUILD-01 | The build refuses a non-hosted URL, a missing key, a secret key or a non-anon token, without echoing the key | `tests/build-release.test.cjs` | Unit level |
+| REL-BUILD-02 | Release builds are signed with the upload key read from the environment; debug builds keep the debug key; an unrecognised template stops the build; no literal password in the build file | `tests/build-release.test.cjs` | Unit level; the real signing is REL-BUILD-05 |
+| REL-BUILD-03 | The artifact is signed only by the upload certificate `72:D9:…:84:A2`; unsigned, other-key or second-signer artifacts are reported | `tests/build-release.test.cjs` with `keytool -printcert` output | Unit level |
+| REL-BUILD-04 | Bytecode and bundled-source checks: hosted project present; no local address or port, fixture account, test package or scheme, secret-key prefix or `service_role` reference outside the reviewed library literals; tokens have the `anon` role; a source map without contents is reported | `tests/build-release.test.cjs` | The reviewed literals are pinned to supabase-js 2.119.0 |
+| REL-BUILD-05 | Real single-ABI trial build from a clean commit, 2026-11-27 | **PASS** on the step 3 branch: `:app:bundleRelease` (arm64-v8a), signed by the upload key, package `com.pantryflow.app`, version 0.1.0 (1), target API 36, backup rules in the AAB, no bundle or source-map problems. The first trial flagged `sb_secret_` and `127.0.0.1` in the bytecode; both were traced to supabase-js (a prefix check and default trace targets) in the source map of all 1,834 bundled files, which led to the per-file source-map check | Trial artifact, not for upload; the full four-ABI build of a merged commit is the upload candidate |
+| REL-BUILD-06 | The e2e test build's Windows path workaround is unchanged after moving it into `scripts/windows-native-paths.cjs` | `tests/build-release.test.cjs` (byte-for-byte output of the former inline code) | Linux CI does not run this Windows-only path |
+
+Checks written test first. Removing any single check of `scripts/build-release.cjs` or `scripts/windows-native-paths.cjs` (37 mutants) fails a test (checked 2026-11-27); the first pass found four gaps (three source-map strings and the node_modules-only allowlist), now covered.
