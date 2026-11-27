@@ -8,11 +8,13 @@ function fixture() {
   const sent = deferred();
   const calls = { exchange: [], resend: [] };
   let session = null;
+  let sessionError = null;
   const service = load('lib/email-confirmation.ts', {
     'expo-linking': { createURL: path => `pantryflow://${path}` },
     './native-auth-crypto': { assertSecurePkce() {} },
     './supabase': { supabase: { auth: {
-      getSession: async () => ({ data: { session }, error: null }),
+      // As in supabase-js, a failed read returns the error and no session.
+      getSession: async () => (sessionError ? { data: { session: null }, error: sessionError } : { data: { session }, error: null }),
       // As in supabase-js, a successful exchange stores its session and replaces the current one.
       exchangeCodeForSession: code => {
         calls.exchange.push(code);
@@ -21,7 +23,12 @@ function fixture() {
       resend: request => { calls.resend.push(request); return sent.promise; },
     } } },
   });
-  return { service, calls, exchange, sent, signIn() { session = { user: { id: 'existing' } }; }, currentSession: () => session };
+  return {
+    service, calls, exchange, sent,
+    signIn() { session = { user: { id: 'existing' } }; },
+    failGetSession(error) { sessionError = error; },
+    currentSession: () => session,
+  };
 }
 
 test('confirmation rejects missing, ambiguous, malformed and error links without exchanging credentials', async () => {
@@ -66,6 +73,22 @@ test('a callback cannot replace an already signed-in account', async () => {
   assert.deepEqual(f.currentSession(), { user: { id: 'existing' } }, 'the signed-in account must keep its session');
   assert.equal(outcome.status, 'rejected', 'the callback must report that an account is already signed in');
   assert.match(outcome.reason.message, /Already signed in/);
+});
+
+// KAN-124: when the current session cannot be read, the callback must fail closed rather than treat
+// "unknown" as "signed out" and exchange the code.
+test('a getSession() error stops the callback before any code exchange', async () => {
+  const f = fixture();
+  const failure = new Error('session storage could not be read');
+  f.failGetSession(failure);
+  // Settled before the callback runs: without the error check the exchange completes at once and
+  // stores its session, so the assertions below fail instead of waiting on a promise nobody settles.
+  f.exchange.resolve({ data: { session: { user: { id: 'from-link' } } }, error: null });
+  const [outcome] = await Promise.allSettled([f.service.confirmEmail({ code: 'link-code' })]);
+  assert.deepEqual(f.calls.exchange, [], 'no code may be exchanged after a getSession() error');
+  assert.equal(f.currentSession(), null, 'the authentication state must not be replaced after a getSession() error');
+  assert.equal(outcome.status, 'rejected', 'the callback must reject after a getSession() error');
+  assert.equal(outcome.reason, failure, 'the callback must reject with the getSession() error itself');
 });
 
 test('resend validates the address, prevents overlap, uses the app callback and unlocks after rejection', async () => {
