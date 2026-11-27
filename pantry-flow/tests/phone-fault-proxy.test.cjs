@@ -15,7 +15,9 @@ async function start() {
     seen.push(`${req.method} ${req.url}`);
     req.resume();
     req.on('end', () => {
-      res.writeHead(req.method === 'POST' ? 201 : 200, { 'Content-Type': 'application/json' });
+      // Headers the app reads, plus two it must never get through this proxy.
+      res.writeHead(req.method === 'POST' ? 201 : 200, { 'Content-Type': 'application/json', 'Content-Range': '0-0/1',
+        'X-Supabase-Api-Version': '2024-01-01', Location: 'https://elsewhere.example/', 'Set-Cookie': 'session=x' });
       res.end('[]');
     });
   });
@@ -37,7 +39,7 @@ async function start() {
       clearTimeout(timer);
       const chunks = [];
       res.on('data', chunk => chunks.push(chunk));
-      res.on('end', () => resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString() }));
+      res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks).toString() }));
     });
     const timer = setTimeout(() => resolve('no answer'), NO_ANSWER_MS);
     req.on('error', () => { clearTimeout(timer); resolve('closed'); });
@@ -163,5 +165,32 @@ test('an unknown control is refused and changes nothing', async () => {
     const s = await p.state();
     assert.equal(s.hangReads || s.hangWrites || s.swallowWrites, false);
     assert.equal((await p.send('GET', pantryRead)).status, 200);
+  } finally { p.stop(); }
+});
+
+// Hardening after SonarCloud (#89): the proxy forwards only Auth and data paths, and passes back only
+// the response headers the app reads; never a redirect or a cookie from upstream.
+test('only Auth and data paths are forwarded; any other path or a ".." segment is refused before the stack', async () => {
+  const p = await start();
+  try {
+    for (const url of ['/storage/v1/object/x', '/functions/v1/x', '/', '/rest/v1/../admin', '/auth/v1/..%2fadmin', '/rest/v2/pantry_items']) {
+      assert.equal((await p.send('GET', url)).status, 404, url);
+    }
+    assert.deepEqual(p.seen, [], 'nothing refused reached the stack');
+    assert.equal((await p.send('GET', pantryRead)).status, 200);
+    assert.equal((await p.send('GET', authCall)).status, 200);
+  } finally { p.stop(); }
+});
+
+test('only the listed response headers are passed back, never Location or Set-Cookie', async () => {
+  const p = await start();
+  try {
+    const answer = await p.send('GET', pantryRead);
+    assert.equal(answer.status, 200);
+    assert.equal(answer.headers['content-type'], 'application/json');
+    assert.equal(answer.headers['content-range'], '0-0/1');
+    assert.equal(answer.headers['x-supabase-api-version'], '2024-01-01');
+    assert.equal(answer.headers.location, undefined);
+    assert.equal(answer.headers['set-cookie'], undefined);
   } finally { p.stop(); }
 });

@@ -7,7 +7,8 @@
 //   /__test/swallow-writes  data writes reach the stack, the app gets no answer (committed, answer lost)
 //   /__test/restore         everything answered again; held requests are dropped
 //   /__test/state           the switches, the held count and each swallowed write's stack status
-// Auth (/auth/v1/) is always forwarded, so sign-in and token refresh keep working.
+// Auth (/auth/v1/) is always forwarded, so sign-in and token refresh keep working. Only /auth/v1/ and
+// /rest/v1/ paths are forwarded, and only the response headers the app reads are passed back.
 const http = require('node:http');
 // Port overrides exist only for the proxy's unit test; the phone session uses the defaults.
 const listenPort = Number(process.env.PANTRY_PROXY_PORT ?? 54329);
@@ -30,10 +31,27 @@ function hold(req, res) {
 
 const tableOf = url => url.slice('/rest/v1/'.length).split('?')[0];
 
+// Only Auth and data requests are forwarded, never with a ".." segment (also percent-encoded).
+function forwardable(url) {
+  if (!/^\/(?:auth|rest)\/v1\//.test(url)) return false;
+  let route;
+  try { route = decodeURIComponent(url.split('?')[0]); } catch { return false; }
+  return !route.split('/').includes('..');
+}
+
+// Only the response headers the app reads go back; never a redirect or a cookie from upstream.
+const ANSWER_HEADERS = ['content-type', 'content-length', 'content-encoding', 'content-range', 'preference-applied',
+  'x-supabase-api-version', 'retry-after'];
+function answerHeaders(headers) {
+  const out = {};
+  for (const name of ANSWER_HEADERS) if (headers[name] !== undefined) out[name] = headers[name];
+  return out;
+}
+
 function control(req, res) {
-  const url = new URL(req.url, 'http://proxy');
-  const name = url.pathname.slice('/__test/'.length);
-  if (name === 'hang-reads') modes.hangReads = url.searchParams.get('table') || true;
+  const [route, query = ''] = req.url.split('?');
+  const name = route.slice('/__test/'.length);
+  if (name === 'hang-reads') modes.hangReads = new URLSearchParams(query).get('table') || true;
   else if (name === 'hang-writes') { modes.hangWrites = true; modes.swallowWrites = false; }
   else if (name === 'swallow-writes') { modes.swallowWrites = true; modes.hangWrites = false; }
   else if (name === 'restore') {
@@ -49,7 +67,7 @@ function forward(req, res, body, swallow) {
   const upstream = http.request({ hostname: '127.0.0.1', port: upstreamPort, path: req.url, method: req.method,
     headers: { ...req.headers, host: `127.0.0.1:${upstreamPort}` } }, response => {
     if (!swallow) {
-      res.writeHead(response.statusCode, response.headers);
+      res.writeHead(response.statusCode, answerHeaders(response.headers));
       return response.pipe(res);
     }
     // Committed or not, the stack's answer is recorded (table and status only) and never sent.
@@ -62,6 +80,7 @@ function forward(req, res, body, swallow) {
 
 const server = http.createServer(async (req, res) => {
   if (req.url.startsWith('/__test/')) return control(req, res);
+  if (!forwardable(req.url)) return json(res, 404, { message: 'not forwarded by the phone fault proxy' });
   const data = req.url.startsWith('/rest/v1/');
   const write = WRITES.has(req.method);
   if (data && !write && (modes.hangReads === true || modes.hangReads === tableOf(req.url))) return hold(req, res);
