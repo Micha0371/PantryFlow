@@ -1,0 +1,20 @@
+# M1 (getSession() error ignored), test file from main
+$ node --test --test-reporter=spec tests/kan124-old-email-confirmation.test.cjs
+(exit 0)
+
+✔ confirmation rejects missing, ambiguous, malformed and error links without exchanging credentials (58.9164ms)
+✔ confirmation coalesces duplicate active callbacks and requires an actual authenticated session (31.0792ms)
+✔ expired codes remain recoverable (7.6704ms)
+✔ a callback cannot replace an already signed-in account (7.7099ms)
+✔ resend validates the address, prevents overlap, uses the app callback and unlocks after rejection (6.1096ms)
+✔ native PKCE adapter delegates secure randomness and SHA-256 without replacing browser crypto (18.839ms)
+✔ the email shape check accepts and rejects exactly the same addresses (11.2716ms)
+✔ the email shape check runs in linear time (9.7184ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 446.0373

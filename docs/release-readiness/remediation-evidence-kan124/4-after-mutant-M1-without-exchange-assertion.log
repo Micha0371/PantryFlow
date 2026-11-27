@@ -1,0 +1,46 @@
+# M1, new test without the exchange assertion
+$ node --test --test-reporter=spec tests/kan124-variant-email-confirmation.test.cjs
+(exit 1)
+
+✔ confirmation rejects missing, ambiguous, malformed and error links without exchanging credentials (72.7188ms)
+✔ confirmation coalesces duplicate active callbacks and requires an actual authenticated session (30.002ms)
+✔ expired codes remain recoverable (7.9954ms)
+✔ a callback cannot replace an already signed-in account (7.8296ms)
+✖ a getSession() error stops the callback before any code exchange (8.2624ms)
+✔ resend validates the address, prevents overlap, uses the app callback and unlocks after rejection (8.2179ms)
+✔ native PKCE adapter delegates secure randomness and SHA-256 without replacing browser crypto (17.5883ms)
+✔ the email shape check accepts and rejects exactly the same addresses (7.3284ms)
+✔ the email shape check runs in linear time (7.0543ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 8
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 463.5879
+
+✖ failing tests:
+
+test at tests\kan124-variant-email-confirmation.test.cjs:80:1
+✖ a getSession() error stops the callback before any code exchange (8.2624ms)
+  AssertionError [ERR_ASSERTION]: the authentication state must not be replaced after a getSession() error
+  + actual - expected
+  
+  + {
+  +   user: {
+  +     id: 'from-link'
+  +   }
+  + }
+  - null
+  
+      at TestContext.<anonymous> (C:\pf3\pantry-flow\tests\kan124-variant-email-confirmation.test.cjs:88:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { user: { id: 'from-link' } },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

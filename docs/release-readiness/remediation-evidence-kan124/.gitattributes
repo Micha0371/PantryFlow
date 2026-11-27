@@ -1,0 +1,6 @@
+# Keep evidence hashes stable across checkouts.
+* text eol=lf
+# Captured diffs keep their original context and trailing whitespace.
+*.diff -whitespace
+# Captured test output keeps the runner's trailing spaces.
+*.log -whitespace
