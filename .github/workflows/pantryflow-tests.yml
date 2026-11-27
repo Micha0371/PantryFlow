@@ -64,12 +64,22 @@ jobs:
     steps:
       # CI-PORT-01: Linux gives outgoing connections ports 32768-60999, which include the fixed
       # local Supabase ports (supabase/config.toml, 54320-54329). Reserve them before anything
-      # (checkout, npm, image pulls) opens a connection, so Docker can always bind them.
+      # (checkout, npm, image pulls) opens a connection, so Docker can always bind them. Writing
+      # the setting replaces the whole list, so the runner's own reservations are kept: the step
+      # writes "<existing>,54320-54329" and fails unless every port reserved before, plus ours,
+      # is reserved after. Both lists and the ephemeral range are logged for the diagnosis.
       - name: Reserve the local Supabase ports
         working-directory: .
         run: |
-          sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54329
-          test "$(sysctl -n net.ipv4.ip_local_reserved_ports)" = "54320-54329"
+          ports() { tr ',' '\n' <<<"$1" | awk -F- 'NF { last = ($2 == "" ? $1 : $2); for (p = $1; p <= last; p++) print p }' | sort -u; }
+          before="$(sysctl -n net.ipv4.ip_local_reserved_ports)"
+          echo "ephemeral port range: $(sysctl -n net.ipv4.ip_local_port_range)"
+          echo "reserved before: '${before}'"
+          sudo sysctl -w net.ipv4.ip_local_reserved_ports="${before:+${before},}54320-54329"
+          after="$(sysctl -n net.ipv4.ip_local_reserved_ports)"
+          echo "reserved after: '${after}'"
+          missing="$(comm -23 <({ ports "$before"; seq 54320 54329; } | sort -u) <(ports "$after"))"
+          if [ -n "$missing" ]; then echo "::error::not reserved after the change: $(echo $missing)"; exit 1; fi
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -116,12 +126,22 @@ jobs:
     steps:
       # CI-PORT-01: Linux gives outgoing connections ports 32768-60999, which include the fixed
       # local Supabase ports (supabase/config.toml, 54320-54329). Reserve them before anything
-      # (checkout, npm, image pulls) opens a connection, so Docker can always bind them.
+      # (checkout, npm, image pulls) opens a connection, so Docker can always bind them. Writing
+      # the setting replaces the whole list, so the runner's own reservations are kept: the step
+      # writes "<existing>,54320-54329" and fails unless every port reserved before, plus ours,
+      # is reserved after. Both lists and the ephemeral range are logged for the diagnosis.
       - name: Reserve the local Supabase ports
         working-directory: .
         run: |
-          sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54329
-          test "$(sysctl -n net.ipv4.ip_local_reserved_ports)" = "54320-54329"
+          ports() { tr ',' '\n' <<<"$1" | awk -F- 'NF { last = ($2 == "" ? $1 : $2); for (p = $1; p <= last; p++) print p }' | sort -u; }
+          before="$(sysctl -n net.ipv4.ip_local_reserved_ports)"
+          echo "ephemeral port range: $(sysctl -n net.ipv4.ip_local_port_range)"
+          echo "reserved before: '${before}'"
+          sudo sysctl -w net.ipv4.ip_local_reserved_ports="${before:+${before},}54320-54329"
+          after="$(sysctl -n net.ipv4.ip_local_reserved_ports)"
+          echo "reserved after: '${after}'"
+          missing="$(comm -23 <({ ports "$before"; seq 54320 54329; } | sort -u) <(ports "$after"))"
+          if [ -n "$missing" ]; then echo "::error::not reserved after the change: $(echo $missing)"; exit 1; fi
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
