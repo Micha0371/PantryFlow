@@ -16,10 +16,17 @@ const pantryData = load('lib/pantry-data.ts', { './write-outcome': writeOutcome,
 const shoppingData = load('lib/shopping-data.ts', { './write-outcome': writeOutcome, './pagination': pagination });
 
 const DATA_MS = 50;
-function hangingServer() {
+// `answerReads`: how many list reads get an (empty) answer before the server stops answering.
+function hangingServer(answerReads = 0) {
   const seen = [];
+  let answered = 0;
   const fetch = (input, init = {}) => {
-    seen.push({ url: String(input), method: init.method ?? 'GET' });
+    const method = init.method ?? 'GET';
+    seen.push({ url: String(input), method });
+    if (method === 'GET' && answered < answerReads) {
+      answered += 1;
+      return Promise.resolve(new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json', 'Content-Range': '*/0' } }));
+    }
     return new Promise((_, reject) => {
       init.signal?.addEventListener('abort', () => reject(new DOMException('The operation was aborted.', 'AbortError')));
     });
@@ -39,8 +46,8 @@ const within = (promise, message, ms = 2000) => {
   return Promise.race([promise, deadline]).finally(() => clearTimeout(timer));
 };
 
-function mount(hookFile, hookName, Provider, data, dataStub) {
-  const server = hangingServer();
+function mount(hookFile, hookName, Provider, data, dataStub, answerReads = 0) {
+  const server = hangingServer(answerReads);
   const boundary = { '@/lib/supabase': { supabase: server.client }, '@/lib/auth': { useAuth: () => ({ user: { id: 'u' } }) },
     './household-scope': { useHouseholdScope: () => ({ householdId: 'h', loading: false, error: null, refreshHousehold: async () => {} }) } };
   const hooks = load(hookFile, { ...boundary, './household-list': load('hooks/household-list.ts', boundary), [dataStub]: data });
@@ -90,3 +97,41 @@ test('shopping: a read that never answers shows the load error; a write that nev
     assert.equal(m.server.seen.filter(r => r.method === 'POST').length, 1, 'the write was sent once, never retried');
   } finally { m.dispose(); }
 });
+
+// #86 review: the re-read after an unconfirmed write is started, not awaited, so the message must
+// not claim the list was refreshed; when that re-read also gets no answer, the list shows its load
+// error with Retry, never a synchronized state.
+const { en } = load('lib/i18n/en.ts');
+const { de } = load('lib/i18n/de.ts');
+
+test('the could-not-be-confirmed message never claims that the list was refreshed', () => {
+  assert.doesNotMatch(en.err_change_unconfirmed, /refreshed|has been (re)?loaded|is up to date/i);
+  assert.doesNotMatch(de.err_change_unconfirmed, /wurde neu geladen|ist aktuell|aktualisiert/i);
+  assert.match(en.err_change_unconfirmed, /could not be confirmed/);
+});
+
+for (const [label, hookFile, hookName, Provider, data, dataStub, loadError, write] of [
+  ['pantry', 'hooks/usePantryItems.tsx', 'usePantryItems', 'PantryProvider', pantryData, '@/lib/pantry-data', 'err_load_items',
+    value => value.addItem({ name: 'Eggs', category: 'dairy', location: 'fridge' })],
+  ['shopping', 'hooks/useShoppingItems.tsx', 'useShoppingItems', 'ShoppingProvider', shoppingData, '@/lib/shopping-data', 'err_load_shopping',
+    value => value.addItem({ name: 'Eggs' })],
+]) {
+  test(`${label}: when the re-read after an unconfirmed write also gets no answer, the list shows its load error with Retry`, async () => {
+    const m = mount(hookFile, hookName, Provider, data, dataStub, 1);
+    try {
+      await act(settle);
+      assert.equal(m.value.error, null, 'the first read was answered');
+      assert.equal(m.value.loading, false);
+      let outcome;
+      await act(async () => {
+        [outcome] = await Promise.allSettled([within(write(m.value), `the data timeout must end a ${label} write that never answers`)]);
+        await settle();
+      });
+      assert.equal(outcome.reason?.code, data.WRITE_UNCONFIRMED, 'the write outcome is unconfirmed, not failed');
+      assert.equal(m.server.seen.filter(r => r.method === 'GET').length, 2, 'the write was followed by a re-read');
+      assert.equal(m.value.error, loadError, 'the failed re-read shows the load error, never a synchronized list');
+      assert.equal(m.value.loading, false);
+      assert.equal(typeof m.value.retry, 'function', 'the load error keeps its Retry');
+    } finally { m.dispose(); }
+  });
+}
