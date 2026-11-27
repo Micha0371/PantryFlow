@@ -34,6 +34,14 @@ Hashes: [SHA256SUMS](remediation-evidence-kan124/SHA256SUMS). The folder's `.git
 
 **Not run locally:** the database, integration and Android suites. No e2e harness file changed; CI runs the database job on the pull request.
 
+## Independent review
+
+An independent AI reviewer (Claude Sonnet, its own disposable clone of `9d0a02a`, read-only) **approved** with two nits; [report](remediation-evidence-kan124/independent-review.md).
+
+- **Reproduced:** intact pass, the named failure of the removed check within about 7 ms, the restore, five randomized orders, the new test alone, and all evidence hashes on a fresh checkout.
+- **Own mutants:** 9 of 10 failed an assertion. The survivor (`return Promise.reject(current.error)`) behaves the same as the guard, so it is not a test gap.
+- **Nits, no change:** the state assertion relies on the mock storing its session, and the gate and isolated logs are filtered summaries; both are stated in this record.
+
 ## Limits
 
 - **Mocked boundary:** the Supabase client is mocked. The test shows the guard's contract is asserted, not how the real client fails on a phone (for example, unreadable storage).
