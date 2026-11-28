@@ -34,6 +34,9 @@ export function Input({ label, error, announceKey, style, ...rest }: Readonly<Pr
         placeholderTextColor={colors.textMuted}
         style={[styles.input, error ? styles.inputError : null, style]}
         {...rest}
+        // The visible label is a separate Text, so it is also the field's accessible name; without it
+        // TalkBack said only "Bearbeitungsfeld" (phone check 2026-11-28). An explicit one wins.
+        accessibilityLabel={rest.accessibilityLabel ?? label}
       />
       <InlineError message={error ?? null} style={styles.error} />
     </View>

@@ -93,3 +93,18 @@ test('an unchanged error is announced again when announceKey changes', () => {
     assert.deepEqual(announced, ['Name is required.'], 'an error that re-appears is left to the live region');
   } finally { act(() => renderer.unmount()); }
 });
+
+// Phone check 2026-11-28 (TalkBack): every field said only "Bearbeitungsfeld", because the visible
+// label is a separate Text and the TextInput had no accessible name. The label is now its name.
+test('a field\'s visible label is its accessible name; an explicit accessibilityLabel wins', () => {
+  const { Input } = loadInput();
+  let renderer;
+  act(() => { renderer = create(React.createElement(Input, { label: 'E-Mail', testID: 'field' })); });
+  try {
+    assert.equal(renderer.root.findByType('TextInput').props.accessibilityLabel, 'E-Mail');
+    act(() => renderer.update(React.createElement(Input, { label: 'Passwort', accessibilityLabel: 'Passwort, Hinweis', testID: 'field' })));
+    assert.equal(renderer.root.findByType('TextInput').props.accessibilityLabel, 'Passwort, Hinweis');
+    act(() => renderer.update(React.createElement(Input, { testID: 'field' })));
+    assert.equal(renderer.root.findByType('TextInput').props.accessibilityLabel, undefined, 'no label, no name');
+  } finally { act(() => renderer.unmount()); }
+});

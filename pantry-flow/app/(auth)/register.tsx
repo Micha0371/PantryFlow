@@ -106,7 +106,8 @@ export default function RegisterScreen() {
           <NewPasswordField
             label={t('auth_password')}
             value={password}
-            onChangeText={setPassword}
+            // Typing again clears a shown error, so the live status line returns (owner decision 2026-11-28).
+            onChangeText={value => { setPassword(value); if (error) setError(null); }}
             testID="register-password"
             error={error}
             announceKey={failures}
