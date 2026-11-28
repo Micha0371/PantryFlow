@@ -163,9 +163,17 @@ jobs:
     timeout-minutes: 60
     needs: [changes]
     env:
-      # React Native, reanimated and worklets compile through ccache when it is installed.
+      # Every native CMake project compiles through ccache. React Native turns ccache on only for the
+      # app's own module (RULE_LAUNCH_COMPILE); reanimated, worklets, expo-modules-core, screens and
+      # gesture-handler are separate CMake projects, so CMake's launcher variables (read from the
+      # environment on the first configure) add it there. ccache skips its own name when it is
+      # given twice. The sloppiness lets the precompiled headers (reanimated and worklets build
+      # with -fno-pch-timestamp) and headers generated during the build be cached.
       CCACHE_DIR: /home/runner/.ccache
       CCACHE_MAXSIZE: 1G
+      CMAKE_C_COMPILER_LAUNCHER: ccache
+      CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      CCACHE_SLOPPINESS: pch_defines,time_macros,include_file_mtime,include_file_ctime
     steps:
       # CI-PORT-01: Linux gives outgoing connections ports 32768-60999, which include the fixed
       # local Supabase ports (supabase/config.toml, 54320-54329). Reserve them before anything
@@ -234,8 +242,11 @@ jobs:
       - run: npm run db:reset
       - run: npm run e2e:prepare
       - run: npm run e2e:build
+      # Also as an annotation, which the run's public API shows without the job log.
       - name: Native build cache statistics
-        run: ccache --show-stats
+        run: |
+          ccache --show-stats
+          echo "::notice title=Native build cache::$(ccache --show-stats -v | grep -E 'calls|Hits|Misses|Errors|Could not|Unsupported|failed' | tr -s ' ' | paste -sd ';')"
       - name: Save the native build cache
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
