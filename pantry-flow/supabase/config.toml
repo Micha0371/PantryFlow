@@ -19,7 +19,8 @@ enabled = false
 [studio]
 enabled = false
 
-[inbucket]
+# Mailpit, which catches confirmation emails locally. CLI 3 reads only [local_smtp]; it was [inbucket].
+[local_smtp]
 enabled = true
 port = 54324
 
@@ -34,7 +35,8 @@ enable_signup = true
 minimum_password_length = 6
 
 [auth.email]
-enable_signup = true
+# The provider toggle (CLI 3 deprecates enable_signup here); [auth] enable_signup allows new sign-ups.
+enabled = true
 enable_confirmations = true
 double_confirm_changes = true
 otp_expiry = 60

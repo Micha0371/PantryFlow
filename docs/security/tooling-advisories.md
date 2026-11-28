@@ -67,5 +67,6 @@ A nonzero audit exit status does not by itself establish a release blocker. Esca
 - **2026-11-09:** 23 moderate and one low. Root advisories: glob, minimatch and deepmerge. All accepted for tooling exposure.
 - **Resolved in the SDK baseline:** the unused direct query-string dependency was removed, and the old CLI tar dependency was scoped to the patched 7.5.22.
   - Email acceptance requires CLI 2.122.1, because its local Auth 2.197.0 matches the hosted server and supports PKCE resend.
+  - **2026-11-28:** the pin moved to CLI 3.2.0. Its local Auth v2.198.0 matches the hosted server again (hosted read 2026-11-21) and counts the password minimum in code points (password spec §2.2, FV-A2); the local email integration passes on it.
   - That CLI distributes platform binaries and no longer uses the JavaScript tar path, so the obsolete override was removed.
   - Reassess these decisions if dependency paths change.

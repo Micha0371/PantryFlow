@@ -544,7 +544,8 @@ case and separate reviewable fix; it must not silently alter this reference.
 
 Local email integration passed against Auth 2.197.0, matching hosted Auth.
 The pinned CLI 2.122.1 replaces the older local Auth that ignored resend PKCE
-challenges. This change is separate from the validated SDK baseline.
+challenges. Since 2026-11-28 the pin is CLI 3.2.0 with Auth v2.198.0, the hosted
+version; the local email integration passes on it. This change is separate from the validated SDK baseline.
 
 ### Custom SMTP investigation (2026-11-09)
 

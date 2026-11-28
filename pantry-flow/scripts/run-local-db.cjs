@@ -38,7 +38,8 @@ function runChild(args, env) {
 }
 
 function runDatabase(command, env) {
-  const args = command === 'reset' ? ['db', 'reset', '--local'] : ['test', 'db'];
+  // CLI 3 resets the local stack by default; a hosted target needs --remote and consent.
+  const args = command === 'reset' ? ['db', 'reset'] : ['test', 'db'];
   return runChild([path.join(root, 'node_modules/supabase/dist/supabase.js'), ...args], env);
 }
 

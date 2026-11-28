@@ -458,7 +458,7 @@ Destructive or concurrency tests run only in a disposable stack, never against t
 | ID | What it checks |
 |---|---|
 | FV-A1 | Hosted Auth version and settings read-back: minimum length, HIBP entitlement, rate limits, JWT expiry. |
-| FV-A2 | **Done for Auth behavior:** the §2.3 table was confirmed on CLI v3.2.0 / Auth v2.198.0. **Open:** whether the project's config, migrations and test suites work on CLI 3.x (the project migrations applied cleanly in the disposable stack; the suites were not run). |
+| FV-A2 | **Done for Auth behavior:** the §2.3 table was confirmed on CLI v3.2.0 / Auth v2.198.0. **Project compatibility (2026-11-28):** the project pins CLI 3.2.0 (`pantry-flow/package.json`; CI uses the same pin), and the local stack it starts reports Auth v2.198.0. Two config changes were needed: `[inbucket]` became `[local_smtp]` (required by CLI 3) and `[auth.email] enable_signup` became `enabled` (deprecated key). `db reset` no longer passes `--local` (the CLI 3 default; the flag warns and goes away in v4). On CLI 3.2.0, locally: `supabase config validate` (no errors or warnings), `test:local` (pgTAP 88, integration 41), `test:rls-mutations` (all seven mutants detected), `db:reset`, `e2e:prepare` and `e2e:cleanup` pass. The CI database and Android jobs of the change that pins CLI 3.2.0 are the remaining evidence; the minimum of 15 (KAN-82) ships only after they pass. |
 | FV-A3 | Overlapping recovery requests on React Native with auth-js 2.119.0. |
 | FV-A4 | **Done:** confirmed. |
 | FV-A5 | **Local: done** (`[auth.email] require_current_password`; exemption confirmed). Hosted: part of FV-A1. |
