@@ -9,7 +9,7 @@ const { load } = require('./helpers.cjs');
 // refresh the server already rotated would replay the old refresh token.
 // KAN-127: data requests (PostgREST, /rest/v1/) get their own, longer timeout.
 const { withRequestTimeouts, AUTH_FORM_TIMEOUT_MS, DATA_REQUEST_TIMEOUT_MS } = load('lib/auth-timeout.ts');
-const { signInErrorKey } = load('lib/auth-error.ts');
+const { signInErrorKey } = load('lib/auth-error.ts', { './password-policy': load('lib/password-policy.ts') });
 
 // A server that accepts the request and never answers; only an abort ends it.
 function hanging(seen = []) {

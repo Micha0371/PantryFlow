@@ -84,16 +84,46 @@ test('a key missing from the German catalogue falls back to English', async () =
   } finally { if (view) act(() => view.unmount()); }
 });
 
-// KAN-82: the registration placeholder and the two password messages state the approved limits.
-test('KAN-82: the password guidance names 15 characters, and the too-long message explains umlauts and emoji', () => {
+// KAN-82 / section 2.6: the policy line, the status phrases and the server-mapped messages. The
+// English wording is the spec's; the German wording was approved by the owner on 2026-11-28.
+test('section 2.6: the password strings exist in both languages and the placeholder is retired', () => {
+  const { en } = load('lib/i18n/en.ts');
+  const { de } = load('lib/i18n/de.ts');
+  const check = String.fromCodePoint(0x2713);
+  const oe = String.fromCodePoint(0xf6);
+  const ae = String.fromCodePoint(0xe4);
+  const keys = ['auth_password_policy', 'auth_password_remaining_many', 'auth_password_remaining_one', 'auth_password_minimum_met',
+    'auth_password_too_long', 'auth_password_show', 'auth_password_hide', 'err_password_length', 'err_password_pwned',
+    'err_password_characters', 'err_password_unusable'];
+  for (const c of [en, de]) {
+    for (const key of keys) assert.equal(typeof c[key], 'string', key);
+    for (const gone of ['auth_password_placeholder', 'err_password_too_short', 'err_password_too_long']) assert.ok(!(gone in c), gone);
+    assert.match(c.auth_password_policy, /15/);
+    assert.match(c.err_password_length, /15/);
+    assert.doesNotMatch(c.auth_password_too_long, /72/, 'bytes are not a number a user can count');
+  }
+  assert.equal(en.auth_password_policy, 'Use at least 15 characters. Spaces are allowed. A longer passphrase is harder to guess.');
+  assert.equal(en.auth_password_remaining_many, 'more characters needed');
+  assert.equal(en.auth_password_remaining_one, 'more character needed');
+  assert.equal(en.auth_password_minimum_met, check + ' Minimum length reached');
+  assert.equal(en.auth_password_too_long, 'This password is too long. Letters with accents and emoji take up more space, so use fewer characters.');
+  assert.equal(en.auth_password_show, 'Show password');
+  assert.equal(en.auth_password_hide, 'Hide password');
+  assert.equal(en.err_password_length, 'Use at least 15 characters.');
+  assert.equal(en.err_password_pwned, 'This password has appeared in a data breach. Choose a different one.');
+  assert.equal(en.err_password_characters, "This password doesn't meet the requirements.");
+  assert.equal(en.err_password_unusable, "This password can't be used. Check the requirements above.");
+  assert.equal(de.auth_password_remaining_one, 'weiteres Zeichen n' + oe + 'tig');
+  assert.equal(de.auth_password_remaining_many, 'weitere Zeichen n' + oe + 'tig');
+  assert.equal(de.auth_password_minimum_met, check + ' Mindestl' + ae + 'nge erreicht');
+});
+
+test('section 2.6 (P11): no password string claims strength or security', () => {
   const { en } = load('lib/i18n/en.ts');
   const { de } = load('lib/i18n/de.ts');
   for (const c of [en, de]) {
-    assert.match(c.auth_password_placeholder, /15/);
-    assert.match(c.err_password_too_short, /15/);
-    assert.doesNotMatch(c.err_password_too_long, /72/, 'bytes are not a number a user can count');
+    for (const key of Object.keys(c).filter(k => /^(auth_password|err_password)/.test(k))) {
+      assert.doesNotMatch(c[key], /strong|secure|safe|stark|sicher/i, key);
+    }
   }
-  assert.match(en.err_password_too_long, /umlaut/i);
-  assert.match(de.err_password_too_long, /Umlaut/);
-  assert.notEqual(en.err_password_too_short, en.err_login_failed);
 });

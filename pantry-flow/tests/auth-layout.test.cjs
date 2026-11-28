@@ -10,18 +10,22 @@ const t = key => key;
 const flat = style => Object.assign({}, ...[style].flat(Infinity).filter(Boolean));
 
 function stubs(os, overlap) {
-  return {
-    'react-native': { Text: 'Text', View: 'View', Pressable: 'Pressable', ScrollView: 'ScrollView',
+  const native = { Text: 'Text', View: 'View', Pressable: 'Pressable', ScrollView: 'ScrollView',
       KeyboardAvoidingView: 'KeyboardAvoidingView', ActivityIndicator: 'Spinner', Platform: { OS: os },
-      StyleSheet: { create: s => s } },
+      StyleSheet: { create: s => s } };
+  return {
+    'react-native': native,
     'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView' },
     'expo-router': { Link: 'Link', useRouter: () => ({ replace: () => {} }), useLocalSearchParams: () => ({}) },
     '@/lib/theme': theme, '@/lib/i18n': { useTranslation: () => ({ t }) },
     '@/components/Button': { Button: 'Button' }, '@/components/Input': { Input: 'Input' },
     '@/hooks/useKeyboardOverlap': { useKeyboardOverlap: () => overlap },
     '@/hooks/useFormError': load('hooks/useFormError.ts'),
-    '@/lib/auth-error': load('lib/auth-error.ts'),
+    '@/lib/auth-error': load('lib/auth-error.ts', { './password-policy': load('lib/password-policy.ts') }),
     '@/lib/password-policy': load('lib/password-policy.ts'),
+    '@/components/NewPasswordField': load('components/NewPasswordField.tsx', { 'react-native': native, '@/lib/theme': theme,
+      '@/components/Input': { Input: 'Input' }, '@/lib/i18n': { useTranslation: () => ({ t }) }, '@/lib/accessibility': { announce: () => {} },
+      '@/lib/password-policy': load('lib/password-policy.ts') }),
     '@/lib/email-confirmation': { confirmationCode: () => null, confirmEmail: async () => {}, resendConfirmation: async () => {} },
     '@/lib/auth': { useAuth: () => ({ signIn: async () => {}, signUp: async () => 'confirmation_required' }) },
   };

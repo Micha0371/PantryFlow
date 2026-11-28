@@ -74,6 +74,9 @@ export default function LoginScreen() {
             // KAN-82: no minimum here; accounts from before the 15-character policy still sign in.
             secureTextEntry
             autoComplete="current-password"
+            textContentType="password"
+            autoCorrect={false}
+            autoCapitalize="none"
             value={password}
             onChangeText={setPassword}
             testID="login-password"
