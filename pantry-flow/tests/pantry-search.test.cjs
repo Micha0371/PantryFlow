@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { load } = require('./helpers.cjs');
 const constants = load('lib/constants.ts');
-const pantryData = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
+const pantryData = load('lib/pantry-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './constants': constants, './pagination': load('lib/pagination.ts') });
 const { filterItemsByName } = load('lib/pantry-search.ts', { './pantry-data': pantryData });
 const items = (...names) => names.map((name, i) => ({ id: String(i), name }));
 

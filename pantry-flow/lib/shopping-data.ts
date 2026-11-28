@@ -1,5 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { fetchAllPages } from './pagination';
+import { WRITE_UNCONFIRMED } from './write-outcome';
+
+export { WRITE_UNCONFIRMED, isUncodedFailure, isUnconfirmedWrite, unconfirmedWrite } from './write-outcome';
 
 export interface ShoppingItem {
   id: string;
@@ -17,7 +20,7 @@ export interface NewShoppingItemInput { name: string; pantryItemId?: string | nu
 
 export type ShoppingErrorKey =
   | 'err_duplicate_shopping_item' | 'err_shopping_permission' | 'err_shopping_missing'
-  | 'err_shopping_invalid' | 'err_shopping_link_missing' | 'err_save_shopping';
+  | 'err_shopping_invalid' | 'err_shopping_link_missing' | 'err_save_shopping' | 'err_change_unconfirmed';
 
 export const SHOPPING_NAME_MAX = 120;
 
@@ -79,6 +82,7 @@ export function shoppingErrorKey(error: unknown): ShoppingErrorKey {
       return typeof fields.message === 'string' && fields.message.includes('"shopping_name_valid"')
         ? 'err_shopping_invalid' : 'err_save_shopping';
     case '23503': return 'err_shopping_link_missing';
+    case WRITE_UNCONFIRMED: return 'err_change_unconfirmed';
     default: return 'err_save_shopping';
   }
 }

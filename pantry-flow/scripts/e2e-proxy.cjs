@@ -64,7 +64,8 @@ const server = http.createServer(async (req, res) => {
   const body = Buffer.concat(chunks);
   if (lacksPkce(req, body)) return json(res, 400, { message: 'Native confirmation test requires S256 PKCE' });
   const delayed = delayWrites && req.url.startsWith('/rest/v1/pantry_items') && req.method === 'PATCH';
-  if (delayed) { writeStarted = true; pendingWrites++; await sleep(30000); }
+  // 12 s: long enough to leave the screen mid-save, well under the 20 s data timeout (KAN-127).
+  if (delayed) { writeStarted = true; pendingWrites++; await sleep(12000); }
   forward(req, res, body, delayed);
 });
 server.listen(listenPort, '127.0.0.1', () => process.send?.({ ready: true, port: server.address().port }));

@@ -26,7 +26,7 @@ const shared = { 'react-native': native, '@/lib/theme': theme,
   // UX-01B list wiring: modules the pantry list imports, inert in these tests.
   '@/components/StatusSelector': { StatusSelector: 'StatusSelector' },
   '@/hooks/useShoppingPrompt': { useShoppingPrompt: () => ({ prompting: false, offer: () => {}, invalidate: () => {} }), notice: () => {} },
-  '@/lib/pantry-data': load('lib/pantry-data.ts', { './constants': load('lib/constants.ts'), './pagination': load('lib/pagination.ts') }),
+  '@/lib/pantry-data': load('lib/pantry-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './constants': load('lib/constants.ts'), './pagination': load('lib/pagination.ts') }),
   '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'),
   '@/lib/accessibility': { announce: () => {} },
   // KAN-92 search: inert here; the rows come through unfiltered.
@@ -207,7 +207,7 @@ test('protected routes do not mount children during restoration, failure or sign
 for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit-item/[id].tsx', 'item_save_button']]) {
   test(`${file} translates a server unique-constraint rejection without navigating`, async () => {
     const constants = load('lib/constants.ts');
-    const data = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
+    const data = load('lib/pantry-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './constants': constants, './pagination': load('lib/pagination.ts') });
     const { en } = load('lib/i18n/en.ts');
     const mutation = load('hooks/useItemMutation.ts', { 'expo-router': {
       useFocusEffect: callback => React.useEffect(callback, [callback]),
@@ -222,11 +222,11 @@ for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit
       '@/components/Input': { Input: 'Input' }, '@/components/OptionChips': { OptionChips: 'OptionChips' },
       '@/hooks/useItemMutation': mutation, '@/lib/pantry-data': data, '@/lib/constants': constants,
       '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
-      '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
+      '@/lib/shopping-data': load('lib/shopping-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './pagination': load('lib/pagination.ts') }),
       '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'),
       '@/hooks/useShoppingPrompt': load('hooks/useShoppingPrompt.ts', { 'react-native': native,
         '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
-        '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
+        '@/lib/shopping-data': load('lib/shopping-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './pagination': load('lib/pagination.ts') }),
         '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'), '@/lib/i18n': { useTranslation: () => ({ t }) },
         '@/hooks/household-scope': { useHouseholdScope: () => ({ householdId: 'h' }) } }),
       '@/hooks/usePantryItems': { usePantryItems: () => ({ householdId: 'h', loading: false, error: null,
@@ -304,7 +304,7 @@ test('a session restore failure is announced without a screen focus (KAN-39)', (
 
 test('an Add Item load error appears inside a live region that was already mounted (KAN-39)', () => {
   const constants = load('lib/constants.ts');
-  const data = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
+  const data = load('lib/pantry-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './constants': constants, './pagination': load('lib/pagination.ts') });
   let pantry = { householdId: 'h', loading: false, error: null, retry: () => {}, addItem: async () => ({}) };
   const { default: Screen } = load('app/add-item.tsx', { ...shared(),
     'expo-router': { useRouter: () => ({ back: () => {} }), useLocalSearchParams: () => ({}) },
@@ -314,7 +314,7 @@ test('an Add Item load error appears inside a live region that was already mount
       useFocusEffect: callback => React.useEffect(callback, [callback]) } }),
     '@/lib/pantry-data': data, '@/lib/constants': constants,
     '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
-    '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
+    '@/lib/shopping-data': load('lib/shopping-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './pagination': load('lib/pagination.ts') }),
     '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'),
     '@/hooks/usePantryItems': { usePantryItems: () => pantry },
   });
@@ -339,7 +339,7 @@ for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit
   const announced = [];
   const shared = () => makeShared(announced);
     const constants = load('lib/constants.ts');
-    const data = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
+    const data = load('lib/pantry-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './constants': constants, './pagination': load('lib/pagination.ts') });
     const { en } = load('lib/i18n/en.ts');
     const input = load('components/Input.tsx', {
       'react-native': { Text: 'Text', TextInput: 'TextInput', View: 'View', StyleSheet: { create: s => s } },
@@ -357,11 +357,11 @@ for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit
         useFocusEffect: callback => React.useEffect(callback, [callback]) } }),
       '@/lib/pantry-data': data, '@/lib/constants': constants,
       '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
-      '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
+      '@/lib/shopping-data': load('lib/shopping-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './pagination': load('lib/pagination.ts') }),
       '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'),
       '@/hooks/useShoppingPrompt': load('hooks/useShoppingPrompt.ts', { 'react-native': native,
         '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
-        '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
+        '@/lib/shopping-data': load('lib/shopping-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './pagination': load('lib/pagination.ts') }),
         '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'), '@/lib/i18n': { useTranslation: () => ({ t }) },
         '@/hooks/household-scope': { useHouseholdScope: () => ({ householdId: 'h' }) } }),
       '@/hooks/usePantryItems': { usePantryItems: () => ({ householdId: 'h', loading: false, error: null,
@@ -462,7 +462,7 @@ test('the Edit Item screen announces a missing item or failed load as an alert (
   const announced = [];
   const shared = () => makeShared(announced);
   const constants = load('lib/constants.ts');
-  const data = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
+  const data = load('lib/pantry-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './constants': constants, './pagination': load('lib/pagination.ts') });
   const { default: Screen } = load('app/edit-item/[id].tsx', { ...shared(),
     'expo-router': { useRouter: () => ({ back: () => {} }), useLocalSearchParams: () => ({ id: '1' }),
       useFocusEffect: callback => React.useEffect(callback, [callback]) },
@@ -472,11 +472,11 @@ test('the Edit Item screen announces a missing item or failed load as an alert (
       useFocusEffect: callback => React.useEffect(callback, [callback]) } }),
     '@/lib/pantry-data': data, '@/lib/constants': constants,
     '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
-    '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
+    '@/lib/shopping-data': load('lib/shopping-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './pagination': load('lib/pagination.ts') }),
     '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'),
     '@/hooks/useShoppingPrompt': load('hooks/useShoppingPrompt.ts', { 'react-native': native,
       '@/hooks/useShoppingItems': { useShoppingItems: () => ({ addItem: async () => ({}) }) },
-      '@/lib/shopping-data': load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') }),
+      '@/lib/shopping-data': load('lib/shopping-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './pagination': load('lib/pagination.ts') }),
       '@/lib/pantry-shopping': load('lib/pantry-shopping.ts'), '@/lib/i18n': { useTranslation: () => ({ t }) },
       '@/hooks/household-scope': { useHouseholdScope: () => ({ householdId: 'h' }) } }),
     '@/hooks/usePantryItems': { usePantryItems: () => ({ householdId: 'h', loading: false, error: 'err_load_items',

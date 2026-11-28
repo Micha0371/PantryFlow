@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
-import { assertUniqueItemName, fetchAllItems, isMissingPantryItem, PANTRY_MISSING, PANTRY_STATUS_CONFLICT, PANTRY_STATUS_UNKNOWN, parseItem, validateItem, writeItemStatus, PantryItem, NewItemInput, UpdateItemInput, StatusWriteResult } from '@/lib/pantry-data';
+import { assertUniqueItemName, fetchAllItems, isMissingPantryItem, isUncodedFailure, PANTRY_MISSING, PANTRY_STATUS_CONFLICT, PANTRY_STATUS_UNKNOWN, parseItem, unconfirmedWrite, validateItem, writeItemStatus, PantryItem, NewItemInput, UpdateItemInput, StatusWriteResult } from '@/lib/pantry-data';
 import type { StatusKey } from '@/lib/theme';
 import { useHouseholdList } from './household-list';
 
@@ -52,6 +52,9 @@ function usePantryState() {
     if (isCurrent(scope)) setItems(prev => prev.filter(it => it.id !== id));
     return true;
   };
+  // A write that ended without a database answer may have committed (KAN-127): it keeps the
+  // cached rows, forces a re-read and rejects with an unknown outcome, never as a failure.
+  const outcomeOf = (error: unknown) => isUncodedFailure(error) ? unconfirmedWrite(error) : error;
   const beginItemMutation = (id: string) => {
     if (pendingItems.current.has(id)) throw new Error('Item change is already pending');
     const unloaded = beginMutation();
@@ -61,7 +64,7 @@ function usePantryState() {
   const addItem = async (input: NewItemInput) => {
     const validated = validateItem(input);
     assertUniqueItemName(visibleItems, validated.name);
-    const unloaded = beginMutation();
+    let reread = beginMutation();
     try {
       const { data, error: err } = await supabase.from('pantry_items')
         .insert({ ...validated, household_id: householdId, status: 'in_stock', created_by: user!.id })
@@ -71,8 +74,11 @@ function usePantryState() {
       // A refresh may already hold this row; replace it instead of adding a copy.
       if (isCurrent(scope)) { generation.current++; setLoading(false); setItems(prev => [item, ...prev.filter(it => it.id !== item.id)]); }
       return item;
+    } catch (error) {
+      if (isUncodedFailure(error)) reread = true;
+      throw outcomeOf(error);
     } finally {
-      rereadIfUnloaded(unloaded);
+      rereadIfUnloaded(reread);
     }
   };
   const updateItem = async (id: string, input: UpdateItemInput) => {
@@ -87,8 +93,8 @@ function usePantryState() {
       if (isCurrent(scope)) { generation.current++; setLoading(false); setItems(prev => prev.map(it => it.id === id ? item : it)); }
       return item;
     } catch (error) {
-      if (dropIfMissing(id, error)) reread = true;
-      throw error;
+      if (dropIfMissing(id, error) || isUncodedFailure(error)) reread = true;
+      throw outcomeOf(error);
     } finally {
       pendingItems.current.delete(id);
       rereadIfUnloaded(reread);
@@ -103,8 +109,8 @@ function usePantryState() {
       if (!data?.length) throw Object.assign(new Error('Item was not deleted'), { code: PANTRY_MISSING });
       if (isCurrent(scope)) { generation.current++; setLoading(false); setItems(prev => prev.filter(it => it.id !== id)); }
     } catch (error) {
-      if (dropIfMissing(id, error)) reread = true;
-      throw error;
+      if (dropIfMissing(id, error) || isUncodedFailure(error)) reread = true;
+      throw outcomeOf(error);
     } finally {
       pendingItems.current.delete(id);
       rereadIfUnloaded(reread);

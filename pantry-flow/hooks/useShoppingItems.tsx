@@ -2,8 +2,8 @@ import React, { createContext, useContext, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import {
-  assertUniqueOpenName, deleteShoppingItem, fetchAllShoppingItems, insertShoppingItem, renameShoppingItem,
-  setShoppingItemChecked, shoppingErrorKey, validateShoppingName, ShoppingItem, NewShoppingItemInput,
+  assertUniqueOpenName, deleteShoppingItem, fetchAllShoppingItems, insertShoppingItem, isUncodedFailure, renameShoppingItem,
+  setShoppingItemChecked, shoppingErrorKey, unconfirmedWrite, validateShoppingName, ShoppingItem, NewShoppingItemInput,
 } from '@/lib/shopping-data';
 import { useHouseholdList } from './household-list';
 
@@ -38,6 +38,9 @@ function useShoppingState() {
     if (isCurrent(scope)) setItems(prev => prev.filter(it => it.id !== id));
     return true;
   };
+  // A write that ended without a database answer may have committed (KAN-127): it keeps the
+  // cached rows, forces a re-read and rejects with an unknown outcome, never as a failure.
+  const outcomeOf = (error: unknown) => isUncodedFailure(error) ? unconfirmedWrite(error) : error;
   const beginItemMutation = (id: string) => {
     if (pendingItems.current.has(id)) throw new Error('Shopping item change is already pending');
     const unloaded = beginMutation();
@@ -56,8 +59,8 @@ function useShoppingState() {
       applyResult(prev => prev.map(it => it.id === id ? item : it));
       return item;
     } catch (error) {
-      if (dropIfMissing(id, error)) reread = true;
-      throw error;
+      if (dropIfMissing(id, error) || isUncodedFailure(error)) reread = true;
+      throw outcomeOf(error);
     } finally {
       pendingItems.current.delete(id);
       rereadIfUnloaded(reread);
@@ -67,14 +70,17 @@ function useShoppingState() {
   const addItem = async (input: NewShoppingItemInput) => {
     const name = validateShoppingName(input.name);
     assertUniqueOpenName(visibleItems, name);
-    const unloaded = beginMutation();
+    let reread = beginMutation();
     try {
       const item = await insertShoppingItem(supabase, householdId!, user!.id, { ...input, name });
       // A refresh may already hold this row; replace it instead of adding a copy.
       applyResult(prev => [item, ...prev.filter(it => it.id !== item.id)]);
       return item;
+    } catch (error) {
+      if (isUncodedFailure(error)) reread = true;
+      throw outcomeOf(error);
     } finally {
-      rereadIfUnloaded(unloaded);
+      rereadIfUnloaded(reread);
     }
   };
   const renameItem = async (id: string, name: string) => {
@@ -96,8 +102,8 @@ function useShoppingState() {
       await deleteShoppingItem(supabase, householdId!, id);
       applyResult(prev => prev.filter(it => it.id !== id));
     } catch (error) {
-      if (dropIfMissing(id, error)) reread = true;
-      throw error;
+      if (dropIfMissing(id, error) || isUncodedFailure(error)) reread = true;
+      throw outcomeOf(error);
     } finally {
       pendingItems.current.delete(id);
       rereadIfUnloaded(reread);

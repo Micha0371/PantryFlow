@@ -4,7 +4,7 @@ const { load } = require('./helpers.cjs');
 const pagination = load('lib/pagination.ts');
 const { validateShoppingName, parseShoppingItem, assertUniqueOpenName, shoppingErrorKey,
   fetchAllShoppingItems, insertShoppingItem, renameShoppingItem, setShoppingItemChecked,
-  deleteShoppingItem, splitShoppingItems } = load('lib/shopping-data.ts', { './pagination': pagination });
+  deleteShoppingItem, splitShoppingItems, unconfirmedWrite } = load('lib/shopping-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './pagination': pagination });
 const { en } = load('lib/i18n/en.ts');
 const { PAGE_SIZE } = pagination;
 
@@ -45,7 +45,7 @@ test('error mapping follows the contract', () => {
     ['PGRST116', 'err_shopping_missing'], ['PF_SHOPPING_MISSING', 'err_shopping_missing'],
     ['PF_INVALID_SHOPPING', 'err_shopping_invalid'], ['23503', 'err_shopping_link_missing'],
     ['23514', 'err_save_shopping'], ['23502', 'err_save_shopping'], ['22P02', 'err_save_shopping'],
-    ['XX000', 'err_save_shopping']];
+    ['XX000', 'err_save_shopping'], ['PF_WRITE_UNCONFIRMED', 'err_change_unconfirmed']];
   for (const [code, key] of table) {
     assert.equal(shoppingErrorKey({ code }), key);
     assert.ok(key in en);
@@ -187,4 +187,10 @@ test('splitShoppingItems separates open from completed and orders completions ne
   const tied = splitShoppingItems([row('a', { is_checked: true, completed_at: '2026-01-01' }),
     row('c', { is_checked: true, completed_at: '2026-01-01' }), row('b', { is_checked: true, completed_at: '2026-01-01' })]);
   assert.deepEqual(tied.completed.map(i => i.id), ['c', 'b', 'a']);
+});
+
+// KAN-127: a shopping write the server may have committed is never reported as failed.
+test('a shopping write with an unknown outcome maps to the could-not-be-confirmed message', () => {
+  assert.equal(shoppingErrorKey(unconfirmedWrite({ message: 'AbortError', code: '' })), 'err_change_unconfirmed');
+  assert.equal(shoppingErrorKey(new Error('offline')), 'err_save_shopping', 'an unwrapped uncoded error keeps the save message');
 });
