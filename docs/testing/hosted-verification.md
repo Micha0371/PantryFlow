@@ -72,10 +72,11 @@ stack to the explicitly selected hosted project:
 
 ```sh
 npm run db:reset
-npx --no-install supabase db query --local --file scripts/catalog-snapshot.sql --output-format json
+npx --no-install supabase db query --file scripts/catalog-snapshot.sql --output-format json
 ```
 
-With Supabase CLI 2.122.1, `db query --local` rejects files with several
+CLI 3 targets the local stack by default (`--local` only warns). With Supabase
+CLI 2.122.1, `db query --local` rejected files with several
 statements ("cannot insert multiple commands into a prepared statement"). Run the
 local snapshot through psql in the database container instead:
 
@@ -89,8 +90,9 @@ the parsed JSON of both was identical before and after, both still run
 `READ ONLY` (a write in the same transaction fails), and neither reads an
 application table. The hosted query was not rerun for this refactor.
 
-For the hosted query, prepare the isolated workdir and use the explicit-project
-commands in the baseline procedure. Do not run linked Management API lookups
+For the hosted query, prepare the isolated workdir and use the CLI 3 read-only
+form in the [hosted CLI 3 guide](hosted-cli3.md) (the baseline procedure
+records the CLI 2 commands as they ran). Do not run linked Management API lookups
 from the disposable project's workdir: the CLI can leave a hosted-project cache
 there even without an explicit `supabase link` command.
 
