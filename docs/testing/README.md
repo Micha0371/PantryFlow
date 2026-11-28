@@ -26,7 +26,8 @@ Historical reference baseline: `e6dbcf8`. PF-TEST-001 was implemented on `pantry
 Read [the existing inventory](existing-inventory.md), [behavior matrix](coverage-matrix.md), and [independent production tasks](production-follow-ups.md).
 
 Hosted checks with confirmed disposable accounts, exact cleanup and read-only
-catalog comparison are documented in [hosted verification](hosted-verification.md).
+catalog comparison are documented in [hosted verification](hosted-verification.md). Hosted commands on the pinned CLI 3, and the hosted Auth password
+procedure (KAN-82, on hold), are in the [hosted CLI 3 guide](hosted-cli3.md).
 Do not disable hosted email confirmation to run the legacy account-creation flag.
 
 ## Fast checks
