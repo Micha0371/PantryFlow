@@ -798,6 +798,20 @@ The builder and its checks are described in the [release build runbook](../relea
 
 Checks written test first. Removing any single check of `scripts/build-release.cjs`, `scripts/windows-native-paths.cjs` or the rules-order handling (48 mutants) fails a test (checked 2026-11-27, after the PR #84 review); earlier passes found gaps in the source-map strings, the node_modules-only allowlist, a cut-off varint and the allowlist message, now covered. The step 1 mutation pass (37 mutants) still passes.
 
+## KAN-83 coverage — the password policy enforced by Auth itself (password spec §6, P01–P05)
+
+Contract: local Auth (CLI 3.2.0 / Auth v2.198.0, `minimum_password_length = 15`, no character rules) enforces the approved policy whatever the client does: sign-up, password change, raw HTTP and the admin API all refuse a password under 15 code points or over 72 UTF-8 bytes. `tests/integration/password-policy.integration.ts`, part of `test:integration` (CI database job); reserved `pf.test.pwpolicy.*` accounts only, all removed.
+
+| ID | Observable outcome | Automated coverage | Limit |
+| --- | --- | --- | --- |
+| PWA-01 (P01, P02) | A password change accepts and rejects exactly the 17 rows of the spec's §2.3 table: 14/15 ASCII, 14/15 `ä`, 15 😀, 14 and 7 × `e`+U+0301 (code points, not visible characters), 64/72/73 ASCII, 36/37/64 `ä`, 18/19/64 😀, a passphrase with leading and trailing spaces; each boundary value then signs in exactly as given, and the passphrase without its spaces does not | `password-policy.integration.ts` | — |
+| PWA-02 (P01, P02) | Sign-up rejects every disallowed row with the same outcome (422 `weak_password`/`length`, or 400 `validation_failed` over 72 bytes) and creates no account; 15 ASCII characters are accepted | `password-policy.integration.ts` | Accepted rows go through the password change, not sign-up, so the run sends one confirmation email instead of nine |
+| PWA-03 (P03) | No truncation at 72 bytes: a 72-byte password (ASCII, and umlauts) signs in, its 71-byte prefix gets `invalid_credentials` | `password-policy.integration.ts` | — |
+| PWA-04 (P04) | Bypassing the app: raw `POST /auth/v1/signup` and raw `PUT /auth/v1/user` with a 14-code-point password return 422 `weak_password` and change nothing; the admin API (service role) can neither create nor update a user with it | `password-policy.integration.ts` | — |
+| PWA-05 (P05) | A legacy account whose 6-character password was set before the policy (directly in the database: Auth refuses it everywhere) signs in with a session and `weakPassword [length]`; its next password must comply (14 rejected, a 24-character passphrase accepted and then signing in without an advisory) | `password-policy.integration.ts` | — |
+
+Shown to detect a wrong server setting (checked 2026-11-28 by restarting local Auth): with the old minimum of 6, four of the five tests fail (only the truncation test, which does not depend on the minimum, passes); with a minimum of 16, both table tests fail on the 15-character rows. No test account remained after the failing runs. Not covered here: the app's §2.6 feedback (P06–P17, with the registration follow-up), password reset and change screens (KAN-42), and hosted Auth (separate owner approval).
+
 ## KAN-82 coverage — the approved password policy (KAN-81)
 
 Contract (owner decisions 2026-11-27 and 2026-11-28): sign-up needs at least 15 Unicode code points and at most the Auth server's 72 UTF-8 bytes, with no character rules; the app checks both before sending, with its own messages, and sends the password exactly as typed. The server enforces the same minimum (local Auth v2.198.0, CLI 3.2.0, `minimum_password_length = 15`) and stays authoritative. Existing accounts with shorter passwords still sign in; the advisory `weakPassword` is neither shown nor acted on during the supervised beta (revisit with KAN-42). Hosted Auth is unchanged (separate owner approval).
