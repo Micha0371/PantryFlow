@@ -18,10 +18,10 @@ const MET = CHECK + ' Minimum length reached';
 const TOO_LONG = 'This password is too long. Letters with accents and emoji take up more space, so use fewer characters.';
 const POLICY = 'Use at least 15 characters. Spaces are allowed. A longer passphrase is harder to guess.';
 
-function setup(ctx, { announced = [], initial = '', error = null } = {}) {
+function setup(ctx, { announced = [], initial = '', error = null, os = 'android' } = {}) {
   ctx.mock.timers.enable({ apis: ['setTimeout'] });
   const { NewPasswordField } = load('components/NewPasswordField.tsx', {
-    'react-native': { Text: 'Text', View: 'View', Pressable: 'Pressable', StyleSheet: { create: s => s } },
+    'react-native': { Text: 'Text', View: 'View', Pressable: 'Pressable', StyleSheet: { create: s => s }, Platform: { OS: os } },
     '@/lib/theme': theme, '@/components/Input': { Input: 'Input' },
     '@/lib/i18n': { useTranslation: () => ({ t }) },
     '@/lib/accessibility': { announce: message => announced.push(message) },
@@ -50,10 +50,13 @@ function setup(ctx, { announced = [], initial = '', error = null } = {}) {
   return api;
 }
 
-test('P08: the policy line is visible before any input, is the accessibility hint, and promises nothing about composition', ctx => {
+test('P08: the policy line is visible before any input, reaches the screen reader, and promises nothing about composition', ctx => {
   const f = setup(ctx);
   assert.equal(textOfNode(f.policy()), POLICY);
-  assert.equal(f.input().props.accessibilityHint, POLICY);
+  // Android (phone check 2026-11-28): React Native drops accessibilityHint on a text field, so TalkBack
+  // read only "Bearbeitungsfeld". The policy is part of the field's accessible name there instead.
+  assert.equal(f.input().props.accessibilityLabel, 'Password, ' + POLICY);
+  assert.equal(f.input().props.accessibilityHint, undefined, 'no hint on Android, so nothing is read twice');
   assert.equal(f.input().props.placeholder, undefined, 'a placeholder disappears on the first keystroke');
   assert.equal(f.status(), null, 'an empty field shows only the policy line');
   assert.deepEqual(f.announced, []);
@@ -249,4 +252,25 @@ test('the field passes the error and announceKey to the input', ctx => {
   assert.equal(f.input().props.error, 'Something');
   assert.equal(f.input().props.announceKey, 0);
   assert.equal(f.input().props.label, 'Password');
+});
+
+test('P08 on iOS: the label is the accessible name and the policy is the hint', ctx => {
+  const f = setup(ctx, { os: 'ios' });
+  assert.equal(f.input().props.accessibilityLabel, 'Password');
+  assert.equal(f.input().props.accessibilityHint, POLICY);
+});
+
+// Owner decision 2026-11-28 (phone check): after a refused submit only the red error shows, not the same
+// text again in the status line. The policy line stays; typing again brings the status line back.
+test('while the field shows an error, the status line is hidden and the policy line stays', ctx => {
+  const f = setup(ctx, { initial: 'a'.repeat(80), error: TOO_LONG });
+  assert.equal(f.status(), null, 'no second copy of the error');
+  assert.equal(textOfNode(f.policy()), POLICY);
+  assert.equal(f.input().props.error, TOO_LONG);
+});
+
+test('the status line is hidden by an error in the "more needed" state too, which renders its own text', ctx => {
+  const f = setup(ctx, { initial: 'abc', error: '12 more characters needed' });
+  assert.equal(f.status(), null);
+  assert.equal(textOfNode(f.policy()), POLICY);
 });

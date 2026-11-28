@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Input } from '@/components/Input';
 import { announce } from '@/lib/accessibility';
 import { useTranslation } from '@/lib/i18n';
@@ -72,6 +72,18 @@ export function NewPasswordField({ label, value, onChangeText, error, announceKe
   }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const policy = t('auth_password_policy');
+  // React Native drops accessibilityHint on an Android text field (phone check 2026-11-28: TalkBack read
+  // only "Bearbeitungsfeld"), so there the policy is part of the accessible name; iOS keeps it as a hint.
+  const android = Platform.OS === 'android';
+  // Owner decision 2026-11-28: while an error shows (a refused submit), only the red error is shown, not
+  // the same text again in the status line; typing again clears the error and the status line returns.
+  let statusLine: React.ReactNode = null;
+  if (!error && status === 'needed') {
+    // The count is its own text, so the phrase stays a plain catalogue string.
+    statusLine = <Text style={styles.status} testID={`${testID}-status`}>{evaluation.remaining}{' '}{t(remainingKey(evaluation))}</Text>;
+  } else if (!error && message) {
+    statusLine = <Text style={styles.status} testID={`${testID}-status`}>{message}</Text>;
+  }
   return (
     <View>
       <Input
@@ -83,7 +95,8 @@ export function NewPasswordField({ label, value, onChangeText, error, announceKe
         textContentType="newPassword"
         autoCorrect={false}
         autoCapitalize="none"
-        accessibilityHint={policy}
+        accessibilityLabel={android ? `${label}, ${policy}` : label}
+        accessibilityHint={android ? undefined : policy}
         testID={testID}
         error={error}
         announceKey={announceKey}
@@ -99,11 +112,7 @@ export function NewPasswordField({ label, value, onChangeText, error, announceKe
         <Text style={styles.toggleText}>{t(visible ? 'auth_password_hide' : 'auth_password_show')}</Text>
       </Pressable>
       <Text style={styles.policy} testID={`${testID}-policy`}>{policy}</Text>
-      {status === 'needed' ? (
-        <Text style={styles.status} testID={`${testID}-status`}>{evaluation.remaining}{' '}{t(remainingKey(evaluation))}</Text>
-      ) : message ? (
-        <Text style={styles.status} testID={`${testID}-status`}>{message}</Text>
-      ) : null}
+      {statusLine}
     </View>
   );
 }

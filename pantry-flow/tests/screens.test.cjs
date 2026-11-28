@@ -687,3 +687,19 @@ test('P15: sign-in shows no policy or length feedback, asks for the saved passwo
     assert.deepEqual(signedIn, [['a@example.com', 'abc123']]);
   } finally { act(() => s.renderer.unmount()); }
 });
+
+// Owner decision 2026-11-28 (phone check): after a refused submit only the red error shows; typing in
+// the password field again clears it, and the live status line returns.
+test('registration: typing after a refused submit clears the error and brings the status line back', async () => {
+  const s = passwordScreen('app/(auth)/register.tsx', { signUp: async () => 'confirmation_required' });
+  try {
+    s.fill('a'.repeat(73));
+    await s.submit();
+    assert.equal(s.error(), TOO_LONG);
+    const statusTexts = () => s.renderer.root.findAll(n => n.props.testID === 'register-password-status' && typeof n.type === 'string');
+    assert.equal(statusTexts().length, 0, 'only the red error shows');
+    act(() => s.password().props.onChangeText('a'.repeat(72)));
+    assert.equal(s.error(), null, 'typing clears the error');
+    assert.equal(statusTexts().length, 1, 'the status line is back');
+  } finally { act(() => s.renderer.unmount()); }
+});
