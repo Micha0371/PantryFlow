@@ -32,7 +32,11 @@ enabled = true
 site_url = "http://127.0.0.1:3000"
 additional_redirect_urls = ["pantryflow://auth/callback", "pantryflowtest://auth/callback"]
 enable_signup = true
-minimum_password_length = 6
+# KAN-82: the approved policy (KAN-81): 15 characters, no character rules (password_requirements
+# stays empty), no leaked-password check (Pro plan only; B2 deviation for the beta). Auth v2.198.0
+# (CLI 3.2.0) counts this minimum in code points, like the app; v2.197.0 counted bytes (spec 2.2).
+minimum_password_length = 15
+password_requirements = ""
 
 [auth.email]
 # The provider toggle (CLI 3 deprecates enable_signup here); [auth] enable_signup allows new sign-ups.

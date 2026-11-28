@@ -14,6 +14,7 @@ import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { useAuth } from '@/lib/auth';
 import { signUpErrorKey } from '@/lib/auth-error';
+import { passwordProblem } from '@/lib/password-policy';
 import { useTranslation } from '@/lib/i18n';
 import { colors, spacing, typography } from '@/lib/theme';
 import { useFormError } from '@/hooks/useFormError';
@@ -39,6 +40,13 @@ export default function RegisterScreen() {
 
   const onSubmit = async () => {
     if (submitLock.current) return;
+    // KAN-82: the approved policy is checked before sending, with its own message; the password
+    // itself is sent exactly as typed (no trimming, truncation or normalization).
+    const problem = passwordProblem(password);
+    if (problem) {
+      setError(t(problem === 'too_short' ? 'err_password_too_short' : 'err_password_too_long'));
+      return;
+    }
     submitLock.current = true;
     setError(null);
     setSubmitting(true);
@@ -98,6 +106,7 @@ export default function RegisterScreen() {
             label={t('auth_password')}
             placeholder={t('auth_password_placeholder')}
             secureTextEntry
+            autoComplete="new-password"
             value={password}
             onChangeText={setPassword}
             testID="register-password"
@@ -109,7 +118,8 @@ export default function RegisterScreen() {
             label={t('auth_register_button')}
             onPress={onSubmit}
             loading={submitting}
-            disabled={!name.trim() || !email.trim() || password.length < 6}
+            // A short password can be submitted: the message then says what the policy needs.
+            disabled={!name.trim() || !email.trim() || !password}
             style={{ marginTop: spacing.md }}
             testID="register-submit"
           />
