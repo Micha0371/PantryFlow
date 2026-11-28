@@ -4,7 +4,7 @@ const React = require('react');
 const { create, act } = require('react-test-renderer');
 const { load } = require('./helpers.cjs');
 
-const shoppingData = load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') });
+const shoppingData = load('lib/shopping-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './pagination': load('lib/pagination.ts') });
 const pantryShopping = load('lib/pantry-shopping.ts');
 const STATUSES = ['in_stock', 'low', 'out'];
 

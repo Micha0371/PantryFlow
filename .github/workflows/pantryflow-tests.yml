@@ -62,6 +62,24 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      # CI-PORT-01: Linux gives outgoing connections ports 32768-60999, which include the fixed
+      # local Supabase ports (supabase/config.toml, 54320-54329). Reserve them before anything
+      # (checkout, npm, image pulls) opens a connection, so Docker can always bind them. Writing
+      # the setting replaces the whole list, so the runner's own reservations are kept: the step
+      # writes "<existing>,54320-54329" and fails unless every port reserved before, plus ours,
+      # is reserved after. Both lists and the ephemeral range are logged for the diagnosis.
+      - name: Reserve the local Supabase ports
+        working-directory: .
+        run: |
+          ports() { tr ',' '\n' <<<"$1" | awk -F- 'NF { last = ($2 == "" ? $1 : $2); for (p = $1; p <= last; p++) print p }' | sort -u; }
+          before="$(sysctl -n net.ipv4.ip_local_reserved_ports)"
+          echo "ephemeral port range: $(sysctl -n net.ipv4.ip_local_port_range)"
+          echo "reserved before: '${before}'"
+          sudo sysctl -w net.ipv4.ip_local_reserved_ports="${before:+${before},}54320-54329"
+          after="$(sysctl -n net.ipv4.ip_local_reserved_ports)"
+          echo "reserved after: '${after}'"
+          missing="$(comm -23 <({ ports "$before"; seq 54320 54329; } | sort -u) <(ports "$after"))"
+          if [ -n "$missing" ]; then echo "::error::not reserved after the change: $(echo $missing)"; exit 1; fi
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -73,6 +91,9 @@ jobs:
           set -o pipefail
           npm run db:start 2>&1 | tee db-start.log
         id: stack
+      - name: Show which process holds a local Supabase port
+        if: always() && steps.stack.outcome == 'failure'
+        run: sudo ss -tanp | grep -E ':5432[0-9][^0-9]' || echo 'no process holds a local Supabase port now'
       - name: Redact startup diagnostics
         if: always() && steps.stack.outcome == 'failure'
         run: node scripts/redact-startup-log.cjs
@@ -97,12 +118,73 @@ jobs:
         with:
           name: database-startup-failure
           path: pantry-flow/db-start.sanitized.log
+  # Decides whether the Android job starts on its own: for a pull request, the PR's own changes
+  # (three-dot diff against its base); for a push to main, what the push brought in. What counts is
+  # defined and tested in pantry-flow/scripts/android-relevance.cjs. Dispatch and the weekly
+  # schedule always run Android, whatever this says.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      android: ${{ steps.decide.outputs.android }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - id: decide
+        working-directory: .
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          case "$EVENT" in
+            pull_request) range="$PR_BASE...HEAD" ;;
+            push)
+              # A new branch has no "before"; count everything as relevant then.
+              if [ -z "$PUSH_BEFORE" ] || [ "$PUSH_BEFORE" = "0000000000000000000000000000000000000000" ]; then
+                echo "android=true" >> "$GITHUB_OUTPUT"; exit 0
+              fi
+              range="$PUSH_BEFORE..HEAD" ;;
+            *) echo "android=false" >> "$GITHUB_OUTPUT"; exit 0 ;;
+          esac
+          git diff --name-only "$range" | node pantry-flow/scripts/android-relevance.cjs >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
   android:
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-e2e]'))
+    # Starts on its own for Android-relevant pull requests and pushes to main (see `changes`), and on
+    # dispatch, the weekly schedule or a "[full-e2e]" push. It no longer waits for fast and database:
+    # it runs beside them, so a run takes the time of the Android job alone.
+    if: >-
+      !cancelled() && (
+        github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' ||
+        needs.changes.outputs.android == 'true' ||
+        (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-e2e]')))
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    needs: [fast, database]
+    needs: [changes]
+    env:
+      # React Native, reanimated and worklets compile through ccache when it is installed.
+      CCACHE_DIR: /home/runner/.ccache
+      CCACHE_MAXSIZE: 1G
     steps:
+      # CI-PORT-01: Linux gives outgoing connections ports 32768-60999, which include the fixed
+      # local Supabase ports (supabase/config.toml, 54320-54329). Reserve them before anything
+      # (checkout, npm, image pulls) opens a connection, so Docker can always bind them. Writing
+      # the setting replaces the whole list, so the runner's own reservations are kept: the step
+      # writes "<existing>,54320-54329" and fails unless every port reserved before, plus ours,
+      # is reserved after. Both lists and the ephemeral range are logged for the diagnosis.
+      - name: Reserve the local Supabase ports
+        working-directory: .
+        run: |
+          ports() { tr ',' '\n' <<<"$1" | awk -F- 'NF { last = ($2 == "" ? $1 : $2); for (p = $1; p <= last; p++) print p }' | sort -u; }
+          before="$(sysctl -n net.ipv4.ip_local_reserved_ports)"
+          echo "ephemeral port range: $(sysctl -n net.ipv4.ip_local_port_range)"
+          echo "reserved before: '${before}'"
+          sudo sysctl -w net.ipv4.ip_local_reserved_ports="${before:+${before},}54320-54329"
+          after="$(sysctl -n net.ipv4.ip_local_reserved_ports)"
+          echo "reserved after: '${after}'"
+          missing="$(comm -23 <({ ports "$before"; seq 54320 54329; } | sort -u) <(ports "$after"))"
+          if [ -n "$missing" ]; then echo "::error::not reserved after the change: $(echo $missing)"; exit 1; fi
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -117,17 +199,56 @@ jobs:
         with:
           packages: platform-tools
           log-accepted-android-sdk-licenses: false
+      # Build caches: the native compile (ccache, saved after every successful build) and Gradle's
+      # dependencies (saved when the lockfile changes). Restored from this branch or from main.
+      - name: Install ccache
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ccache && ccache --version | head -1 && ccache --zero-stats
+      - name: Restore the native build cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.ccache
+          key: android-ccache-${{ hashFiles('pantry-flow/package-lock.json') }}-${{ github.run_id }}
+          restore-keys: |
+            android-ccache-${{ hashFiles('pantry-flow/package-lock.json') }}-
+            android-ccache-
+      - name: Restore the Gradle cache
+        id: gradle-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: android-gradle-${{ hashFiles('pantry-flow/package-lock.json') }}
+          restore-keys: android-gradle-
       - run: npm ci --ignore-scripts
       - run: |
           set -o pipefail
           npm run db:start 2>&1 | tee db-start.log
         id: stack
+      - name: Show which process holds a local Supabase port
+        if: always() && steps.stack.outcome == 'failure'
+        run: sudo ss -tanp | grep -E ':5432[0-9][^0-9]' || echo 'no process holds a local Supabase port now'
       - name: Redact startup diagnostics
         if: always() && steps.stack.outcome == 'failure'
         run: node scripts/redact-startup-log.cjs
       - run: npm run db:reset
       - run: npm run e2e:prepare
       - run: npm run e2e:build
+      - name: Native build cache statistics
+        run: ccache --show-stats
+      - name: Save the native build cache
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.ccache
+          key: android-ccache-${{ hashFiles('pantry-flow/package-lock.json') }}-${{ github.run_id }}
+      - name: Save the Gradle cache
+        if: steps.gradle-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: android-gradle-${{ hashFiles('pantry-flow/package-lock.json') }}
       - name: Install pinned Maestro CLI
         run: |
           curl --proto '=https' --proto-redir '=https' --tlsv1.2 --fail --location --retry 3 https://github.com/mobile-dev-inc/maestro/releases/download/cli-2.12.0/maestro.zip -o /tmp/maestro.zip

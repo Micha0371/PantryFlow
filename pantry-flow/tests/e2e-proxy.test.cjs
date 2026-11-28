@@ -111,3 +111,17 @@ test('an upstream that drops the connection answers 502', async () => {
     assert.deepEqual(await send('GET', pantry), { status: 502, body: 'Local Supabase unavailable' });
   } finally { stop(); }
 });
+
+// KAN-127: data requests end after 20 s without an answer. The delayed write models a slow save
+// that still answers (slice-1-1's abandoned-save check leaves the screen while it is pending), so
+// it must answer well before that timeout; a longer delay would turn it into an unconfirmed write.
+test('the delayed write answers well before the app\'s data timeout', () => {
+  const fs = require('node:fs');
+  const { load } = require('./helpers.cjs');
+  const { DATA_REQUEST_TIMEOUT_MS } = load('lib/auth-timeout.ts');
+  const source = fs.readFileSync(path.join(__dirname, '../scripts/e2e-proxy.cjs'), 'utf8');
+  const delays = [...source.matchAll(/if \(delayed\) \{[^}]*await sleep\((\d+)\)/g)].map(m => Number(m[1]));
+  assert.equal(delays.length, 1, 'exactly one delayed-write sleep in the proxy');
+  assert.ok(delays[0] <= DATA_REQUEST_TIMEOUT_MS - 5000, `delay ${delays[0]} ms leaves under 5 s before the ${DATA_REQUEST_TIMEOUT_MS} ms data timeout`);
+  assert.ok(delays[0] >= 10000, `delay ${delays[0]} ms is too short for the flow to leave the screen while the save is pending`);
+});

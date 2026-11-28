@@ -1,0 +1,44 @@
+# M1 (getSession() error ignored), new test
+$ node --test --test-reporter=spec tests/email-confirmation.test.cjs
+(exit 1)
+
+✔ confirmation rejects missing, ambiguous, malformed and error links without exchanging credentials (75.653ms)
+✔ confirmation coalesces duplicate active callbacks and requires an actual authenticated session (31.5488ms)
+✔ expired codes remain recoverable (7.467ms)
+✔ a callback cannot replace an already signed-in account (8.3158ms)
+✖ a getSession() error stops the callback before any code exchange (7.9203ms)
+✔ resend validates the address, prevents overlap, uses the app callback and unlocks after rejection (7.1938ms)
+✔ native PKCE adapter delegates secure randomness and SHA-256 without replacing browser crypto (16.6513ms)
+✔ the email shape check accepts and rejects exactly the same addresses (7.8594ms)
+✔ the email shape check runs in linear time (9.1084ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 8
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 475.7659
+
+✖ failing tests:
+
+test at tests\email-confirmation.test.cjs:80:1
+✖ a getSession() error stops the callback before any code exchange (7.9203ms)
+  AssertionError [ERR_ASSERTION]: no code may be exchanged after a getSession() error
+  + actual - expected
+  
+  + [
+  +   'link-code'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (C:\pf3\pantry-flow\tests\email-confirmation.test.cjs:88:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'link-code' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

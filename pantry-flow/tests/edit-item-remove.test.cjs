@@ -8,8 +8,8 @@ const { load, deferred } = require('./helpers.cjs');
 // resolves, so the closing edit screen must not fall back to its missing state.
 const theme = load('lib/theme.ts');
 const constants = load('lib/constants.ts');
-const pantryData = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
-const shoppingData = load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') });
+const pantryData = load('lib/pantry-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './constants': constants, './pagination': load('lib/pagination.ts') });
+const shoppingData = load('lib/shopping-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './pagination': load('lib/pagination.ts') });
 const pantryShopping = load('lib/pantry-shopping.ts');
 const mutation = load('hooks/useItemMutation.ts', { 'expo-router': { useFocusEffect: () => {} } });
 const t = key => key;
@@ -101,6 +101,19 @@ test('a pantry delete that fails for another reason keeps the typed form and sho
     const input = renderer.root.findByType('Input');
     assert.equal(input.props.value, 'Oat milk');
     assert.equal(input.props.error, 'err_delete_item');
+  } finally { act(() => renderer.unmount()); }
+});
+
+// KAN-127: a delete without a database answer may have happened; the screen never says it failed.
+test('a pantry delete with an unknown outcome keeps the form and says the change could not be confirmed', async () => {
+  const d = deferred();
+  const { renderer, state, missingShown, confirmDelete } = render({ deleteResult: d, drops: false });
+  try {
+    const pending = confirmDelete();
+    await act(async () => { d.reject(pantryData.unconfirmedWrite({ message: 'AbortError', code: '' })); await pending; });
+    assert.equal(state.back, 0);
+    assert.equal(missingShown(), false);
+    assert.equal(renderer.root.findByType('Input').props.error, 'err_change_unconfirmed');
   } finally { act(() => renderer.unmount()); }
 });
 

@@ -6,8 +6,8 @@ const { load, deferred } = require('./helpers.cjs');
 
 const theme = load('lib/theme.ts');
 const constants = load('lib/constants.ts');
-const pantryData = load('lib/pantry-data.ts', { './constants': constants, './pagination': load('lib/pagination.ts') });
-const shoppingData = load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') });
+const pantryData = load('lib/pantry-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './constants': constants, './pagination': load('lib/pagination.ts') });
+const shoppingData = load('lib/shopping-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './pagination': load('lib/pagination.ts') });
 const pantryShopping = load('lib/pantry-shopping.ts');
 const t = key => key;
 const baseItem = { id: '1', household_id: 'h', name: 'Milk', category: 'dairy', location: 'fridge', status: 'in_stock' };

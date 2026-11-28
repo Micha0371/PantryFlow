@@ -1,0 +1,58 @@
+# M3 (another error instead of the getSession() error), new test
+$ node --test --test-reporter=spec tests/email-confirmation.test.cjs
+(exit 1)
+
+✔ confirmation rejects missing, ambiguous, malformed and error links without exchanging credentials (70.4287ms)
+✔ confirmation coalesces duplicate active callbacks and requires an actual authenticated session (34.0632ms)
+✔ expired codes remain recoverable (9.3502ms)
+✔ a callback cannot replace an already signed-in account (8.4317ms)
+✖ a getSession() error stops the callback before any code exchange (9.682ms)
+✔ resend validates the address, prevents overlap, uses the app callback and unlocks after rejection (6.648ms)
+✔ native PKCE adapter delegates secure randomness and SHA-256 without replacing browser crypto (17.7663ms)
+✔ the email shape check accepts and rejects exactly the same addresses (7.1987ms)
+✔ the email shape check runs in linear time (7.2458ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 8
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 451.7677
+
+✖ failing tests:
+
+test at tests\email-confirmation.test.cjs:80:1
+✖ a getSession() error stops the callback before any code exchange (9.682ms)
+  AssertionError [ERR_ASSERTION]: the callback must reject with the getSession() error itself
+  + actual - expected
+  
+  + Error: Session check failed
+  +     at eval (eval at exports.load (C:\pf3\pantry-flow\tests\helpers.cjs:17:3), <anonymous>:32:19)
+  - Error: session storage could not be read
+  -     at TestContext.<anonymous> (C:\pf3\pantry-flow\tests\email-confirmation.test.cjs:82:19)
+  -     at Test.runInAsyncScope (node:async_hooks:226:14)
+  -     at Test.run (node:internal/test_runner/test:1402:25)
+  -     at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+  -     at Test.postRun (node:internal/test_runner/test:1542:19)
+  -     at Test.run (node:internal/test_runner/test:1467:12)
+  -     at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+  
+      at TestContext.<anonymous> (C:\pf3\pantry-flow\tests\email-confirmation.test.cjs:91:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: Error: Session check failed
+        at eval (eval at exports.load (C:\pf3\pantry-flow\tests\helpers.cjs:17:3), <anonymous>:32:19),
+    expected: Error: session storage could not be read
+        at TestContext.<anonymous> (C:\pf3\pantry-flow\tests\email-confirmation.test.cjs:82:19)
+        at Test.runInAsyncScope (node:async_hooks:226:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+        at Test.postRun (node:internal/test_runner/test:1542:19)
+        at Test.run (node:internal/test_runner/test:1467:12)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:974:7),
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -8,7 +8,8 @@ require the GitHub Actions `fast` and `database` checks plus the genuine
 `SonarCloud Code Analysis` check against an up-to-date
 branch, with conversations resolved. Direct pushes, force pushes and branch
 deletion are blocked by branch protection, including for administrators.
-Android remains an on-demand/weekly gate rather than an unconditional PR job.
+Android runs on its own for pull requests and pushes to `main` whose changes reach the app, and on
+dispatch and weekly; docs-only and unit-test-only changes skip it (see "When the Android job runs").
 
 The coverage matrix is a living specification: every behavior change, including
 Slice 2 work, adds or updates its acceptance scenarios and regression tests in
@@ -126,7 +127,7 @@ Diagnostics: ignored `.verification/maestro/results.xml`, `debug/`, screenshots 
 
 ## CI and release gate
 
-`.github/workflows/pantryflow-tests.yml` runs fast and disposable-database jobs on PRs. Manual dispatch and weekly scheduled runs additionally build an Android test APK and run Maestro on an accelerated emulator. CI has read-only repository permissions and needs no Supabase/GitHub secrets. Android diagnostics are retained for seven days. With the workflow integrated on `main`, scheduled and manual dispatch runs are active. Manual dispatch can select a follow-up branch for full Android validation before its PR is merged.
+`.github/workflows/pantryflow-tests.yml` runs fast and disposable-database jobs on PRs. The Android job builds an Android test APK and runs Maestro on an accelerated emulator; when it runs is described below. CI has read-only repository permissions and needs no Supabase/GitHub secrets. Android diagnostics are retained for seven days. With the workflow integrated on `main`, scheduled and manual dispatch runs are active. Manual dispatch can select a follow-up branch for full Android validation before its PR is merged.
 
 Only superseded PR runs are automatically cancelled. New pushes to `main` do not
 cancel an active scheduled/manual full run. Startup output is captured separately
@@ -136,7 +137,22 @@ are not uploaded. A redaction failure cannot upload the raw startup file.
 Bash pipe failure propagation keeps a failed Supabase startup red. Artifact access still follows
 GitHub's authentication and repository permissions.
 
-A harness change is accepted only after fast, database and Android jobs pass for its exact commit. Do not label an unexecuted flow a passing regression. Baseline historical counts (32 local, 13 hosted, 22 device groups) remain historical evidence rather than current automation counts. SDK upgrade, actual email delivery and historical hosted-account cleanup stay separate tasks.
+A harness change is accepted only after fast, database and Android jobs pass for its commit, under the rerun rule below. Do not label an unexecuted flow a passing regression. Baseline historical counts (32 local, 13 hosted, 22 device groups) remain historical evidence rather than current automation counts. SDK upgrade, actual email delivery and historical hosted-account cleanup stay separate tasks.
+
+### When the Android job runs
+
+- **On its own** (since 2026-11-27) for a pull request whose own changes reach the app, and for a push to `main` that brings such changes in. `pantry-flow/scripts/android-relevance.cjs` decides, and its tests pin the list: everything under `pantry-flow/` counts except Markdown files, the top-level node unit tests (`tests/*.test.cjs` and their helpers) and the Jest component tests (`tests/components/`); the workflow file counts too. `tests/integration/` counts, because the e2e fixtures use it. Anything new under `pantry-flow/` counts until it is listed.
+- **Always** on manual dispatch, the weekly schedule and a push to `main` whose message contains `[full-e2e]`.
+- **Beside the other jobs:** it no longer waits for fast and database.
+- **Build caches:** the native compile goes through ccache (React Native, reanimated and worklets use it when it is installed) and Gradle's dependencies are cached. A pull request restores its own or `main`'s caches, so the first run after a lockfile change is a cold build.
+
+**Rerun rule.** After a green Android run on commit G, a new head H needs another Android run only when the branch's own Android-relevant changes differ between G and H. Commits that a merge of `main` brings in don't count: the Android run on `main` after their own merge checks them. A file that both the branch and `main` changed does count. Check it with:
+
+```
+node scripts/android-relevance.cjs --since <G> --head <H> --base origin/main
+```
+
+It prints `Android run needed again: no`, or `yes` with the files. The automatic run on a pull request starts anyway on every push; under this rule, a PR may be merged on G's green run without waiting for H's.
 
 ## Historical execution record — PF-TEST-001, 2026-11-08
 

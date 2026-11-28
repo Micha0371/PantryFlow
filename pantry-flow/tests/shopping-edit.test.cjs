@@ -5,7 +5,7 @@ const { create, act } = require('react-test-renderer');
 const { load, deferred } = require('./helpers.cjs');
 
 const theme = load('lib/theme.ts');
-const data = load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') });
+const data = load('lib/shopping-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './pagination': load('lib/pagination.ts') });
 const mutation = load('hooks/useItemMutation.ts', { 'expo-router': { useFocusEffect: () => {} } });
 const t = key => key;
 const existing = { id: '1', household_id: 'h', pantry_item_id: null, name: 'Milk', is_checked: false,

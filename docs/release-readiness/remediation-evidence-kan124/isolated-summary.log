@@ -1,0 +1,16 @@
+# npm run test:isolated on the KAN-124 branch (test file blob 201a094baf62558b43163d1f439f2f6987ce84b2); node v26.10.0
+# Filtered summary: exit code and the runner's closing lines, not the full log
+exit: 0
+
+> pantry-flow@0.1.0 test:isolated
+> node scripts/run-tests-alone.cjs
+
+test:isolated ran 572 top-level tests alone across 65 files
+
+# The new test alone: node --test --test-name-pattern="^a getSession\(\) error stops the callback before any code exchange$" tests/email-confirmation.test.cjs
+exit: 0
+✔ a getSession() error stops the callback before any code exchange (60.102ms)
+ℹ tests 1
+ℹ pass 1
+ℹ fail 0
+ℹ skipped 0

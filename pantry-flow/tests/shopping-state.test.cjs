@@ -4,7 +4,7 @@ const React = require('react');
 const { create, act } = require('react-test-renderer');
 const { load, deferred } = require('./helpers.cjs');
 const { readContract } = require('./list-provider-contract.cjs');
-const real = load('lib/shopping-data.ts', { './pagination': load('lib/pagination.ts') });
+const real = load('lib/shopping-data.ts', { './write-outcome': load('lib/write-outcome.ts'), './pagination': load('lib/pagination.ts') });
 const row = (id = '1', name = 'Milk', checked = false, household_id = 'h') => ({ id, household_id, pantry_item_id: null,
   name, is_checked: checked, completed_at: checked ? '2026-01-02' : null, created_by: 'u',
   created_at: '2026-01-01', updated_at: '2026-01-01' });
@@ -134,24 +134,35 @@ test('failed or malformed writes leave state intact and allow retry', async () =
   const f = fixture();
   await act(async () => f.reads[0].resolve([row('1', 'Milk', true)]));
   const before = f.first.items;
-  f.impl.rename = async () => { throw new Error('offline'); };
-  f.impl.check = async () => real.parseShoppingItem({ id: '1' });
-  f.impl.insert = async () => { throw new Error('offline'); };
+  // A confirmed (coded) rejection; a write without a database answer is the KAN-127 test below.
+  const rejected = () => { throw Object.assign(new Error('server rejected the write'), { code: 'XX000' }); };
+  f.impl.rename = async () => rejected();
+  f.impl.insert = async () => rejected();
   await act(async () => {
-    await assert.rejects(f.first.renameItem('1', 'Oat'), /offline/);
-    await assert.rejects(f.first.completeItem('1'), /Invalid shopping item/);
-    await assert.rejects(f.first.addItem({ name: 'Eggs' }), /offline/);
+    await assert.rejects(f.first.renameItem('1', 'Oat'), /rejected/);
+    await assert.rejects(f.first.addItem({ name: 'Eggs' }), /rejected/);
+    // A name the rules refuse is rejected before anything is sent, never as an unknown outcome.
+    await assert.rejects(f.first.addItem({ name: '   ' }), e => e.code === 'PF_INVALID_SHOPPING');
   });
   assert.deepEqual(f.first.items, before);
   assert.equal(f.reads.length, 1);
+  // A malformed answer arrives after the server accepted the write, so it is not a failure:
+  // the outcome is unconfirmed and the list is re-read (KAN-127).
+  f.impl.check = async () => real.parseShoppingItem({ id: '1' });
+  await act(async () => {
+    await assert.rejects(f.first.completeItem('1'), e => e.code === real.WRITE_UNCONFIRMED && /Invalid shopping item/.test(e.cause.message));
+  });
+  assert.deepEqual(f.first.items, before);
+  assert.equal(f.reads.length, 2);
+  await act(async () => f.reads[1].resolve([row('1', 'Milk', true)]));
   f.impl.check = async (_c, _h, _id, checked) => row('1', 'Milk', checked);
   await act(async () => { await f.first.reopenItem('1'); });
   assert.equal(f.first.items[0].is_checked, false);
   await act(async () => { await f.first.completeItem('1'); });
   f.impl.check = async () => { throw Object.assign(new Error('gone'), { code: 'PGRST116' }); };
   await act(async () => { await assert.rejects(f.first.reopenItem('1'), e => e.code === 'PGRST116'); });
-  assert.equal(f.reads.length, 2);
-  await act(async () => f.reads[1].resolve([]));
+  assert.equal(f.reads.length, 3);
+  await act(async () => f.reads[2].resolve([]));
   assert.equal(f.first.items.length, 0);
   assert.equal(f.first.loading, false);
   f.dispose();
@@ -202,18 +213,42 @@ test('a missing-record re-read loses to a newer read and to a household change',
   f.dispose();
 });
 
-test('a transport failure on a write issues no re-read', async () => {
+// KAN-127: a write that ends without a database answer (a timeout, a lost connection) may have
+// been committed. It keeps the cached rows, re-reads, and reports an unknown outcome, never a failure.
+test('a write without a database answer keeps cached rows, re-reads and reports an unknown outcome (KAN-127)', async () => {
   const f = fixture();
   await act(async () => f.reads[0].resolve([row('1', 'Milk')]));
-  f.impl.rename = async () => { throw new Error('offline'); };
-  f.impl.delete = async () => { throw new Error('offline'); };
-  await act(async () => {
-    await assert.rejects(f.first.renameItem('1', 'Oat'), /offline/);
-    await assert.rejects(f.first.deleteItem('1'), /offline/);
-  });
-  assert.equal(f.reads.length, 1);
-  assert.deepEqual(f.first.items.map(i => i.id), ['1']);
+  const writes = {
+    insert: () => f.first.addItem({ name: 'Eggs' }),
+    rename: () => f.first.renameItem('1', 'Oat'),
+    check: () => f.first.completeItem('1'),
+    reopen: () => f.first.reopenItem('1'),
+    delete: () => f.first.deleteItem('1'),
+  };
+  for (const [name, write] of Object.entries(writes)) {
+    for (const error of [{ message: 'AbortError: The operation was aborted.', code: '' }, new TypeError('Network request failed')]) {
+      const readsBefore = f.reads.length;
+      f.impl[name === 'reopen' ? 'check' : name] = async () => { throw error; };
+      await act(async () => {
+        await assert.rejects(write(), e => e.code === real.WRITE_UNCONFIRMED && e.cause === error, name);
+      });
+      assert.equal(f.reads.length, readsBefore + 1, `${name} re-reads the list`);
+      assert.deepEqual(f.first.items.map(i => [i.id, i.name, i.is_checked]), [['1', 'Milk', false]], `${name} keeps the cached rows`);
+      await act(async () => f.reads.at(-1).resolve([row('1', 'Milk')]));
+    }
+  }
   assert.equal(f.first.loading, false);
+  f.dispose();
+});
+
+test('the re-read after an unknown shopping add shows the item the server did commit (KAN-127)', async () => {
+  const f = fixture();
+  await act(async () => f.reads[0].resolve([row('1', 'Milk')]));
+  f.impl.insert = async () => { throw { message: 'AbortError', code: '' }; };
+  await act(async () => { await assert.rejects(f.first.addItem({ name: 'Eggs' }), e => e.code === real.WRITE_UNCONFIRMED); });
+  await act(async () => f.reads.at(-1).resolve([row('2', 'Eggs'), row('1', 'Milk')]));
+  assert.deepEqual(f.first.items.map(i => i.name).sort(), ['Eggs', 'Milk']);
+  assert.deepEqual(f.second.items.map(i => i.name).sort(), ['Eggs', 'Milk']);
   f.dispose();
 });
 
@@ -278,7 +313,9 @@ test('a failed write after a failed load keeps the load error and retry recovers
   const f = fixture();
   await act(async () => f.reads[0].reject(new Error('offline')));
   f.impl.insert = async () => { throw new Error('offline'); };
-  await act(async () => { await assert.rejects(f.first.addItem({ name: 'New' }), /offline/); });
+  await act(async () => {
+    await assert.rejects(f.first.addItem({ name: 'New' }), e => e.code === real.WRITE_UNCONFIRMED && /offline/.test(e.cause.message));
+  });
   await act(async () => f.reads[f.reads.length - 1].reject(new Error('offline')));
   assert.equal(f.first.loading, false);
   assert.equal(f.first.error, 'err_load_shopping');

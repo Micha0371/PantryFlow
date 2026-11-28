@@ -8,7 +8,9 @@ this pull request. Identify any manual or deferred coverage explicitly.
 
 ## Validation
 
-Record the fast/database CI results and any relevant Android run.
+Record the fast/database CI results and the Android run, which starts on its own when the
+change reaches the app. If the head moved after a green Android run, record the result of
+`node scripts/android-relevance.cjs --since <green> --head <head>` (docs/testing/README.md).
 SDK or native dependency changes require the full harness, a fresh Android
 build, and a physical-device smoke test. Include links and observed results.
 
