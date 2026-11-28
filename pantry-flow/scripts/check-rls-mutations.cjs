@@ -84,7 +84,7 @@ function saveRun(dir, name, exe, args) {
 function baseline(out, name) {
   const dir = path.join(out, name);
   fs.mkdirSync(dir);
-  successful(cli(['db', 'reset', '--local']), 'local reset');
+  successful(cli(['db', 'reset']), 'local reset');
   const sql = saveRun(dir, 'sql', process.execPath, [launcher, 'test', 'db', sqlTest]);
   const http = saveRun(dir, 'http', process.execPath, integrationArgs());
   successful(sql, 'intact SQL tests');
@@ -112,7 +112,7 @@ function requireDetector(result, policy, sql) {
 }
 
 function mutate(out, spec) {
-  successful(cli(['db', 'reset', '--local']), 'reset between mutants');
+  successful(cli(['db', 'reset']), 'reset between mutants');
   const dir = path.join(out, spec.policy);
   fs.mkdirSync(dir);
   const before = policies().find(p => p.policyname === spec.policy);
@@ -159,7 +159,7 @@ function main() {
   const lock = lockFile();
   acquireRunLock(lock, process.pid, isAlive, root);
   let validated = false;
-  const restore = () => { if (validated) successful(cli(['db', 'reset', '--local']), 'restore intact local database'); };
+  const restore = () => { if (validated) successful(cli(['db', 'reset']), 'restore intact local database'); };
   for (const [signal, code] of [['SIGINT', 130], ['SIGTERM', 143]]) {
     process.once(signal, () => { try { restore(); } finally { releaseRunLock(lock, process.pid); process.exit(code); } });
   }

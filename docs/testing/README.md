@@ -42,7 +42,7 @@ This runs TypeScript, the original Node/React/PGlite regressions plus lifecycle/
 
 ## Disposable Supabase
 
-Docker Desktop (Linux containers) must be running. Supabase CLI 2.122.1 is locked as a dev dependency; no global CLI is required. On Windows, Docker's CLI directory must be on PATH for the CLI's credential helper. A per-user install may be under `%LOCALAPPDATA%/Programs/DockerDesktop/resources/bin`.
+Docker Desktop (Linux containers) must be running. Supabase CLI 3.2.0 is locked as a dev dependency (local Auth v2.198.0, the hosted version); no global CLI is required. On Windows, Docker's CLI directory must be on PATH for the CLI's credential helper. A per-user install may be under `%LOCALAPPDATA%/Programs/DockerDesktop/resources/bin`.
 
 ```sh
 npm run db:start
