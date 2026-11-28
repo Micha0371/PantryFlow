@@ -85,7 +85,7 @@ test('a key missing from the German catalogue falls back to English', async () =
 });
 
 // KAN-82 / section 2.6: the policy line, the status phrases and the server-mapped messages. The
-// English wording is the spec's; the German wording is a draft the owner still has to approve.
+// English wording is the spec's; the German wording was approved by the owner on 2026-11-28.
 test('section 2.6: the password strings exist in both languages and the placeholder is retired', () => {
   const { en } = load('lib/i18n/en.ts');
   const { de } = load('lib/i18n/de.ts');
