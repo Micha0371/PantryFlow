@@ -1,16 +1,16 @@
 # Phone session checklist: KAN-127 (DATA-TO-PHONE)
 
-**Status:** prepared 2026-11-27, not run. Closes the DATA-TO-PHONE row of the [coverage matrix](coverage-matrix.md) (KAN-127 section), which PR #86 adds.
+**Status:** prepared 2026-11-27, not run. Closes the DATA-TO-PHONE row of the [coverage matrix](coverage-matrix.md) (KAN-127 section). PR #86 (KAN-127) is merged; build from main once the household-lookup fix (DATA-TO-09) is merged too, so observation 4.1 checks it.
 
 **Ticket:** KAN-127 (UX-10: End hung data requests with a connection error instead of waiting forever). Beta line B13 needs it.
 
 **What the phone shows that the tests can't:** React Native's Android HTTP client has no timeouts of its own, so only a real device shows that the app's 20 s data timeout really ends a request that never answers. The unit and hook tests run the same code in Node.
 
-**Scope:** Android only, on the owner's POCO X6 (Android 16), with the test APK (`com.pantryflow.test`) built from PR #86's head. Local stack only: no hosted call, mutation or account.
+**Scope:** Android only, on the owner's POCO X6 (Android 16), with the test APK (`com.pantryflow.test`) built from a main commit that contains PR #86 and the household-lookup fix. Local stack only: no hosted call, mutation or account.
 
 ## 0. Preconditions (stop if one fails)
 
-- [ ] PR #86 passed the Android e2e job on its exact head. Write down that SHA (`a382be3` when this was written); every result below refers to it.
+- [ ] That main commit passed the Android e2e job (it runs on its own for every main push that changes the app). Write down the SHA; every result below refers to it.
 - [ ] Docker Desktop is running, and the local stack starts with `npm run db:start`.
 - [ ] Free RAM is above about 3 GB, or close Opera and WSL first. Low memory has crashed builds and test runs.
 - [ ] Phone:
@@ -21,7 +21,7 @@
 - [ ] Owner is present for the Xiaomi install prompt and AVG's warning on the test APK. Dismiss the warning; don't uninstall.
 - [ ] A stopwatch (the phone's clock app on a second device, or a PC timer).
 
-## 1. Build the APK from PR #86's head
+## 1. Build the APK from that main commit
 
 Build from a short path (CMake fails over 260 characters): a detached worktree, for example `git worktree add --detach C:/pf7 <SHA>`, with a `node_modules` junction to the main checkout.
 
@@ -82,7 +82,7 @@ Sign-in and token refresh (`/auth/v1/`) are always forwarded.
 
 | # | Setup | Action | Record |
 |---|---|---|---|
-| 4.1 | App in English, signed in. Run `hang-reads` (every data read, including the household read) | Force-stop the app and open it again; start the stopwatch | The seconds until a message appears, and the message. The code maps any failed household read to "No household found. Please sign out and back in." (`hooks/useHousehold.ts`), so a timeout is expected to show that message, which would send the user to sign out over a connection problem. Run `restore` and tap Try again: does the list load? |
+| 4.1 | App in English, signed in. Run `hang-reads` (every data read, including the household read) | Force-stop the app and open it again; start the stopwatch | The seconds until a message appears (about 20 s expected), and the message. Expected: "Could not load items." with Try again, **not** "No household found. Please sign out and back in." (DATA-TO-09; before the fix every failed household read showed that). Run `restore` and tap Try again: does the list load? |
 
 ## 5. Cleanup (always, even after a failure)
 
@@ -94,7 +94,7 @@ Sign-in and token refresh (`/auth/v1/`) are always forwarded.
 
 ## 6. After the session
 
-- **Results:** fill DATA-TO-PHONE with the PR #86 SHA, the APK SHA-256, the date, the transport and each check's time to the message.
+- **Results:** fill DATA-TO-PHONE with the main SHA, the APK SHA-256, the date, the transport and each check's time to the message.
 - **Fixes:** each FAIL becomes its own small change, tested first, then rechecked on the phone.
-- **Observation 4.1:** if the household timeout shows "No household found", the owner decides whether that becomes a follow-up ticket (a connection message instead) or is accepted for the beta.
-- **Jira:** KAN-127 moves to Done only with the owner's approval, after PR #86 is merged and DATA-TO-PHONE is PASS on the recorded commit.
+- **Observation 4.1:** if the household timeout still shows "No household found", the APK does not contain the fix; check the recorded SHA before anything else.
+- **Jira:** KAN-127 moves to Done only with the owner's approval, after DATA-TO-PHONE is PASS on the recorded commit.

@@ -9,7 +9,7 @@ function setup(initialUser = { id: 'alice' }) {
   const requests = [];
   const calls = [];
   const supabase = { from(table) { calls.push(table); return { select() { return this; }, eq() { return this; },
-    single() { const d = deferred(); requests.push(d); return d.promise; } }; } };
+    maybeSingle() { const d = deferred(); requests.push(d); return d.promise; } }; } };
   const stubs = { '@/lib/supabase': { supabase }, '@/lib/auth': { useAuth: () => ({ user: state.user }) } };
   // household-scope imports ./useHousehold, which is TS and must be compiled by load too.
   const useHouseholdModule = load('hooks/useHousehold.ts', stubs);
@@ -48,7 +48,7 @@ test('a user change re-keys the scope and old results cannot leak', async () => 
   act(() => renderer.unmount());
 });
 
-test('a failed lookup exposes err_no_household and one refresh recovers all consumers', async () => {
+test('a failed lookup exposes household_unavailable and one refresh recovers all consumers', async () => {
   const { requests, scope } = setup();
   let a, b;
   function One() { a = scope.useHouseholdScope(); return null; }
@@ -57,7 +57,7 @@ test('a failed lookup exposes err_no_household and one refresh recovers all cons
   act(() => { renderer = create(React.createElement(scope.HouseholdProvider, null,
     React.createElement(One), React.createElement(Two))); });
   await act(async () => requests[0].reject(new Error('offline')));
-  assert.equal(a.error, 'err_no_household'); assert.equal(b.error, 'err_no_household');
+  assert.equal(a.error, 'household_unavailable'); assert.equal(b.error, 'household_unavailable');
   let retry;
   act(() => { retry = a.refreshHousehold(); });
   await act(async () => {
@@ -104,11 +104,20 @@ test('PantryProvider consumes the shared scope', async () => {
   reads.length = 0; requests.length = 0; calls.length = 0;
   act(() => { renderer = create(tree()); });
   await act(async () => requests[0].reject(new Error('offline')));
-  assert.equal(value.error, 'err_no_household');
+  // The screen shows the list's load message (with Try again), not "sign out and back in".
+  assert.equal(value.error, 'err_load_items');
   act(() => { void value.retry(); });
   assert.equal(requests.length, 2);
   assert.equal(calls.length, 2);
   assert.deepEqual(reads, []);
   await act(async () => requests[1].reject(new Error('offline')));
+  act(() => renderer.unmount());
+
+  // No membership row: the screen keeps the no-household message.
+  requests.length = 0;
+  act(() => { renderer = create(tree()); });
+  await act(async () => requests[0].resolve({ data: null, error: null }));
+  assert.equal(value.error, 'err_no_household');
+  assert.deepEqual(reads, []);
   act(() => renderer.unmount());
 });

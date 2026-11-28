@@ -135,3 +135,68 @@ for (const [label, hookFile, hookName, Provider, data, dataStub, loadError, writ
     } finally { m.dispose(); }
   });
 }
+
+// The household lookup goes through the same client: when it gets no answer, both lists show their
+// load error with Try again (which re-runs the lookup), never "No household found. Please sign out
+// and back in."; only an answer without a membership row keeps that message. Real supabase-js,
+// real useHousehold, HouseholdProvider and both list providers.
+function mountHousehold(fetch) {
+  const client = createClient('http://pantryflow.invalid', 'anon-key', {
+    global: { fetch: withRequestTimeouts(fetch, { dataMs: DATA_MS }) },
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+  const stubs = { '@/lib/supabase': { supabase: client }, '@/lib/auth': { useAuth: () => ({ user: { id: 'u' } }) } };
+  const scope = load('hooks/household-scope.tsx', { ...stubs, './useHousehold': load('hooks/useHousehold.ts', stubs) });
+  const boundary = { ...stubs, './household-scope': scope };
+  const list = load('hooks/household-list.ts', boundary);
+  const pantry = load('hooks/usePantryItems.tsx', { ...boundary, './household-list': list, '@/lib/pantry-data': pantryData });
+  const shopping = load('hooks/useShoppingItems.tsx', { ...boundary, './household-list': list, '@/lib/shopping-data': shoppingData });
+  const value = {};
+  function Probe() { value.pantry = pantry.usePantryItems(); value.shopping = shopping.useShoppingItems(); return null; }
+  let renderer;
+  act(() => {
+    renderer = create(React.createElement(scope.HouseholdProvider, null, React.createElement(pantry.PantryProvider, null,
+      React.createElement(shopping.ShoppingProvider, null, React.createElement(Probe)))));
+  });
+  return { value, dispose: () => act(() => renderer.unmount()) };
+}
+
+test('a household lookup that never answers shows each list\'s load error, not "No household found"', async () => {
+  const neverAnswers = (_input, init = {}) => new Promise((_, reject) => {
+    init.signal?.addEventListener('abort', () => reject(new DOMException('The operation was aborted.', 'AbortError')));
+  });
+  const m = mountHousehold(neverAnswers);
+  try {
+    await act(settle);
+    assert.equal(m.value.pantry.error, 'err_load_items');
+    assert.equal(m.value.shopping.error, 'err_load_shopping');
+    assert.equal(m.value.pantry.loading, false);
+    assert.equal(m.value.shopping.loading, false);
+  } finally { m.dispose(); }
+});
+
+// The lookup asks for an array (maybeSingle), so PostgREST answers "no row" with [] and never with
+// its single-object 406 (PGRST116), which is ambiguous between no row and more than one.
+const rows = list => async (input, init = {}) => {
+  rows.accept = new Headers(init.headers).get('accept');
+  return new Response(JSON.stringify(list), { status: 200, headers: { 'Content-Type': 'application/json', 'Content-Range': `*/${list.length}` } });
+};
+
+test('an empty answer to the household lookup keeps "No household found"; the lookup never asks for a single object', async () => {
+  const m = mountHousehold(rows([]));
+  try {
+    await act(settle);
+    assert.equal(m.value.pantry.error, 'err_no_household');
+    assert.equal(m.value.shopping.error, 'err_no_household');
+    assert.doesNotMatch(rows.accept ?? '', /vnd\.pgrst\.object/, 'with the single-object header, no row would be a 406 error');
+  } finally { m.dispose(); }
+});
+
+test('more than one membership row (ruled out by UNIQUE(user_id)) is a failed lookup, never "No household found"', async () => {
+  const m = mountHousehold(rows([{ household_id: 'h1' }, { household_id: 'h2' }]));
+  try {
+    await act(settle);
+    assert.equal(m.value.pantry.error, 'err_load_items');
+    assert.equal(m.value.shopping.error, 'err_load_shopping');
+  } finally { m.dispose(); }
+});
