@@ -162,18 +162,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     needs: [changes]
-    env:
-      # Every native CMake project compiles through ccache. React Native turns ccache on only for the
-      # app's own module (RULE_LAUNCH_COMPILE); reanimated, worklets, expo-modules-core, screens and
-      # gesture-handler are separate CMake projects, so CMake's launcher variables (read from the
-      # environment on the first configure) add it there. ccache skips its own name when it is
-      # given twice. The sloppiness lets the precompiled headers (reanimated and worklets build
-      # with -fno-pch-timestamp) and headers generated during the build be cached.
-      CCACHE_DIR: /home/runner/.ccache
-      CCACHE_MAXSIZE: 1G
-      CMAKE_C_COMPILER_LAUNCHER: ccache
-      CMAKE_CXX_COMPILER_LAUNCHER: ccache
-      CCACHE_SLOPPINESS: pch_defines,time_macros,include_file_mtime,include_file_ctime
     steps:
       # CI-PORT-01: Linux gives outgoing connections ports 32768-60999, which include the fixed
       # local Supabase ports (supabase/config.toml, 54320-54329). Reserve them before anything
@@ -207,18 +195,9 @@ jobs:
         with:
           packages: platform-tools
           log-accepted-android-sdk-licenses: false
-      # Build caches: the native compile (ccache, saved after every successful build) and Gradle's
-      # dependencies (saved when the lockfile changes). Restored from this branch or from main.
-      - name: Install ccache
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq ccache && ccache --version | head -1 && ccache --zero-stats
-      - name: Restore the native build cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.ccache
-          key: android-ccache-${{ hashFiles('pantry-flow/package-lock.json') }}-${{ github.run_id }}
-          restore-keys: |
-            android-ccache-${{ hashFiles('pantry-flow/package-lock.json') }}-
-            android-ccache-
+      # Gradle's dependencies are cached (saved when the lockfile changes), restored from this branch
+      # or from main. A native compile cache (ccache) was tried in #90 and #92 and removed: three runs,
+      # 0 hits, and the build stayed at 9-10 minutes.
       - name: Restore the Gradle cache
         id: gradle-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -242,16 +221,6 @@ jobs:
       - run: npm run db:reset
       - run: npm run e2e:prepare
       - run: npm run e2e:build
-      # Also as an annotation, which the run's public API shows without the job log.
-      - name: Native build cache statistics
-        run: |
-          ccache --show-stats
-          echo "::notice title=Native build cache::$(ccache --show-stats -v | grep -E 'calls|Hits|Misses|Errors|Could not|Unsupported|failed' | tr -s ' ' | paste -sd ';')"
-      - name: Save the native build cache
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.ccache
-          key: android-ccache-${{ hashFiles('pantry-flow/package-lock.json') }}-${{ github.run_id }}
       - name: Save the Gradle cache
         if: steps.gradle-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
