@@ -71,8 +71,9 @@ export default function LoginScreen() {
           />
           <Input
             label={t('auth_password')}
-            placeholder={t('auth_password_placeholder')}
+            // KAN-82: no minimum here; accounts from before the 15-character policy still sign in.
             secureTextEntry
+            autoComplete="current-password"
             value={password}
             onChangeText={setPassword}
             testID="login-password"

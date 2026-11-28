@@ -74,7 +74,16 @@ for (const [name, fetch, expected] of [
   ['a timed-out request', async () => { throw new DOMException('The operation was aborted.', 'AbortError'); }, 'err_auth_connection'],
   ['a server error', text(503, '<html>Service Unavailable</html>'), 'err_auth_server'],
   ['too many confirmation emails', json(429, { code: 'over_email_send_rate_limit', msg: 'Email rate limit exceeded' }), 'err_confirmation_rate_limit'],
-  ['a rejected sign-up', json(422, { code: 'weak_password', msg: 'Password is too weak', weak_password: { reasons: ['length'] } }), 'err_register_failed'],
+  // KAN-82: the server's two password rejections get their own messages (owner decision 5: a length
+  // rejection reads differently from a failed sign-up). Bodies as Auth v2.197.0 and v2.198.0 send them
+  // (internal/api/password.go): the minimum as weak_password with reasons, the 72-byte bcrypt
+  // maximum as validation_failed with a message that says "characters".
+  ['a password below the minimum', json(422, { code: 'weak_password', msg: 'Password should be at least 15 characters.', weak_password: { reasons: ['length'] } }), 'err_password_too_short'],
+  ['a password over the 72-byte maximum', json(400, { code: 'validation_failed', msg: 'Password cannot be longer than 72 characters' }), 'err_password_too_long'],
+  // Not configured (no character rules, no leaked-password check on Free): the general message.
+  ['a weak password for another reason', json(422, { code: 'weak_password', msg: 'Password is too weak', weak_password: { reasons: ['characters'] } }), 'err_register_failed'],
+  ['a leaked password', json(422, { code: 'weak_password', msg: 'Password is known to be weak', weak_password: { reasons: ['pwned'] } }), 'err_register_failed'],
+  ['another validation failure', json(400, { code: 'validation_failed', msg: 'Unable to validate email address: invalid format' }), 'err_register_failed'],
 ]) {
   test(`registration: ${name} shows ${expected}`, async () => {
     assert.equal(signUpErrorKey(await signUpError(fetch)), expected);

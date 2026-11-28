@@ -21,6 +21,7 @@ function stubs(os, overlap) {
     '@/hooks/useKeyboardOverlap': { useKeyboardOverlap: () => overlap },
     '@/hooks/useFormError': load('hooks/useFormError.ts'),
     '@/lib/auth-error': load('lib/auth-error.ts'),
+    '@/lib/password-policy': load('lib/password-policy.ts'),
     '@/lib/email-confirmation': { confirmationCode: () => null, confirmEmail: async () => {}, resendConfirmation: async () => {} },
     '@/lib/auth': { useAuth: () => ({ signIn: async () => {}, signUp: async () => 'confirmation_required' }) },
   };
@@ -50,7 +51,7 @@ for (const file of ['app/(auth)/login.tsx', 'app/(auth)/register.tsx']) {
 async function registered() {
   const r = mount('app/(auth)/register.tsx', 'ios', 0);
   const inputs = r.root.findAllByType('Input');
-  act(() => { inputs[0].props.onChangeText('Alice'); inputs[1].props.onChangeText('a@example.com'); inputs[2].props.onChangeText('password'); });
+  act(() => { inputs[0].props.onChangeText('Alice'); inputs[1].props.onChangeText('a@example.com'); inputs[2].props.onChangeText('milk and eggs on tuesday'); });
   await act(async () => r.root.findByType('Button').props.onPress());
   return r;
 }

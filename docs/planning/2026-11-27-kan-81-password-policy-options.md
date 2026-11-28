@@ -77,3 +77,9 @@ Sources: [NIST SP 800-63B Rev. 4, 3.1.1](https://pages.nist.gov/800-63-4/sp800-6
 - **KAN-82:** local `config.toml` and hosted Auth set to the decision (hosted change with its own approval and a read-back); the sign-up screen enforces the same length in code points and the 72-byte limit; `weak_password` and the over-long rejection get their own messages in English and German; the placeholder and autofill hints change.
 - **KAN-83:** a local Auth API test that a 14-character password is rejected with `weak_password` / `length` and a 15-character one accepted, called directly (bypassing the app); boundary, Unicode, passphrase, double-submit and interruption tests; a hosted read-back that does not leave accounts behind; the existing sign-up, confirmation and sign-in flows unchanged.
 - **Order:** before the hosted smoke test of the signed build (KAN-77 step 5) and the B3 re-registration rehearsal.
+
+## KAN-82 status (2026-11-28)
+
+- **Open points resolved:** the Auth server does not normalize Unicode (composed and decomposed forms are different passwords), consistent with the app; an existing account below the minimum signs in, with the session and an advisory `weakPassword` (Jira KAN-82 comment 10039). Owner decision: the advisory is ignored during the supervised beta (comment 10040).
+- **Correction:** Auth v2.197.0 counted the minimum in bytes, not code points (password spec §2.2); CLI 3.2.0 (Auth v2.198.0, the hosted version) counts code points. The local and CI pin moved to CLI 3.2.0 in #94 (FV-A2).
+- **Local and app:** implemented in the KAN-82 change (coverage matrix, KAN-82 section). Hosted Auth is unchanged and needs its own owner approval and read-back.

@@ -21,6 +21,7 @@ const shared = { 'react-native': native, '@/lib/theme': theme,
   '@/hooks/useErrorAnnouncement': announcement, '@/components/InlineError': inlineError,
   '@/hooks/useFormError': load('hooks/useFormError.ts'),
   '@/lib/auth-error': load('lib/auth-error.ts'),
+  '@/lib/password-policy': load('lib/password-policy.ts'),
   // KAN-61: the Settings language row is inert in the sign-out tests.
   '@/components/OptionChips': { OptionChips: 'OptionChips' }, '@/lib/language': load('lib/language.ts'), '@/lib/profile-language': {},
   // UX-01B list wiring: modules the pantry list imports, inert in these tests.
@@ -157,7 +158,7 @@ test('email-confirmation signup shows instructions and does not navigate to the 
   let renderer;
   act(() => { renderer = create(React.createElement(Register)); });
   const inputs = renderer.root.findAllByType('Input');
-  act(() => { inputs[0].props.onChangeText('Alice'); inputs[1].props.onChangeText('a@example.com'); inputs[2].props.onChangeText('password'); });
+  act(() => { inputs[0].props.onChangeText('Alice'); inputs[1].props.onChangeText('a@example.com'); inputs[2].props.onChangeText('milk and eggs on tuesday'); });
   await act(async () => renderer.root.findByType('Button').props.onPress());
   assert.deepEqual(navigation, []);
   assert.match(JSON.stringify(renderer.toJSON()), /auth_check_email_message/);
@@ -384,7 +385,7 @@ for (const [file, label] of [['app/add-item.tsx', 'item_add_button'], ['app/edit
 for (const [file, fill, failing] of [
   ['app/(auth)/login.tsx', inputs => { inputs[0].props.onChangeText('a@example.com'); inputs[1].props.onChangeText('wrong'); },
     { signIn: async () => { throw new Error('denied'); } }],
-  ['app/(auth)/register.tsx', inputs => { inputs[0].props.onChangeText('Alice'); inputs[1].props.onChangeText('a@example.com'); inputs[2].props.onChangeText('password'); },
+  ['app/(auth)/register.tsx', inputs => { inputs[0].props.onChangeText('Alice'); inputs[1].props.onChangeText('a@example.com'); inputs[2].props.onChangeText('milk and eggs on tuesday'); },
     { signUp: async () => { throw new Error('denied'); } }],
 ]) {
   test(`${file}: each failed submit gives the error field a new announceKey (KAN-84)`, async () => {
@@ -447,7 +448,7 @@ test('registration shows the connection message for an unreachable server and it
   act(() => { renderer = create(React.createElement(Screen)); });
   try {
     const inputs = renderer.root.findAllByType('Input');
-    act(() => { inputs[0].props.onChangeText('Alice'); inputs[1].props.onChangeText('a@example.com'); inputs[2].props.onChangeText('password'); });
+    act(() => { inputs[0].props.onChangeText('Alice'); inputs[1].props.onChangeText('a@example.com'); inputs[2].props.onChangeText('milk and eggs on tuesday'); });
     const shown = async error => {
       failure = error;
       await act(async () => renderer.root.findByType('Button').props.onPress());
@@ -455,6 +456,9 @@ test('registration shows the connection message for an unreachable server and it
     };
     assert.equal(await shown(new AuthRetryableFetchError('Network request failed', 0)), 'err_auth_connection');
     assert.equal(await shown(new AuthApiError('Password is too weak', 422, 'weak_password')), 'err_register_failed');
+    // KAN-82: the server's minimum gets its own message (the length reason comes from the real body, see auth-error tests).
+    const { AuthWeakPasswordError } = require('@supabase/supabase-js');
+    assert.equal(await shown(new AuthWeakPasswordError('Password should be at least 15 characters.', 422, ['length'])), 'err_password_too_short');
   } finally { act(() => renderer.unmount()); }
 });
 
@@ -521,4 +525,68 @@ test('a pantry load error on an unfocused tab is announced only once the tab is 
     act(() => mock.timers.tick(1000));
     assert.deepEqual(announced, ['err_load_items']);
   } finally { if (renderer) act(() => renderer.unmount()); mock.timers.reset(); }
+});
+
+// KAN-82: registration enforces the approved policy before sending (15 code points, the server's
+// 72 bytes) with its own messages, sends the password exactly as typed, and asks password managers
+// for a new password; sign-in asks for the saved one and states no minimum (existing accounts keep
+// shorter passwords, owner decision 2026-11-28).
+function passwordScreen(file, auth) {
+  const { default: Screen } = load(file, { ...shared(),
+    'expo-router': { Link: 'Link', useRouter: () => ({ replace: () => {} }) },
+    'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView' },
+    '@/components/Input': { Input: 'Input' },
+    '@/lib/auth': { useAuth: () => auth },
+  });
+  let renderer;
+  act(() => { renderer = create(React.createElement(Screen)); });
+  const inputs = () => renderer.root.findAllByType('Input');
+  const password = () => inputs().find(i => i.props.secureTextEntry);
+  return { renderer, inputs, password, error: () => inputs().find(i => 'error' in i.props).props.error,
+    submit: () => act(async () => renderer.root.findByType('Button').props.onPress()) };
+}
+
+test('KAN-82: registration refuses a password under 15 characters or over 72 bytes before sending, with its own messages', async () => {
+  const sent = [];
+  const s = passwordScreen('app/(auth)/register.tsx', { signUp: async (...args) => { sent.push(args); return 'confirmation_required'; } });
+  try {
+    const fill = value => act(() => { s.inputs()[0].props.onChangeText('Alice'); s.inputs()[1].props.onChangeText('a@example.com'); s.password().props.onChangeText(value); });
+    fill('fourteen chars');
+    assert.equal(s.renderer.root.findByType('Button').props.disabled, false, 'a short password can be submitted and is explained');
+    await s.submit();
+    assert.equal(s.error(), 'err_password_too_short');
+    fill('🥛'.repeat(14));
+    await s.submit();
+    assert.equal(s.error(), 'err_password_too_short', '14 emoji are 14 characters, not 28');
+    fill('ä'.repeat(37));
+    await s.submit();
+    assert.equal(s.error(), 'err_password_too_long', '37 umlauts are 74 bytes');
+    assert.deepEqual(sent, [], 'nothing was sent to the server');
+  } finally { act(() => s.renderer.unmount()); }
+});
+
+test('KAN-82: registration sends the password exactly as typed: no trimming, truncation or normalization', async () => {
+  const sent = [];
+  const s = passwordScreen('app/(auth)/register.tsx', { signUp: async (...args) => { sent.push(args); return 'confirmation_required'; } });
+  try {
+    const typed = '  Grüße an alle  '; // decomposed ü (u + U+0308): must not be normalized to NFC
+    const decomposed = typed.replace('ü', 'ü');
+    act(() => { s.inputs()[0].props.onChangeText('Alice'); s.inputs()[1].props.onChangeText('a@example.com'); s.password().props.onChangeText(decomposed); });
+    await s.submit();
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0][2], decomposed);
+    assert.notEqual(sent[0][2], decomposed.normalize('NFC'));
+  } finally { act(() => s.renderer.unmount()); }
+});
+
+test('KAN-82: registration asks for a new password, states the minimum, and sign-in asks for the saved one without a minimum', () => {
+  const register = passwordScreen('app/(auth)/register.tsx', { signUp: async () => 'confirmation_required' });
+  const login = passwordScreen('app/(auth)/login.tsx', { signIn: async () => {} });
+  try {
+    assert.equal(register.password().props.autoComplete, 'new-password');
+    assert.equal(register.password().props.placeholder, 'auth_password_placeholder');
+    assert.equal(login.password().props.autoComplete, 'current-password');
+    assert.equal(login.password().props.placeholder, undefined, 'sign-in states no minimum: older accounts keep shorter passwords');
+    assert.equal(login.renderer.root.findByType('Button').props.disabled, true, 'sign-in still needs an email and a password');
+  } finally { act(() => { register.renderer.unmount(); login.renderer.unmount(); }); }
 });

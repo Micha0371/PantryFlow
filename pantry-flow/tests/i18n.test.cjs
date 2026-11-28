@@ -83,3 +83,17 @@ test('a key missing from the German catalogue falls back to English', async () =
     assert.equal(current.t('err_duplicate_item'), en.err_duplicate_item);
   } finally { if (view) act(() => view.unmount()); }
 });
+
+// KAN-82: the registration placeholder and the two password messages state the approved limits.
+test('KAN-82: the password guidance names 15 characters, and the too-long message explains umlauts and emoji', () => {
+  const { en } = load('lib/i18n/en.ts');
+  const { de } = load('lib/i18n/de.ts');
+  for (const c of [en, de]) {
+    assert.match(c.auth_password_placeholder, /15/);
+    assert.match(c.err_password_too_short, /15/);
+    assert.doesNotMatch(c.err_password_too_long, /72/, 'bytes are not a number a user can count');
+  }
+  assert.match(en.err_password_too_long, /umlaut/i);
+  assert.match(de.err_password_too_long, /Umlaut/);
+  assert.notEqual(en.err_password_too_short, en.err_login_failed);
+});
