@@ -11,7 +11,7 @@
       "bundleIdentifier": "com.pantryflow.app"
     },
     "android": {
-      "package": "com.pantryflow.app",
+      "package": "com.householdkit.pantryflow",
       "versionCode": 1,
       "allowBackup": false,
       "blockedPermissions": [

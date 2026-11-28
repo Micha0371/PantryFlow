@@ -9,7 +9,7 @@ const path = require('node:path');
 const { XML } = require('@expo/config-plugins');
 const { DOMAINS, RULES_RESOURCE } = require('../plugins/with-backup-exclusion.cjs');
 
-const PRODUCTION = { package: 'com.pantryflow.app', scheme: 'pantryflow' };
+const PRODUCTION = { package: 'com.householdkit.pantryflow', scheme: 'pantryflow' }; // the Play Console app (owner, 2026-11-27)
 const BACKUP_PLUGIN = './plugins/with-backup-exclusion.cjs';
 // Expo's template asks for these; the app uses none of them.
 const BLOCKED_PERMISSIONS = [
@@ -70,7 +70,11 @@ function rulesProblems(xml) {
   for (const section of ['cloud-backup', 'device-transfer']) {
     const body = xml.match(new RegExp(`<${section}\\b[^>]*>([\\s\\S]*?)</${section}>`));
     if (!body) { problems.push(`backup rules have no <${section}> section`); continue; }
-    const excluded = new Set([...body[1].matchAll(/<exclude\s+domain="([^"]+)"\s+path="\."\s*\/>/g)].map(m => m[1]));
+    // Attribute order differs: the plugin writes domain first, aapt2 (inside the AAB) sorts by name.
+    const excluded = new Set([...body[1].matchAll(/<exclude\b([^>]*?)\/?>/g)]
+      .map(m => Object.fromEntries([...m[1].matchAll(/([\w:-]+)="([^"]*)"/g)].map(a => [a[1], a[2]])))
+      .filter(attributes => attributes.path === '.')
+      .map(attributes => attributes.domain));
     for (const domain of DOMAINS) {
       if (!excluded.has(domain)) problems.push(`<${section}> does not exclude all of domain ${domain}`);
     }
@@ -161,9 +165,9 @@ function sourceProblems(root) {
   return problems;
 }
 
-// Generates the production Android project (unchanged app.json) in .verification/release-app and
-// returns the merged release manifest and the generated backup rules.
-function mergeReleaseManifest(root) {
+// Generates the production Android project (unchanged app.json) in .verification/release-app.
+// Returns the workspace and the environment used (no Supabase values).
+function prepareReleaseProject(root) {
   const { execFileSync } = require('node:child_process');
   const work = path.join(root, '.verification/release-app');
   if (!work.startsWith(path.resolve(root, '.verification') + path.sep)) throw new Error('Unsafe release workspace');
@@ -178,6 +182,13 @@ function mergeReleaseManifest(root) {
   const env = Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith('EXPO_PUBLIC_')));
   Object.assign(env, { EXPO_NO_DOTENV: '1', CI: '1' });
   execFileSync(process.execPath, [path.join(root, 'node_modules/expo/bin/cli'), 'prebuild', '--platform', 'android', '--no-install'], { cwd: work, env, stdio: 'inherit' });
+  return { work, env };
+}
+
+// Returns the merged release manifest and the generated backup rules of that project.
+function mergeReleaseManifest(root) {
+  const { execFileSync } = require('node:child_process');
+  const { work, env } = prepareReleaseProject(root);
   const gradle = process.platform === 'win32' ? path.join(work, 'android/gradlew.bat') : './gradlew';
   execFileSync(gradle, [':app:processReleaseMainManifest', '--max-workers=2', '--no-daemon'], {
     cwd: path.join(work, 'android'), env, stdio: 'inherit', shell: process.platform === 'win32',
@@ -225,6 +236,6 @@ if (require.main === module) {
 }
 
 module.exports = {
-  appConfigProblems, rulesProblems, manifestProblems, sourceProblems, releaseExpectations,
+  appConfigProblems, rulesProblems, manifestProblems, sourceProblems, releaseExpectations, prepareReleaseProject,
   BLOCKED_PERMISSIONS, ALLOWED_PERMISSIONS, SIGNATURE_PERMISSIONS, ALLOWED_EXPORTED, MIN_TARGET_SDK,
 };

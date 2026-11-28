@@ -19,6 +19,16 @@ test('app.json is release-ready: production identity, a version code, no backup,
   assert.deepEqual(appConfigProblems(appJson()), []);
 });
 
+// KAN-77 (owner, 2026-11-27): the Play Console app is com.householdkit.pantryflow, and Play locks
+// the package at the first upload. iOS keeps its bundle ID until iOS is planned (KAN-69).
+test('the Android package is the Play Console app\'s, the iOS bundle ID is unchanged, and the old Android name is rejected', () => {
+  const config = appJson();
+  assert.equal(config.expo.android.package, 'com.householdkit.pantryflow');
+  assert.equal(config.expo.ios.bundleIdentifier, 'com.pantryflow.app');
+  config.expo.android.package = 'com.pantryflow.app';
+  assert.ok(appConfigProblems(config).some(p => /android\.package is com\.pantryflow\.app, expected com\.householdkit\.pantryflow/.test(p)));
+});
+
 test('each broken app.json setting is reported', () => {
   const cases = [
     [c => { c.expo.android.package = 'com.pantryflow.test'; }, /package/],
@@ -41,6 +51,14 @@ test('each broken app.json setting is reported', () => {
 
 test('the backup rules exclude every storage domain from cloud backup and device transfer', () => {
   assert.deepEqual(rulesProblems(withBackupExclusion.DATA_EXTRACTION_RULES), []);
+});
+
+// aapt2 stores attributes sorted by name, so the rules inside an AAB read path before domain.
+test('the backup rules pass in any attribute order, as aapt2 stores them in the artifact', () => {
+  const reordered = withBackupExclusion.DATA_EXTRACTION_RULES.replace(/<exclude domain="([^"]+)" path="\." \/>/g, '<exclude path="." domain="$1"/>');
+  assert.notEqual(reordered, withBackupExclusion.DATA_EXTRACTION_RULES);
+  assert.deepEqual(rulesProblems(reordered), []);
+  assert.ok(rulesProblems(reordered.replace('<exclude path="." domain="root"/>', '<exclude path="cache" domain="root"/>')).some(p => /root/.test(p)));
 });
 
 test('weakened backup rules are reported', () => {
@@ -80,11 +98,11 @@ test('the plugin registers a manifest change and writes the rules file into the 
   }
 });
 
-const goodManifest = `<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.pantryflow.app" android:versionCode="1" android:versionName="0.1.0">
+const goodManifest = `<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.householdkit.pantryflow" android:versionCode="1" android:versionName="0.1.0">
   <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="36" />
   <uses-permission android:name="android.permission.INTERNET" />
   <application android:name=".MainApplication" android:allowBackup="false" android:dataExtractionRules="@xml/data_extraction_rules">
-    <activity android:name="com.pantryflow.app.MainActivity" android:exported="true">
+    <activity android:name="com.householdkit.pantryflow.MainActivity" android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
@@ -97,9 +115,9 @@ const goodManifest = `<manifest xmlns:android="http://schemas.android.com/apk/re
   </application>
 </manifest>`;
 const expectations = {
-  package: 'com.pantryflow.app', scheme: 'pantryflow', versionName: '0.1.0', minTargetSdk: 36,
+  package: 'com.householdkit.pantryflow', scheme: 'pantryflow', versionName: '0.1.0', minTargetSdk: 36,
   permissions: ['android.permission.INTERNET'], signaturePermissions: [],
-  exported: [{ name: 'com.pantryflow.app.MainActivity' }],
+  exported: [{ name: 'com.householdkit.pantryflow.MainActivity' }],
 };
 
 test('a release manifest with the expected settings has no problems', async () => {
@@ -108,7 +126,7 @@ test('a release manifest with the expected settings has no problems', async () =
 
 test('each unsafe merged-manifest setting is reported', async () => {
   const cases = [
-    [m => m.replace('package="com.pantryflow.app"', 'package="com.pantryflow.test"'), /package/],
+    [m => m.replace('package="com.householdkit.pantryflow"', 'package="com.pantryflow.test"'), /package/],
     [m => m.replace('android:versionCode="1"', 'android:versionCode="0"'), /versionCode/],
     [m => m.replace('android:versionName="0.1.0"', 'android:versionName="0.0.1"'), /versionName/],
     [m => m.replace('android:targetSdkVersion="36"', 'android:targetSdkVersion="35"'), /targetSdk/],
@@ -132,9 +150,9 @@ test('each unsafe merged-manifest setting is reported', async () => {
 // The two AndroidX entries the real merged release manifest carries (2026-11-27), with their protection.
 const androidxManifest = goodManifest
   .replace('<uses-permission android:name="android.permission.INTERNET" />',
-    '<permission android:name="com.pantryflow.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" android:protectionLevel="signature" />\n' +
+    '<permission android:name="com.householdkit.pantryflow.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" android:protectionLevel="signature" />\n' +
     '  <uses-permission android:name="android.permission.INTERNET" />\n' +
-    '  <uses-permission android:name="com.pantryflow.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />')
+    '  <uses-permission android:name="com.householdkit.pantryflow.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />')
   .replace('</application>',
     '<receiver android:name="androidx.profileinstaller.ProfileInstallReceiver" android:exported="true" android:permission="android.permission.DUMP" /></application>');
 

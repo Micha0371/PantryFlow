@@ -2,6 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
+const { applyWindowsNativePaths } = require('./windows-native-paths.cjs');
 // Metro fails to resolve through the node_modules junction when its target has a
 // lowercase drive letter (a cwd of c:\...), so normalize the drive letter.
 const root = path.resolve(__dirname, '..').replace(/^[a-z](?=:)/, drive => drive.toUpperCase());
@@ -45,28 +46,8 @@ let xml = fs.readFileSync(manifest, 'utf8');
 xml = xml.replace(/\sandroid:usesCleartextTraffic="[^"]*"/g, '').replace('<application ', '<application android:usesCleartextTraffic="true" ');
 fs.writeFileSync(manifest, xml);
 if (process.platform === 'win32') {
-  const buildFile = path.join(work, 'android/app/build.gradle');
-  // All CMake projects need short paths, including Reanimated/Worklets libraries.
   // Keep generated caches inside the repository, outside the deeper test app.
-  const staging = path.resolve(root, '../.cxx').replaceAll('\\', '/');
-  const content = fs.readFileSync(buildFile, 'utf8').replace('android {',
-    `android {\n    externalNativeBuild { cmake { buildStagingDirectory file('${staging}/app') } }\n    defaultConfig { externalNativeBuild { cmake { arguments '-DCMAKE_OBJECT_PATH_MAX=250' } } }`);
-  fs.writeFileSync(buildFile, content);
-  fs.appendFileSync(path.join(work, 'android/build.gradle'), `
-// Windows test-build cache paths; no installed package sources are modified.
-subprojects { nativeProject ->
-    nativeProject.plugins.withId('com.android.library') {
-        nativeProject.android {
-            externalNativeBuild { cmake {
-                buildStagingDirectory file('${staging}/' + Integer.toHexString(nativeProject.path.hashCode()))
-            } }
-            defaultConfig { externalNativeBuild { cmake {
-                arguments '-DCMAKE_OBJECT_PATH_MAX=250'
-            } } }
-        }
-    }
-}
-`);
+  applyWindowsNativePaths(path.join(work, 'android'), path.resolve(root, '../.cxx').replaceAll('\\', '/'));
 }
 // Release JS bundle/lifecycle with a disposable debug-signed test package.
 const gradle = process.platform === 'win32' ? path.join(work, 'android/gradlew.bat') : './gradlew';
