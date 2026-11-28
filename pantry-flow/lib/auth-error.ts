@@ -1,5 +1,6 @@
 import { isAuthApiError, isAuthRetryableFetchError, isAuthWeakPasswordError } from '@supabase/supabase-js';
 import type { TranslationKey } from './i18n/en';
+import { evaluateNewPassword } from './password-policy';
 
 // KAN-122 (UX-09): only a genuine credential rejection may say the password is wrong.
 // supabase-js reports a failed, aborted or timed-out request as AuthRetryableFetchError with
@@ -20,19 +21,22 @@ export function signInErrorKey(error: unknown): TranslationKey {
   return 'err_generic';
 }
 
-// The server's 72-byte bcrypt limit arrives as validation_failed with this message
-// (Auth v2.197.0 and v2.198.0, internal/api/password.go; checked against local v2.198.0 2026-11-28), which says "characters" although it counts bytes.
-const PASSWORD_TOO_LONG = /^Password cannot be longer than \d+ characters/;
-
-// Registration keeps its own message for every rejection; only the transport and the email
-// rate limit (sign-up sends the confirmation email) get the shared messages. KAN-82: the two
-// password limits the server enforces get their own messages; the app checks both before
-// sending, so these cover only a server that is stricter than the app.
-export function signUpErrorKey(error: unknown): TranslationKey {
+// Registration keeps its own message for every rejection; only the transport and the email rate
+// limit (sign-up sends the confirmation email) get the shared messages. Section 2.6: the password
+// rejections map from the error code and the weak_password reasons, never from the provider's message
+// text. `submittedPassword` is the value the screen sent: the server's 72-byte limit arrives as a
+// plain validation_failed, so only the client-side byte count tells it from other validation errors.
+export function signUpErrorKey(error: unknown, submittedPassword: string): TranslationKey {
   const transport = transportErrorKey(error);
   if (transport) return transport;
   if (isAuthApiError(error) && error.status === 429) return 'err_confirmation_rate_limit';
-  if (isAuthWeakPasswordError(error) && error.reasons.includes('length')) return 'err_password_too_short';
-  if (isAuthApiError(error) && error.code === 'validation_failed' && PASSWORD_TOO_LONG.test(error.message)) return 'err_password_too_long';
+  if (isAuthWeakPasswordError(error)) {
+    if (error.reasons.includes('length')) return 'err_password_length';
+    if (error.reasons.includes('pwned')) return 'err_password_pwned';
+    if (error.reasons.includes('characters')) return 'err_password_characters';
+  }
+  if (isAuthApiError(error) && error.code === 'validation_failed') {
+    return evaluateNewPassword(submittedPassword).tooLong ? 'auth_password_too_long' : 'err_password_unusable';
+  }
   return 'err_register_failed';
 }
