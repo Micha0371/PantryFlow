@@ -68,7 +68,8 @@ export function useHouseholdList<T extends { id: string; household_id: string }>
     view: {
       householdId, items: visibleItems,
       loading: householdLoading || loading || (!!householdId && loadedScope !== scope && !error),
-      error: householdError ?? error, fetchItems, retry,
+      // A failed household lookup reads as this list's load failure; Try again re-runs the lookup.
+      error: (householdError === 'household_unavailable' ? loadError : householdError) ?? error, fetchItems, retry,
       getItem: (id: string) => visibleItems.find(it => it.id === id) ?? null,
     },
   };

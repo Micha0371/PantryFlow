@@ -10,16 +10,18 @@ const row = (id = '1', household_id = 'h') => ({ id, household_id, name: 'Milk',
   category: 'dairy', location: 'fridge', created_by: 'u', created_at: '2026-01-01', updated_at: '2026-01-01' });
 
 function fixture() {
-  let user = { id: 'u' }, household = 'h';
+  let user = { id: 'u' }, household = 'h', scope = { loading: false, error: null };
   let first, second, mutationResult;
   const reads = [];
+  const refreshes = [];
   const apiCalls = [];
   const supabase = { from() { return { insert() { apiCalls.push('insert'); return this; }, update() { apiCalls.push('update'); return this; },
     delete() { apiCalls.push('delete'); return this; }, eq() { return this; }, select() { return this; },
     single() { return Promise.resolve(mutationResult); },
     then(yes, no) { return Promise.resolve(mutationResult).then(yes, no); } }; } };
   const boundary = { '@/lib/supabase': { supabase }, '@/lib/auth': { useAuth: () => ({ user }) },
-    './household-scope': { useHouseholdScope: () => ({ householdId: household, loading: false, error: null, refreshHousehold: async () => {} }) } };
+    './household-scope': { useHouseholdScope: () => ({ householdId: household, loading: scope.loading, error: scope.error,
+      refreshHousehold: async () => { refreshes.push(1); } }) } };
   const { PantryProvider, usePantryItems } = load('hooks/usePantryItems.tsx', {
     ...boundary, './household-list': load('hooks/household-list.ts', boundary),
     '@/lib/pantry-data': { ...data, fetchAllItems: () => { const d = deferred(); reads.push(d); return d.promise; } },
@@ -29,9 +31,9 @@ function fixture() {
   const tree = () => React.createElement(PantryProvider, null, React.createElement(One), React.createElement(Two));
   let renderer;
   act(() => { renderer = create(tree()); });
-  return { reads, apiCalls, get first() { return first; }, get second() { return second; },
+  return { reads, apiCalls, refreshes, get first() { return first; }, get second() { return second; },
     mutation(value) { mutationResult = value; },
-    change(nextUser, nextHousehold) { user = nextUser; household = nextHousehold; act(() => renderer.update(tree())); },
+    change(nextUser, nextHousehold, nextScope = scope) { user = nextUser; household = nextHousehold; scope = nextScope; act(() => renderer.update(tree())); },
     dispose() { act(() => renderer.unmount()); } };
 }
 

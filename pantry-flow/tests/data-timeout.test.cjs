@@ -135,3 +135,52 @@ for (const [label, hookFile, hookName, Provider, data, dataStub, loadError, writ
     } finally { m.dispose(); }
   });
 }
+
+// The household lookup goes through the same client: when it gets no answer, both lists show their
+// load error with Try again (which re-runs the lookup), never "No household found. Please sign out
+// and back in."; only PostgREST's no-row answer (PGRST116) keeps that message. Real supabase-js,
+// real useHousehold, HouseholdProvider and both list providers.
+function mountHousehold(fetch) {
+  const client = createClient('http://pantryflow.invalid', 'anon-key', {
+    global: { fetch: withRequestTimeouts(fetch, { dataMs: DATA_MS }) },
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+  const stubs = { '@/lib/supabase': { supabase: client }, '@/lib/auth': { useAuth: () => ({ user: { id: 'u' } }) } };
+  const scope = load('hooks/household-scope.tsx', { ...stubs, './useHousehold': load('hooks/useHousehold.ts', stubs) });
+  const boundary = { ...stubs, './household-scope': scope };
+  const list = load('hooks/household-list.ts', boundary);
+  const pantry = load('hooks/usePantryItems.tsx', { ...boundary, './household-list': list, '@/lib/pantry-data': pantryData });
+  const shopping = load('hooks/useShoppingItems.tsx', { ...boundary, './household-list': list, '@/lib/shopping-data': shoppingData });
+  const value = {};
+  function Probe() { value.pantry = pantry.usePantryItems(); value.shopping = shopping.useShoppingItems(); return null; }
+  let renderer;
+  act(() => {
+    renderer = create(React.createElement(scope.HouseholdProvider, null, React.createElement(pantry.PantryProvider, null,
+      React.createElement(shopping.ShoppingProvider, null, React.createElement(Probe)))));
+  });
+  return { value, dispose: () => act(() => renderer.unmount()) };
+}
+
+test('a household lookup that never answers shows each list\'s load error, not "No household found"', async () => {
+  const neverAnswers = (_input, init = {}) => new Promise((_, reject) => {
+    init.signal?.addEventListener('abort', () => reject(new DOMException('The operation was aborted.', 'AbortError')));
+  });
+  const m = mountHousehold(neverAnswers);
+  try {
+    await act(settle);
+    assert.equal(m.value.pantry.error, 'err_load_items');
+    assert.equal(m.value.shopping.error, 'err_load_shopping');
+    assert.equal(m.value.pantry.loading, false);
+    assert.equal(m.value.shopping.loading, false);
+  } finally { m.dispose(); }
+});
+
+test('PostgREST\'s no-row answer (PGRST116) to the household lookup keeps "No household found"', async () => {
+  const m = mountHousehold(async () => new Response(JSON.stringify({ code: 'PGRST116', details: 'The result contains 0 rows',
+    hint: null, message: 'Cannot coerce the result to a single JSON object' }), { status: 406, headers: { 'Content-Type': 'application/json' } }));
+  try {
+    await act(settle);
+    assert.equal(m.value.pantry.error, 'err_no_household');
+    assert.equal(m.value.shopping.error, 'err_no_household');
+  } finally { m.dispose(); }
+});
