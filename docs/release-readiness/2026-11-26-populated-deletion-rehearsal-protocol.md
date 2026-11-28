@@ -37,7 +37,7 @@
 | Step | Action | Check |
 |---|---|---|
 | 1 | Fill the eight placeholders in a working copy of `readback.sql`; never commit the copy | — |
-| 2 | Run it read-only, as in SEC-02 (`supabase db query --linked --project-ref oiqteedkfwmcertgxqga --workdir <isolated workdir> --file <copy> --output-format json`), saving `before.json` | A leftover placeholder makes the query fail: STOP |
+| 2 | Run it read-only (CLI 3.2.0, [hosted CLI 3 guide](../testing/hosted-cli3.md): `supabase db query --remote=oiqteedkfwmcertgxqga --read-only --workdir <isolated workdir> --file <copy> --output-format json`; check that the `Target:` line names the hosted project), saving `before.json` | A leftover placeholder makes the query fail: STOP |
 | 3 | `node evaluate.cjs --before-only before.json` | Must print **READY**. Any **STOP** line ends the rehearsal before anything is deleted, for example a second member in H_T, a missing fixture, or an item of T outside H_T |
 | 4 | From T's address, email the support contact asking for deletion. The owner runs the requester check of the runbook: reply to the **registered** address, act only on the confirming reply | Record date and time of request, confirmation request and confirming reply (no addresses) |
 | 5 | Owner deletes T in the dashboard: Authentication → Users → **Delete user** (runbook step 2) | Record the UTC time and whether the dashboard reported an error |
