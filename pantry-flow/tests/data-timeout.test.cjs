@@ -138,7 +138,7 @@ for (const [label, hookFile, hookName, Provider, data, dataStub, loadError, writ
 
 // The household lookup goes through the same client: when it gets no answer, both lists show their
 // load error with Try again (which re-runs the lookup), never "No household found. Please sign out
-// and back in."; only PostgREST's no-row answer (PGRST116) keeps that message. Real supabase-js,
+// and back in."; only an answer without a membership row keeps that message. Real supabase-js,
 // real useHousehold, HouseholdProvider and both list providers.
 function mountHousehold(fetch) {
   const client = createClient('http://pantryflow.invalid', 'anon-key', {
@@ -175,12 +175,28 @@ test('a household lookup that never answers shows each list\'s load error, not "
   } finally { m.dispose(); }
 });
 
-test('PostgREST\'s no-row answer (PGRST116) to the household lookup keeps "No household found"', async () => {
-  const m = mountHousehold(async () => new Response(JSON.stringify({ code: 'PGRST116', details: 'The result contains 0 rows',
-    hint: null, message: 'Cannot coerce the result to a single JSON object' }), { status: 406, headers: { 'Content-Type': 'application/json' } }));
+// The lookup asks for an array (maybeSingle), so PostgREST answers "no row" with [] and never with
+// its single-object 406 (PGRST116), which is ambiguous between no row and more than one.
+const rows = list => async (input, init = {}) => {
+  rows.accept = new Headers(init.headers).get('accept');
+  return new Response(JSON.stringify(list), { status: 200, headers: { 'Content-Type': 'application/json', 'Content-Range': `*/${list.length}` } });
+};
+
+test('an empty answer to the household lookup keeps "No household found"; the lookup never asks for a single object', async () => {
+  const m = mountHousehold(rows([]));
   try {
     await act(settle);
     assert.equal(m.value.pantry.error, 'err_no_household');
     assert.equal(m.value.shopping.error, 'err_no_household');
+    assert.doesNotMatch(rows.accept ?? '', /vnd\.pgrst\.object/, 'with the single-object header, no row would be a 406 error');
+  } finally { m.dispose(); }
+});
+
+test('more than one membership row (ruled out by UNIQUE(user_id)) is a failed lookup, never "No household found"', async () => {
+  const m = mountHousehold(rows([{ household_id: 'h1' }, { household_id: 'h2' }]));
+  try {
+    await act(settle);
+    assert.equal(m.value.pantry.error, 'err_load_items');
+    assert.equal(m.value.shopping.error, 'err_load_shopping');
   } finally { m.dispose(); }
 });

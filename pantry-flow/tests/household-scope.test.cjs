@@ -9,7 +9,7 @@ function setup(initialUser = { id: 'alice' }) {
   const requests = [];
   const calls = [];
   const supabase = { from(table) { calls.push(table); return { select() { return this; }, eq() { return this; },
-    single() { const d = deferred(); requests.push(d); return d.promise; } }; } };
+    maybeSingle() { const d = deferred(); requests.push(d); return d.promise; } }; } };
   const stubs = { '@/lib/supabase': { supabase }, '@/lib/auth': { useAuth: () => ({ user: state.user }) } };
   // household-scope imports ./useHousehold, which is TS and must be compiled by load too.
   const useHouseholdModule = load('hooks/useHousehold.ts', stubs);
@@ -116,7 +116,7 @@ test('PantryProvider consumes the shared scope', async () => {
   // No membership row: the screen keeps the no-household message.
   requests.length = 0;
   act(() => { renderer = create(tree()); });
-  await act(async () => requests[0].resolve({ data: null, error: { code: 'PGRST116', message: 'no rows' } }));
+  await act(async () => requests[0].resolve({ data: null, error: null }));
   assert.equal(value.error, 'err_no_household');
   assert.deepEqual(reads, []);
   act(() => renderer.unmount());

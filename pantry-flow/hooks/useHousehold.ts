@@ -2,17 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 
-// 'err_no_household': the lookup found no membership row (PGRST116) or no household on it.
-// 'household_unavailable': the lookup itself failed (timeout, network, server); each list shows its
-// own load message for it, with Try again, instead of telling the user to sign out.
+// 'err_no_household': the lookup answered without a membership row, or without a household on it.
+// 'household_unavailable': the lookup returned an error (timeout, network, server, or PGRST116 for
+// more than one row, which UNIQUE(user_id) rules out); each list shows its own load message for it,
+// with Try again, instead of telling the user to sign out. maybeSingle() asks for an array, so "no
+// row" is an empty answer, never the single-object 406 that PGRST116 shares with "more than one".
 export type HouseholdError = 'err_no_household' | 'household_unavailable';
-const NO_HOUSEHOLD = 'PGRST116';
-
-// No error means the lookup answered, but without a household on the row.
-function lookupError(err: { code?: string } | null): HouseholdError {
-  if (!err || err.code === NO_HOUSEHOLD) return 'err_no_household';
-  return 'household_unavailable';
-}
 
 // Used once by HouseholdProvider; providers and screens consume useHouseholdScope.
 export function useHousehold() {
@@ -31,11 +26,12 @@ export function useHousehold() {
     setLoading(true);
     try {
       const { data, error: err } = await supabase.from('pantry_household_members')
-        .select('household_id').eq('user_id', userId).single();
+        .select('household_id').eq('user_id', userId).maybeSingle();
       const found = data?.household_id;
       if (request === generation.current) {
-        if (err || !found) setError(lookupError(err));
-        else setHouseholdId(found);
+        if (err) setError('household_unavailable');
+        else if (found) setHouseholdId(found);
+        else setError('err_no_household');
       }
     } catch {
       if (request === generation.current) setError('household_unavailable');

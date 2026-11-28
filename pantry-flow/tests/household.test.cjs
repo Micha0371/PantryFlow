@@ -8,7 +8,7 @@ test('household lookup rejects stale identities and exposes a retry after networ
   let user = { id: 'alice' }, value;
   const requests = [];
   const supabase = { from() { return { select() { return this; }, eq() { return this; },
-    single() { const d = deferred(); requests.push(d); return d.promise; } }; } };
+    maybeSingle() { const d = deferred(); requests.push(d); return d.promise; } }; } };
   const { useHousehold } = load('hooks/useHousehold.ts', {
     '@/lib/supabase': { supabase }, '@/lib/auth': { useAuth: () => ({ user }) },
   });
@@ -37,11 +37,12 @@ test('household lookup rejects stale identities and exposes a retry after networ
   act(() => renderer.unmount());
 });
 
-// Only a lookup that found no membership row means "no household"; a timeout (KAN-127), the network
-// or the server is a read that failed and is shown as such, so nobody is told to sign out over it.
+// Only a lookup that answered without a membership row means "no household"; any error is a read
+// that failed (a timeout (KAN-127), the network, the server, or PGRST116, which maybeSingle() now
+// raises only for more than one row) and is shown as such, so nobody is told to sign out over it.
 async function lookup(outcome) {
   let value;
-  const supabase = { from() { return { select() { return this; }, eq() { return this; }, single: () => outcome() }; } };
+  const supabase = { from() { return { select() { return this; }, eq() { return this; }, maybeSingle: () => outcome() }; } };
   const { useHousehold } = load('hooks/useHousehold.ts', {
     '@/lib/supabase': { supabase }, '@/lib/auth': { useAuth: () => ({ user: { id: 'u' } }) },
   });
@@ -52,8 +53,8 @@ async function lookup(outcome) {
   return value;
 }
 
-test('no membership row (PGRST116) or a row without a household is err_no_household', async () => {
-  const none = await lookup(async () => ({ data: null, error: { code: 'PGRST116', message: 'JSON object requested, multiple (or no) rows returned' } }));
+test('an answer without a membership row, or a row without a household, is err_no_household', async () => {
+  const none = await lookup(async () => ({ data: null, error: null }));
   assert.equal(none.error, 'err_no_household');
   assert.equal(none.householdId, null);
   const empty = await lookup(async () => ({ data: { household_id: null }, error: null }));
@@ -64,7 +65,9 @@ test('a timed-out, network or server failure of the lookup is household_unavaila
   // supabase-js answers an aborted or failed fetch with an error object, not a rejection.
   for (const error of [{ code: '', message: 'AbortError: The operation was aborted.' },
     { code: '', message: 'TypeError: Network request failed' }, { code: 'PGRST002', message: 'schema cache' },
-    { code: '500', message: 'server error' }, { message: 'an error without a code' }]) {
+    { code: '500', message: 'server error' }, { message: 'an error without a code' },
+    // More than one row: UNIQUE(user_id) rules it out, and it is never read as "no household".
+    { code: 'PGRST116', message: 'JSON object requested, multiple (or no) rows returned', details: 'Results contain 2 rows' }]) {
     const value = await lookup(async () => ({ data: null, error }));
     assert.equal(value.error, 'household_unavailable', error.message);
     assert.equal(value.loading, false);
